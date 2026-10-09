@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Dúvidas e propostas
+    url: https://github.com/EdneiMonteiro/vareleira-rag/discussions
+    about: Discuta o uso, o escopo e a evolução do laboratório.
+  - name: Relato privado de segurança
+    url: https://github.com/EdneiMonteiro/vareleira-rag/security/advisories/new
+    about: Não publique vulnerabilidades ou informações sensíveis em issues.

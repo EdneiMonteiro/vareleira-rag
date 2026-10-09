@@ -1,0 +1,23 @@
+# Licenças do Vareleira RAG
+
+Copyright (c) 2026 Ednei Monteiro e contribuidores identificados.
+
+Este projeto aplica licenças diferentes a componentes distintos; não oferece
+uma escolha de licença para o mesmo material.
+
+| Componente | Licença |
+| --- | --- |
+| Código, scripts e configurações de ferramentas e automação | MIT, conforme LICENSES/MIT.txt |
+| Documentação, narrativa, ilustrações, textos de modelos de contribuição e dados sintéticos | Creative Commons Atribuição 4.0 Internacional, conforme LICENSES/CC-BY-4.0.txt |
+
+Em arquivos mistos, como notebooks ou páginas HTML, MIT cobre a implementação
+e CC BY 4.0 cobre o conteúdo autoral incorporado. Ao redistribuir o conjunto,
+cumpra ambas as licenças nos respectivos escopos.
+
+Preserve os avisos do código. Ao reutilizar conteúdo, atribua a autoria,
+indique a versão ou revisão, forneça a licença e identifique adaptações.
+O uso comercial é permitido, observadas as condições de cada licença.
+
+Materiais de terceiros mantêm seus próprios termos e atribuições, registrados
+em NOTICE.md. As licenças não concedem direitos sobre marcas de terceiros nem
+permitem sugerir endosso dos autores ou das empresas mencionadas.

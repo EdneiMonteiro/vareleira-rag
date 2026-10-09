@@ -1,0 +1,31 @@
+name: Problema no material disponível
+description: Relate erros de documentação ou comportamento reproduzível.
+title: "[Problema]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        O laboratório está em preparação. Entregas planejadas não são defeitos.
+        Use somente exemplos sintéticos. Não publique dados pessoais, documentos
+        reais, credenciais ou logs sensíveis. Segurança deve ser relatada em privado.
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto e revisão
+      description: Informe o arquivo, link ou commit e o que estava tentando fazer.
+    validations:
+      required: true
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema e resultado esperado
+      description: Explique o resultado observado e o que deveria ocorrer.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Reprodução ou evidência
+      description: Indique o trecho afetado ou passos mínimos com dados sintéticos.
+    validations:
+      required: true

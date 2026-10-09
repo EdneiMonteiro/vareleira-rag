@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Ao usar o Vareleira RAG, cite também a revisão utilizada."
+title: "Vareleira RAG: laboratório educacional de consulta a condições gerais de seguro com fontes documentais"
+abstract: >-
+  Laboratório educacional em preparação para geração aumentada por recuperação
+  sobre condições gerais sintéticas de seguro residencial. Usa o piloto interno
+  de 2025 da seguradora fictícia Vareleira para estudar fontes, versões,
+  recuperação de evidências e avaliação de respostas.
+type: software
+authors:
+  - family-names: Monteiro
+    given-names: Ednei
+    orcid: "https://orcid.org/0009-0006-0765-4201"
+repository-code: "https://github.com/EdneiMonteiro/vareleira-rag"
+url: "https://github.com/EdneiMonteiro/vareleira-rag"
+# Licenças por componente; consulte LICENSE.
+license:
+  - MIT
+  - CC-BY-4.0
+keywords:
+  - retrieval-augmented generation
+  - artificial intelligence
+  - synthetic data
+  - insurance
+  - education
+  - evaluation
