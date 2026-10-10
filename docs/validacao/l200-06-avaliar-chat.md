@@ -93,3 +93,9 @@ A publicação é experimental, não homologação do atendimento.
 
 O teste histórico L100 D06 não foi repetido e continua abaixo da meta registrada.
 Prompts novos do Copilot, login humano e revisão semântica integral não foram executados nesta rodada.
+
+## Evolução posterior
+
+A [correção v2](l200-correcao-v2.md) usa referências curtas restritas na geração e citações montadas
+dos trechos recuperados. Seu desenvolvimento e seu novo teste final são registrados separadamente.
+O conjunto v1 e a medição acima permanecem intactos.

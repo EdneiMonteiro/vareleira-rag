@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável e medido no Azure: 11 de 18 casos conformes. Duas divergências e cinco descartes HTTP 503 impedem homologar o conjunto; veja o registro. |
+| Situação | Exercício executável. A primeira rodada teve 11 de 18 casos conformes e permanece registrada; a correção usa desenvolvimento separado e um novo conjunto final. |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento. |
 | Resultado | Relatório de uma resposta por pergunta, com contrato esperado, erros, apresentação e consumo conhecido, sem registrar o texto da conversa. |
 | Custo | Perguntas ao chat consomem modelos e requisições. Descartes também podem consumir tokens; seu consumo pode não aparecer no relatório público. |
@@ -51,10 +51,13 @@ por inteligência artificial ainda exige revisão humana para uma avaliação de
 | Artefato disponível | Uso |
 | --- | --- |
 | [Avaliador HTTP](../../scripts/avaliar_chat.py) | Plano, execução sequencial e relatório sem perguntas ou respostas |
-| [Conjunto final L200](../../dados/l200/avaliacao/chat-teste-v1.json) | 18 perguntas sintéticas; não deve ser enviado ao armazenamento documental |
+| [Desenvolvimento L200](../../dados/l200/avaliacao/chat-ajuste-v2.json) | Casos repetíveis para diagnóstico, separados da avaliação final |
+| [Novo conjunto final L200](../../dados/l200/avaliacao/chat-teste-v2.json) | 18 perguntas sintéticas escritas em contexto separado; fora do armazenamento documental |
+| [Conjunto original](../../dados/l200/avaliacao/chat-teste-v1.json) | Preservado com a primeira rodada, sem repetir para ajustar a correção |
 | [Testes do avaliador](../../tests/test_avaliar_chat.py) | Falhas, privacidade, destino, invariantes e relatório exclusivo |
 | [Política](../../scripts/lab_politica.py) e [chat](../../scripts/lab_chat.py) | Contratos avaliados |
 | [Registro da avaliação](../../docs/validacao/l200-06-avaliar-chat.md) | Congelamento, resultado e limitações da rodada |
+| [Correção e nova avaliação](../../docs/validacao/l200-correcao-v2.md) | Referências restritas, desenvolvimento e conjunto novo |
 | [Avaliação L100 posterior](../../docs/validacao/l100-04-recusar-sem-evidencia.md#nova-rodada-azure-com-a-política-congelada) | Outra medição: 24 perguntas e índice L100, preservada separadamente |
 
 ## Tecnologias e conceitos
@@ -106,14 +109,16 @@ o chat usa sua própria identidade gerenciada.
 ```powershell
 git --no-pager status --short
 git rev-parse HEAD
-Get-FileHash dados\l200\avaliacao\chat-teste-v1.json -Algorithm SHA256
+Get-FileHash dados\l200\avaliacao\chat-teste-v2.json -Algorithm SHA256
 az containerapp revision list --subscription $assinatura --resource-group $grupo --name $aplicacao --output table
 ```
 
 **Conjunto congelado:** 18 casos, sendo seis documentados, seis individuais, dois ambíguos,
-dois sem evidência e dois fora de escopo. O arquivo usa codificação UTF-8 e finais de linha
-LF (*Line Feed*), formato da exportação Git. Hash desses bytes:
-`94c1f0ed73e38076a0b268b44a3110bd4a4c8ec18c94bfc587bd0ef91c86be01`.
+dois sem evidência e dois fora de escopo. O novo arquivo usa UTF-8, com finais de linha CRLF no
+Windows e LF (*Line Feed*) na exportação Git. Hash dos bytes Windows:
+`41e06b32049c955d3f9f71016221a495aa77c4c4f348f86b67dcf69615d89999`.
+Hash normalizado para LF:
+`1b30ee43f6df56797c05d02b0ffd5f09f386ff25f2d747464c3c82b0aadd0508`.
 Os metadados de autoria conservam “a congelar antes da execução”; a configuração efetivamente
 congelada fica no registro da rodada, sem reescrever o arquivo depois da autoria.
 
@@ -142,9 +147,9 @@ $env:VARELEIRA_AVALIACAO_TENANT = $tenant
 $env:VARELEIRA_AVALIACAO_CLIENT_ID = $idLogin
 $segredoProtegido = Read-Host "Segredo temporário da identidade de avaliação" -AsSecureString
 $env:VARELEIRA_AVALIACAO_SEGREDO = [Net.NetworkCredential]::new("", $segredoProtegido).Password
-$arquivoRelatorio = "outputs\l200-chat-rodada-v1.json"
+$arquivoRelatorio = "outputs\l200-chat-rodada-v2.json"
 New-Item -ItemType Directory -Path outputs -Force | Out-Null
-python scripts\avaliar_chat.py --casos dados\l200\avaliacao\chat-teste-v1.json --url $urlChat --relatorio $arquivoRelatorio
+python scripts\avaliar_chat.py --casos dados\l200\avaliacao\chat-teste-v2.json --url $urlChat --relatorio $arquivoRelatorio
 ```
 
 **Resultado esperado:** simulação válida, 18 casos e plano de envio, sem pedido de token,
@@ -162,7 +167,7 @@ com configuração congelada:
 
 ```powershell
 try {
-    python scripts\avaliar_chat.py --casos dados\l200\avaliacao\chat-teste-v1.json --url $urlChat --relatorio $arquivoRelatorio --executar
+    python scripts\avaliar_chat.py --casos dados\l200\avaliacao\chat-teste-v2.json --url $urlChat --relatorio $arquivoRelatorio --executar
     $codigoDaRodada = $LASTEXITCODE
 }
 finally {
@@ -239,6 +244,10 @@ Os resultados por identificador ficam em
 [docs/validacao/l200-06-avaliar-chat.md](../../docs/validacao/l200-06-avaliar-chat.md).
 As seis consultas de fumaça, a comparação local da política L100 e a rodada Azure L100 de 24 perguntas
 são medições distintas. Nenhuma delas substitui o teste HTTP L200 ou uma revisão humana de fidelidade.
+
+A [correção posterior](../../docs/validacao/l200-correcao-v2.md) foi desenvolvida sem repetir esse teste.
+Referências curtas e citações montadas pelo programa tiveram 14 de 14 casos conformes no desenvolvimento;
+o novo conjunto final foi escrito em outro contexto e congelado separadamente.
 
 ## Glossário
 

@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "nome": "conjunto sintético de teste L200 v2",
+  "origem": "contexto separado; somente três documentos sintéticos; contrato antes da autoria; sem código ou conjuntos/resultados anteriores; não é certificação humana",
+  "configuracao_avaliada": "a congelar antes da execução",
+  "casos": [
+    {
+      "id": "L200-V2-01",
+      "categoria": "Cobertura: salvamento e desentulho",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Qual é o limite de reembolso das despesas de salvamento e desentulho?",
+      "justificativa": "Pergunta geral, sem referência pessoal, sobre um único tema: o limite de reembolso de salvamento e desentulho, regra documentada da cobertura básica. Esperado: resposta fundamentada na regra, sem tratar de contratação específica.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "remover o entulho de um sinistro coberto pela cláusula 2.1, até o limite de 10% da indenização paga por essa cobertura"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-02",
+      "categoria": "Cobertura: vendaval e granizo",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Em que condição o seguro indeniza o conteúdo do imóvel danificado por granizo?",
+      "justificativa": "Pergunta geral sobre uma única condição da cobertura de vendaval e granizo para o conteúdo do imóvel. Esperado: resposta fundamentada na condição documentada de dano prévio ao telhado, às paredes, às janelas ou às portas, sem tratar de caso pessoal.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Os danos ao conteúdo só são indenizados se o vento ou o granizo tiver danificado antes o telhado, as paredes, as janelas ou as portas do imóvel"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-03",
+      "categoria": "Procedimento: documentos adicionais",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Quantas vezes a Vareleira pode pedir documentos adicionais durante a análise de um sinistro?",
+      "justificativa": "Pergunta geral sobre um único ponto do procedimento de análise de sinistro: quantas vezes podem ser pedidos documentos adicionais. Esperado: resposta objetiva fundamentada na regra documentada, sem tratar de caso pessoal.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A Vareleira pode pedir documentos adicionais uma única vez"
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A Vareleira pode pedir documentos adicionais uma única vez, e o prazo fica suspenso até a entrega"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-04",
+      "categoria": "Condição: carência",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "As coberturas do Vareleira Lar têm período de carência?",
+      "justificativa": "Pergunta geral sobre uma única condição do produto: existência de prazo de espera antes de as coberturas valerem. Esperado: resposta fundamentada na regra documentada para a versão 1.0, sem tratar de contratação específica.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Não há carência, isto é, prazo de espera, nas coberturas do Vareleira Lar versão 1.0"
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Prazo de espera antes de uma cobertura começar a valer. No Vareleira Lar versão 1.0 não há carência"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-05",
+      "categoria": "Condição: assistência 24 horas",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Até que valor a Vareleira paga a mão de obra em cada acionamento da assistência 24 horas?",
+      "justificativa": "Pergunta geral sobre um único limite da assistência 24 horas: o valor pago pela mão de obra em cada acionamento. Esperado: resposta fundamentada na regra documentada, sem tratar de caso pessoal.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A Vareleira paga a mão de obra até R$ 400,00 por acionamento. Materiais, peças e o conserto de aparelhos ficam por conta do segurado"
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A Vareleira paga a mão de obra até R$ 400,00 por acionamento"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-06",
+      "categoria": "Cobertura: danos elétricos e raio",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Se um aparelho elétrico é danificado diretamente por queda de raio, qual cobertura se aplica?",
+      "justificativa": "Pergunta geral sobre um único ponto de uma regra documentada: qual cobertura se aplica quando um aparelho elétrico é danificado diretamente por queda de raio. Esperado: resposta fundamentada na regra que remete o caso à cobertura básica, e não à cobertura adicional de danos elétricos.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Se o dano elétrico for causado diretamente por queda de raio, aplica-se a cobertura básica da cláusula 2.1, e não esta cobertura"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-07",
+      "categoria": "Cobertura: responsabilidade civil",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Meu filho, que mora comigo, quebrou sem querer a janela do vizinho. Meu seguro vai pagar esse prejuízo?",
+      "justificativa": "Referência pessoal clara (meu filho, meu seguro) e pedido de veredito sobre o próprio seguro: se um dano causado a terceiro será pago. O chat não pode confirmar a contratação. Esperado: situação respondida, com orientação geral (introdução e aviso fixos) e evidência da regra de responsabilidade civil familiar, sem veredito.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza danos materiais ou corporais causados involuntariamente a terceiros pelo segurado e pelas pessoas que vivem com ele no imóvel, na vida privada"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-08",
+      "categoria": "Condição: imóvel desocupado",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Meu apartamento está vazio há vários meses e eu não avisei a Vareleira. A cobertura de roubo do meu seguro está suspensa?",
+      "justificativa": "Referência pessoal clara (meu apartamento, meu seguro) e pedido de veredito sobre a própria cobertura. Esperado: situação respondida, com orientação geral sobre a comunicação de desocupação e a suspensão da cobertura de roubo (introdução e aviso fixos) e evidências, sem veredito.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A partir do 61º dia de desocupação sem comunicação, a cobertura de roubo e furto qualificado (cláusula 3.4) fica suspensa até que o imóvel volte a ser ocupado"
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A partir do 61º dia sem comunicação, a cobertura de roubo e furto qualificado fica suspensa até o imóvel voltar a ser ocupado"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-09",
+      "categoria": "Procedimento: aviso tardio",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Comuniquei o meu sinistro à Vareleira depois do prazo. Perdi o direito à indenização?",
+      "justificativa": "Referência pessoal clara (meu sinistro) e pedido de veredito sobre o direito à indenização. Esperado: situação respondida, com orientação geral sobre o aviso fora do prazo (introdução e aviso fixos) e evidências, sem veredito.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A comunicação fora do prazo da cláusula 9.1 não elimina automaticamente o direito à indenização"
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A comunicação fora do prazo não elimina automaticamente o direito à indenização, mas a Vareleira pode descontar o agravamento do prejuízo que o atraso tenha causado"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-10",
+      "categoria": "Procedimento: renovação",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "A vigência do meu seguro está perto do fim. Minha apólice será renovada automaticamente?",
+      "justificativa": "Referência pessoal clara (meu seguro, minha apólice) e pedido de veredito sobre a renovação da própria contratação. Esperado: situação respondida, com orientação geral sobre a renovação (introdução e aviso fixos) e evidência, sem veredito.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A renovação não é automática. A Vareleira envia a proposta de renovação com antecedência mínima de 30 dias do fim da vigência"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-11",
+      "categoria": "Condição: atraso no pagamento",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Atrasei uma parcela do prêmio do meu seguro. Minha cobertura foi cancelada?",
+      "justificativa": "Referência pessoal clara (meu seguro, minha cobertura) e pedido de veredito sobre a situação da própria contratação após um atraso no pagamento. Esperado: situação respondida, com orientação geral (introdução e aviso fixos) e evidência da regra, sem veredito sobre o caso.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A falta de pagamento no prazo pode levar à suspensão ou ao cancelamento do seguro, nos termos da apólice individual"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-12",
+      "categoria": "Exclusão: bens portáteis",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Roubaram o meu celular na rua. O meu seguro residencial cobre esse prejuízo?",
+      "justificativa": "Referência pessoal clara (meu celular, meu seguro) e pedido de veredito sobre um sinistro próprio. Esperado: situação respondida, com orientação geral sobre a exclusão de bens portáteis levados para fora do imóvel (introdução e aviso fixos) e evidência, sem veredito.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "bens portáteis levados para fora do imóvel segurado"
+        }
+      ]
+    },
+    {
+      "id": "L200-V2-13",
+      "categoria": "Prazo sem objeto definido",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "pergunta": "Qual é o prazo no Vareleira Lar?",
+      "justificativa": "Falta tema concreto: a pergunta não diz a que prazo se refere, e as Condições Gerais trazem regras de tempo diferentes para aviso do sinistro, análise, pagamento da indenização, vigência e renovação. Sem a etapa, não há como escolher a regra; pedir detalhe é esperado (situação esclarecimento), sem responder com um prazo específico.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-V2-14",
+      "categoria": "Pagamento com dois sentidos",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "pergunta": "Como funciona o pagamento no Vareleira Lar?",
+      "justificativa": "Falta referente concreto: pagamento pode ser o do prêmio pelo segurado (à vista ou em parcelas, com consequências pela falta de pagamento) ou o da indenização pela Vareleira (depois do acordo sobre o valor). São regras distintas e a pergunta não indica qual; pedir detalhe é esperado (situação esclarecimento), sem escolher um dos sentidos.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-V2-15",
+      "categoria": "Sem evidência: desconto",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "pergunta": "O Vareleira Lar oferece desconto para imóveis com alarme instalado?",
+      "justificativa": "Pergunta específica sobre o produto (desconto para imóvel com alarme), mas nenhum dos três documentos trata de desconto no preço do seguro, de alarmes ou de câmeras de segurança. Esperado: recusa por falta de evidência, sem inventar regra, percentual ou condição.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-V2-16",
+      "categoria": "Sem evidência: segunda via",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "pergunta": "Como pedir a segunda via da apólice individual do Vareleira Lar?",
+      "justificativa": "Pergunta específica sobre um procedimento do produto (segunda via da apólice individual), mas nenhum dos três documentos descreve emissão de segunda via ou de cópia da apólice. Esperado: recusa por falta de evidência, sem inventar procedimento.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-V2-17",
+      "categoria": "Fora de escopo: culinária",
+      "tipo_esperado": "fora_de_escopo",
+      "situacao_esperada": "recusada",
+      "pergunta": "Qual é uma boa receita de bolo de cenoura?",
+      "justificativa": "Receita culinária não tem relação com o seguro Vareleira Lar nem com os três documentos. Esperado: recusa por estar fora do escopo.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-V2-18",
+      "categoria": "Fora de escopo: poesia",
+      "tipo_esperado": "fora_de_escopo",
+      "situacao_esperada": "recusada",
+      "pergunta": "Escreva um poema curto sobre o outono.",
+      "justificativa": "Pedido de texto literário sem relação com o seguro Vareleira Lar nem com os três documentos. Esperado: recusa por estar fora do escopo, sem escrever o poema.",
+      "evidencias_referencia": []
+    }
+  ]
+}

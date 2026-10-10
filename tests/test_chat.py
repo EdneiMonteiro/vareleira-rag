@@ -1,3 +1,4 @@
+import argparse
 import ast
 import base64
 import contextlib
@@ -72,18 +73,16 @@ def tearDownModule():
 
 
 def primeiro_trecho(entrada):
-    """Id e texto do primeiro bloco <trecho> do pedido: o que a busca colocou em primeiro lugar."""
+    """Id curto e texto do primeiro bloco <trecho> do pedido: o que a busca colocou em primeiro lugar."""
     achado = re.search(r'<trecho id="([^"]+)"[^>]*>\n(.*?)\n</trecho>', entrada, re.DOTALL)
     return achado.group(1), achado.group(2)
 
 
-def responder(tipo, resposta="Resposta de teste.", evidencias=True, citacao=None, extras=None):
+def responder(tipo, resposta="Resposta de teste.", referencias=True, extras=None):
+    """A saída do modelo no contrato do L200: tipo, resposta e ids curtos. `referencias`: True (o primeiro trecho), False ou a lista exata."""
     def montar(argumentos):
-        lista = []
-        if evidencias:
-            identificador, texto = primeiro_trecho(argumentos["input"])
-            lista = [{"fonte": identificador, "citacao": citacao or texto.strip()[-60:]}]
-        return {"tipo": tipo, "resposta": resposta, "evidencias": lista, **(extras or {})}
+        lista = [primeiro_trecho(argumentos["input"])[0]] if referencias is True else list(referencias or [])
+        return {"tipo": tipo, "resposta": resposta, "referencias": lista, **(extras or {})}
 
     return montar
 
@@ -512,14 +511,18 @@ class ServicoRagTests(unittest.TestCase):
         self.assertEqual(len(resposta.evidencias), 1)
         evidencia = resposta.evidencias[0].a_dict()
         self.assertRegex(evidencia["id"], r"^VLAR-[A-Z]+-1_0-\d+$")
-        self.assertTrue(evidencia["citacao"])
+        trecho = Fixture.indice.documentos[evidencia["id"]]
+        self.assertEqual(evidencia["citacao"], lc.limpar_texto(trecho["conteudo"], None), "a citação é o trecho inteiro, como no índice")
         self.assertEqual((evidencia["versao"], evidencia["fonte"].endswith(".md")), ("1.0", True))
         self.assertEqual(resposta.uso.a_dict()["tokens_saida"], 40)
         self.assertEqual(resposta.uso.a_dict()["tokens_raciocinio"], 10)
         self.assertGreater(resposta.uso.tokens_embeddings, 0)
         chamada = self.geracao.chamadas[0]
-        self.assertEqual(chamada["instructions"], lp.INSTRUCOES_COMPLETAS)
-        self.assertEqual(chamada["text"], {"format": lp.CONTRATO_COMPLETO.esquema})
+        ids_curtos = re.findall(r'<trecho id="([^"]+)"', chamada["input"])
+        self.assertEqual(ids_curtos, [f"T{numero}" for numero in range(1, 6)])
+        self.assertNotIn(f'id="{evidencia["id"]}"', chamada["input"], "o modelo recebe ids curtos, não os do índice")
+        self.assertEqual(chamada["instructions"], lc.INSTRUCOES_L200)
+        self.assertEqual(chamada["text"], {"format": lc.contrato_de_referencias(ids_curtos).esquema})
         self.assertTrue(chamada["input"].endswith(f"Pergunta: {PERGUNTA_GERAL}"))
         self.assertIs(chamada["store"], False)
 
@@ -532,7 +535,7 @@ class ServicoRagTests(unittest.TestCase):
         self.assertIn("MARCADOR-BETA", segunda)
         self.assertNotIn("MARCADOR-ALFA", segunda, "nada da pergunta anterior chega ao modelo")
         for chamada in self.geracao.chamadas:
-            self.assertEqual(chamada["instructions"], lp.INSTRUCOES_COMPLETAS)
+            self.assertEqual(chamada["instructions"], lc.INSTRUCOES_L200)
 
     def test_contratacao_individual_mostra_so_o_texto_fixo_da_politica(self):
         for rotulo, pergunta, tipo_do_modelo in (("regra por palavras", PERGUNTA_INDIVIDUAL, lp.DOCUMENTADA),
@@ -543,6 +546,8 @@ class ServicoRagTests(unittest.TestCase):
                 self.assertEqual((resposta.tipo, resposta.situacao), (lp.CONTRATACAO_INDIVIDUAL, lp.RESPONDIDA))
                 self.assertEqual((resposta.texto, resposta.aviso), (lp.TEXTO_SEM_VEREDITO, lp.AVISO_CONTRATACAO_INDIVIDUAL))
                 self.assertTrue(resposta.evidencias)
+                for evidencia in resposta.evidencias:
+                    self.assertEqual(evidencia.citacao, lc.limpar_texto(Fixture.indice.documentos[evidencia.id]["conteudo"], None))
                 self.assertNotIn("será pago", json.dumps(resposta.a_dict(), ensure_ascii=False))
 
     def test_recusas_e_esclarecimento_usam_os_textos_da_politica(self):
@@ -551,7 +556,7 @@ class ServicoRagTests(unittest.TestCase):
                                       (lp.AMBIGUA, lp.ESCLARECIMENTO, lp.MENSAGEM_ESCLARECIMENTO)):
             with self.subTest(tipo=tipo):
                 self.geracao.responder = responder(tipo, resposta="Sim, cobre tudo!" if tipo != lp.AMBIGUA else "",
-                                                   evidencias=False)
+                                                   referencias=False)
                 resposta = self.servico.perguntar(PERGUNTA_GERAL)
                 self.assertEqual((resposta.tipo, resposta.situacao, resposta.texto, resposta.evidencias),
                                  (tipo, situacao, texto, ()))
@@ -560,12 +565,11 @@ class ServicoRagTests(unittest.TestCase):
     def test_nada_alem_da_decisao_da_politica_chega_a_resposta(self):
         self.geracao.responder = responder(lp.DOCUMENTADA, extras={"debug": "SAIDA-BRUTA-DO-MODELO", "raciocinio": "PENSAMENTO-INTERNO"})
         resposta = json.dumps(self.servico.perguntar(PERGUNTA_GERAL).a_dict(), ensure_ascii=False)
-        for oculto in ("SAIDA-BRUTA-DO-MODELO", "PENSAMENTO-INTERNO", '"debug"', "gpt-5", "<trecho"):
+        for oculto in ("SAIDA-BRUTA-DO-MODELO", "PENSAMENTO-INTERNO", '"debug"', "gpt-5", "<trecho", '"T1"'):
             self.assertNotIn(oculto, resposta)
 
-    def test_resposta_sem_prova_e_descartada_e_o_texto_do_modelo_nao_aparece(self):
-        self.geracao.responder = responder(lp.DOCUMENTADA, resposta="Resposta inventada.",
-                                           citacao="Esta frase não existe em nenhum trecho recuperado.")
+    def test_resposta_com_referencia_inventada_e_descartada_e_o_texto_do_modelo_nao_aparece(self):
+        self.geracao.responder = responder(lp.DOCUMENTADA, resposta="Resposta inventada.", referencias=["T99"])
         with self.assertRaises(lc.ErroChat) as contexto:
             self.servico.perguntar(PERGUNTA_GERAL)
         self.assertEqual(contexto.exception.codigo, lc.RESPOSTA_NAO_VERIFICADA)
@@ -595,6 +599,125 @@ class ServicoRagTests(unittest.TestCase):
         servico = servico_rag(self.geracao, modo="texto", k=2)
         servico.perguntar("coberturas adicionais")
         self.assertEqual(len(re.findall(r"<trecho ", self.geracao.chamadas[0]["input"])), 2)
+
+
+# --------------------------------------------------------------------------------------
+# Ids curtos e citações montadas pelo programa
+# --------------------------------------------------------------------------------------
+
+ID_BASE_LONGO = "VLAR-L200-" + "-".join(f"SECAO{numero:03d}" for numero in range(1, 20))  # 180 caracteres, como as projeções do L200
+
+
+def trecho_sintetico(identificador, conteudo):
+    return {"id": identificador, "documento_id": "DOC-SINTETICO", "titulo_documento": "Documento sintético", "secao": "",
+            "clausulas": "", "conteudo": conteudo, "fonte": "sintetico/documento.md", "versao": "1.0"}
+
+
+class RecuperadorFalso:
+    """Entrega sempre os mesmos trechos: o que o chat faz com o que a busca devolve não depende do índice."""
+
+    def __init__(self, trechos):
+        self.trechos = trechos
+
+    def recuperar(self, pergunta, modo, k):
+        return lg.Recuperacao([dict(trecho) for trecho in self.trechos], 7)
+
+
+class GeradorFalso:
+    """Devolve a saída que o teste mandar, sem a conferência do cliente real: um modelo que não respeita o esquema."""
+
+    def __init__(self, saida):
+        self.saida = saida
+
+    def gerar(self, pedido, contrato):
+        return lg.ResultadoGeracao(self.saida, 11, 22, 33)
+
+
+class IdsCurtosTests(unittest.TestCase):
+    CONTEUDOS = ("Primeira regra fictícia: o aviso do evento deve ser feito em até cinco dias, salvo impossibilidade comprovada.",
+                 "Segunda regra fictícia: a franquia incide em cada evento, e a exclusão vale quando houver dolo.")
+    DOCUMENTADA = {"tipo": lp.DOCUMENTADA, "resposta": "TEXTO-INVENTADO-PELO-MODELO", "referencias": ["T1"]}  # saída válida; os testes a deformam
+
+    def setUp(self):
+        self.ids = [f"{ID_BASE_LONGO}-PAGINA-{letra}" for letra in "AB"]
+        self.trechos = [trecho_sintetico(identificador, conteudo) for identificador, conteudo in zip(self.ids, self.CONTEUDOS)]
+
+    def servico(self, gerador, trechos=None):
+        return lc.ServicoRag(RecuperadorFalso(trechos or self.trechos), gerador, "hibrida", 2)
+
+    def test_ids_longos_com_o_mesmo_prefixo_viram_ids_curtos_unicos_e_voltam_inteiros_com_a_citacao_exata(self):
+        self.assertEqual(self.ids[0][:128], self.ids[1][:128], "premissa: um corte em 128 caracteres igualaria os dois ids")
+        geracao = OpenAIGeracaoFalso()
+        geracao.responder = lambda argumentos: {
+            "tipo": lp.DOCUMENTADA, "resposta": "Regra de teste.", "referencias": ["T2", "T1", "T2"],
+            "evidencias": [{"fonte": "T1", "citacao": "Paráfrase do modelo que não está em nenhum trecho."}]}
+        resposta = self.servico(lg.ClienteGeracao(geracao, "geracao", MODELOS)).perguntar(PERGUNTA_GERAL)
+        chamada = geracao.chamadas[0]
+        self.assertEqual(re.findall(r'<trecho id="([^"]+)"', chamada["input"]), ["T1", "T2"])
+        enviado = json.dumps(chamada, ensure_ascii=False)
+        for identificador in self.ids:
+            self.assertNotIn(identificador, enviado, "o modelo não recebe os ids do índice")
+        self.assertEqual(chamada["text"]["format"]["schema"]["properties"]["referencias"]["items"]["enum"], ["T1", "T2"])
+        self.assertEqual([(item.id, item.citacao) for item in resposta.evidencias],
+                         [(self.ids[1], self.CONTEUDOS[1]), (self.ids[0], self.CONTEUDOS[0])])
+        self.assertEqual((resposta.tipo, resposta.situacao, resposta.texto), (lp.DOCUMENTADA, lp.RESPONDIDA, "Regra de teste."))
+        self.assertNotIn("Paráfrase", json.dumps(resposta.a_dict(), ensure_ascii=False))
+        self.assertEqual((resposta.uso.tokens_embeddings, resposta.uso.tokens_saida, resposta.uso.tokens_raciocinio), (7, 40, 10))
+
+    def test_referencia_inventada_ou_saida_fora_do_contrato_e_descartada_sem_texto_do_modelo(self):
+        saidas = {
+            "id curto que não existe": {**self.DOCUMENTADA, "referencias": ["T3"]},
+            "id do índice no lugar do curto": {**self.DOCUMENTADA, "referencias": [self.ids[0]]},
+            "um id válido e um inventado": {**self.DOCUMENTADA, "referencias": ["T1", "T9"]},
+            "id inventado em um tipo que não usa trechos": {"tipo": lp.SEM_EVIDENCIA, "resposta": "", "referencias": ["T9"]},
+            "referencias que não é lista": {**self.DOCUMENTADA, "referencias": "T1"},
+            "referência que não é texto": {**self.DOCUMENTADA, "referencias": [1]},
+            "resposta que não é texto": {**self.DOCUMENTADA, "resposta": {"texto": "TEXTO-INVENTADO-PELO-MODELO"}},
+            "tipo que não é texto": {**self.DOCUMENTADA, "tipo": [lp.DOCUMENTADA]},
+            "campo ausente": {"tipo": lp.DOCUMENTADA, "resposta": "TEXTO-INVENTADO-PELO-MODELO"},
+            "saída que não é um objeto": ["T1"],
+            "tipo fora do vocabulário": {**self.DOCUMENTADA, "tipo": "inventado"},
+            "documentada sem referências": {**self.DOCUMENTADA, "referencias": []},
+        }
+        for rotulo, saida in saidas.items():
+            with self.subTest(rotulo=rotulo), self.assertRaises(lc.ErroChat) as contexto:
+                self.servico(GeradorFalso(saida)).perguntar(PERGUNTA_GERAL)
+            self.assertEqual(contexto.exception.codigo, lc.RESPOSTA_NAO_VERIFICADA)
+            self.assertNotIn("INVENTADO", f"{contexto.exception} {contexto.exception.mensagem} {contexto.exception.causa}")
+        with self.assertRaises(lc.ErroChat) as contexto:  # o mínimo de 20 caracteres da política continua valendo
+            self.servico(GeradorFalso(self.DOCUMENTADA), [trecho_sintetico(self.ids[0], "Curto demais.")]).perguntar(PERGUNTA_GERAL)
+        self.assertEqual(contexto.exception.codigo, lc.RESPOSTA_NAO_VERIFICADA)
+        geracao = OpenAIGeracaoFalso()
+        geracao.texto = json.dumps({**self.DOCUMENTADA, "referencias": "T1"})
+        with self.assertRaises(lg.ErroDeFormato) as contexto:
+            self.servico(lg.ClienteGeracao(geracao, "geracao", MODELOS)).perguntar(PERGUNTA_GERAL)
+        self.assertEqual(lc.classificar_erro(contexto.exception).codigo, lc.RESPOSTA_NAO_VERIFICADA)
+
+    def test_o_trecho_inteiro_vira_a_citacao_e_um_trecho_acima_do_limite_e_erro_explicito_nunca_corte(self):
+        inteiro = " ".join(f"Condição fictícia {numero:02d} da regra geral." for numero in range(1, 33))
+        self.assertTrue(800 < len(inteiro) <= li.TAMANHO_MAXIMO_PADRAO, "um trecho do tamanho padrão da ingestão passava de 800 caracteres")
+        gerador = GeradorFalso(self.DOCUMENTADA | {"resposta": "Regra de teste."})
+        resposta = self.servico(gerador, [trecho_sintetico(self.ids[0], inteiro)]).perguntar(PERGUNTA_GERAL)
+        self.assertEqual(resposta.evidencias[0].citacao, inteiro, "sem corte e sem reticências")
+        with self.assertRaises(lc.ErroChat) as contexto:
+            self.servico(gerador, [trecho_sintetico(self.ids[0], " ".join(["palavra"] * 1000))]).perguntar(PERGUNTA_GERAL)
+        self.assertEqual((contexto.exception.codigo, contexto.exception.causa),
+                         (lc.RESPOSTA_NAO_VERIFICADA, "citacao_acima_do_limite"))
+        self.assertEqual(li.validar_tamanho_maximo(str(lc.LIMITE_DA_CITACAO)), lc.LIMITE_DA_CITACAO,
+                         "o limite é o maior trecho que a ingestão aceita")
+        with self.assertRaises(argparse.ArgumentTypeError):
+            li.validar_tamanho_maximo(str(lc.LIMITE_DA_CITACAO + 1))
+
+    def test_instrucoes_e_esquema_pedem_ids_curtos_e_nunca_frases_copiadas(self):
+        for tipo in lp.TIPOS:
+            self.assertIn(f"- {tipo}:", lc.INSTRUCOES_L200)
+        for pedido_antigo in ("citacao", "copiad", "fonte"):
+            self.assertNotIn(pedido_antigo, lc.INSTRUCOES_L200)
+        ambigua = next(linha for linha in lc.INSTRUCOES_L200.splitlines() if linha.startswith("- ambigua:"))
+        self.assertIn("sem_evidencia", ambigua, "a pergunta ambígua se distingue da específica sem evidência")
+        esquema = lc.contrato_de_referencias(["T1"]).esquema["schema"]
+        self.assertEqual(set(esquema["properties"]), set(lc.CAMPOS_DA_SAIDA))
+        self.assertEqual(esquema["properties"]["tipo"]["enum"], list(lp.TIPOS))
 
 
 # --------------------------------------------------------------------------------------
@@ -1136,9 +1259,9 @@ class PoliticaPeloHttpTests(unittest.TestCase):
         self.assertEqual(set(resposta.json()), {"id", "id_requisicao", "tipo", "situacao", "texto", "aviso", "evidencias",
                                                 "uso", "simulada", "aviso_simulacao"})
 
-    def test_resposta_com_citacao_inventada_vira_503_sem_o_texto_do_modelo(self):
+    def test_resposta_com_referencia_inventada_vira_503_sem_o_texto_do_modelo(self):
         geracao = OpenAIGeracaoFalso()
-        geracao.responder = responder(lp.DOCUMENTADA, resposta="Resposta inventada.", citacao="Frase que não existe em nenhum trecho.")
+        geracao.responder = responder(lp.DOCUMENTADA, resposta="Resposta inventada.", referencias=["T99"])
         resposta = self.perguntar(geracao)
         self.assertEqual((resposta.status_code, resposta.json()["erro"]), (503, lc.RESPOSTA_NAO_VERIFICADA))
         self.assertNotIn("inventada", resposta.text)
@@ -1147,7 +1270,7 @@ class PoliticaPeloHttpTests(unittest.TestCase):
         for tipo, texto in ((lp.SEM_EVIDENCIA, lp.MENSAGEM_SEM_EVIDENCIA), (lp.FORA_DE_ESCOPO, lp.MENSAGEM_FORA_DE_ESCOPO)):
             with self.subTest(tipo=tipo):
                 geracao = OpenAIGeracaoFalso()
-                geracao.responder = responder(tipo, resposta="Cobre tudo!", evidencias=False)
+                geracao.responder = responder(tipo, resposta="Cobre tudo!", referencias=False)
                 dados = self.perguntar(geracao).json()
                 self.assertEqual((dados["tipo"], dados["situacao"], dados["texto"], dados["evidencias"]),
                                  (tipo, lp.RECUSADA, texto, []))

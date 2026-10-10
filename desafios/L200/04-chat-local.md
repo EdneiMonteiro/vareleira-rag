@@ -66,6 +66,11 @@ Os módulos do L100 recuperam trechos, chamam o deployment de geração e aplica
 O chat usa esse fluxo fixo: ele não executa a escolha de ferramentas do agente
 Microsoft Agent Framework (MAF) do L100 D05.
 
+Na geração L200, o modelo seleciona referências curtas dos trechos recuperados. O programa monta
+as citações usando esses trechos, aplica a política e devolve os identificadores originais das fontes.
+Essa separação evita pedir ao modelo que copie identificadores longos ou reescreva a citação.
+O texto geral ainda exige comparação semântica com as fontes.
+
 **Loopback**, endereço do próprio computador, limita o modo local a `127.0.0.1`, `localhost`
 ou `::1`. Os modos `--demo` e `--local-sem-autenticacao` recusam `0.0.0.0`, endereço que aceitaria
 conexões de outras máquinas.

@@ -1,0 +1,479 @@
+{
+  "schema_version": 1,
+  "relatorio": "avaliacao_http_do_chat",
+  "status": "concluido",
+  "interrupcao": null,
+  "codigo_de_saida": 0,
+  "inicio_utc": "2026-10-10T13:35:17+00:00",
+  "fim_utc": "2026-10-10T13:35:57+00:00",
+  "entrada": {
+    "nome": "Chat L200 - casos sintéticos de desenvolvimento v2",
+    "origem": "Casos de desenvolvimento construídos a partir dos documentos sintéticos, separados dos conjuntos finais. Podem ser repetidos para investigar e selecionar a configuração; não são avaliação independente.",
+    "casos": 14,
+    "campos_ignorados": [],
+    "sha256_bytes_brutos": "545d64020752c60f60195e4f4e5bd91228ea1b8f0ca6e56c3fd050cdaa00f38c",
+    "sha256_normalizado_lf": "f6040669b1619e28bfa0d9cc98c58187c870bbfd5a6bc0995ad2829fc8969179"
+  },
+  "configuracao_avaliada": {
+    "valor": "comparar explicitamente configurações de desenvolvimento antes de congelar a candidata",
+    "informada_pelo_autor": true,
+    "verificada_pelo_avaliador": false,
+    "nota": "Texto informado pelo autor do arquivo de casos e gravado como veio; o avaliador não o confere com o serviço. Se for um marcador de configuração ainda por congelar, o congelamento efetivo fica em um registro separado, fora deste relatório."
+  },
+  "destino": {
+    "modo": "demonstracao_ou_local_loopback"
+  },
+  "identidade": {
+    "tipo": "nenhuma"
+  },
+  "limites": {
+    "casos": 100,
+    "timeout_da_chamada_s": 120,
+    "tempo_maximo_s": 1500,
+    "falhas_de_transporte_seguidas": 3,
+    "resposta_maxima_bytes": 131072,
+    "tentativas_automaticas_do_avaliador": 0
+  },
+  "avaliador": {
+    "arquivo": "scripts/avaliar_chat.py",
+    "versao": 1,
+    "sha256_bytes_brutos": "f314c2ae1b5ac7fdbf3f27053ffa2c627691b266254a50873442286704528afd",
+    "sha256_normalizado_lf": "b2b491ae644cde52b7073c0d941e581eb22e7b70272b61cc99f4e1ad5021e7c4"
+  },
+  "codigo_avaliado": {
+    "scripts/lab_comum.py": {
+      "sha256_bytes_brutos": "2a6ccbaedd95115b1034949c968d5346a815458bb324b26fe0183e56540fbb74",
+      "sha256_normalizado_lf": "78aeaafd814c6c57f36aae08ed3a271d0700afaffce4df902119bae393599049"
+    },
+    "scripts/lab_indexacao.py": {
+      "sha256_bytes_brutos": "4f12016f990f76cda6d38a131ab7c9eab029641022b8d3ba6d7d52eec5ab53cd",
+      "sha256_normalizado_lf": "ab2f3cb296df888557960772af13c6ffb1edc9d7fbe07acd61f4c9dffdf4fe3e"
+    },
+    "scripts/lab_geracao.py": {
+      "sha256_bytes_brutos": "e0f2ce33d00ca0218f05a377dc97f23f737ceef5866c1274e97a571bb82fd1da",
+      "sha256_normalizado_lf": "f07b3b73f9ad2b1afa82090a48ae65d1b3c88dfb7d590761c5f2aff307fbde7a"
+    },
+    "scripts/lab_politica.py": {
+      "sha256_bytes_brutos": "3a6ce44509aa7436e4dbb819c5977b50577f451136d1d705e47e811d17f832df",
+      "sha256_normalizado_lf": "d11144ab5c7a71b76241c6c9dfa8ae7ab8daadf5325d30c60558f8928a08b5b3"
+    },
+    "scripts/lab_chat.py": {
+      "sha256_bytes_brutos": "dec59c7c31418eba90718005a27575b5a5d460b7b86a12ed381c4f9f7c604966",
+      "sha256_normalizado_lf": "ff2c16a088398c1b15dce215e6de5d0143de1a5d5d162bd30270edadd61fa6e5"
+    },
+    "scripts/chat_web.py": {
+      "sha256_bytes_brutos": "1f435c3e4ebffb7892b5ac90058a8df1ee774b32aa9cc2420ed9b5d4712597f7",
+      "sha256_normalizado_lf": "6d4200ceb6b7d9896cf96702314a6be49f3112068d65cac6d21df95df1d30259"
+    }
+  },
+  "significado_dos_hashes": {
+    "sha256_bytes_brutos": "SHA-256 dos bytes exatos do arquivo, como estão no disco (com CRLF ou LF)",
+    "sha256_normalizado_lf": "SHA-256 do mesmo arquivo com CRLF trocado por LF: não muda entre o Windows e o Git"
+  },
+  "resumo": {
+    "casos": 14,
+    "aprovados": 14,
+    "divergentes": 0,
+    "falhas_http": 0,
+    "erros": 0,
+    "nao_avaliados": 0,
+    "chamadas_http": 14,
+    "escopo_da_contagem": "só as chamadas HTTP do avaliador ao chat; as tentativas internas do chat aos modelos e à busca não são visíveis aqui",
+    "respostas_simuladas": 0,
+    "uso_de_tokens": {
+      "respostas_com_uso_informado": 14,
+      "chamadas_sem_uso_informado": 0,
+      "soma_do_uso_informado": {
+        "tokens_embeddings": 259,
+        "tokens_entrada": 24325,
+        "tokens_raciocinio": 662,
+        "tokens_saida": 1629
+      },
+      "observacao": "Soma só do uso que o chat informou em respostas 200. Respostas de erro (inclusive o 503 de resposta descartada), falhas de transporte e respostas sem o campo de uso não informam o consumo: ele é desconhecido, não zero. Não é o total consumido nem o custo."
+    },
+    "tempo_nas_chamadas_s": 39.281,
+    "tempo_total_s": 39.281
+  },
+  "categorias": {
+    "assistencia": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "contratacao": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "vendaval": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "analise": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "franquias": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "agravamento": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "individual_eletrico": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "individual_desocupacao": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "individual_terceiro": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "ambigua_limite": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "ambigua_condicao": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "sem_endereco_aplicativo": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "sem_desconto": {
+      "casos": 1,
+      "aprovados": 1
+    },
+    "fora_astronomia": {
+      "casos": 1,
+      "aprovados": 1
+    }
+  },
+  "casos": [
+    {
+      "id": "DEV-01",
+      "categoria": "assistencia",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 9.266,
+      "tipo": "documentada",
+      "situacao": "respondida",
+      "citacoes": 2,
+      "tokens": {
+        "tokens_embeddings": 17,
+        "tokens_entrada": 1780,
+        "tokens_saida": 182,
+        "tokens_raciocinio": 23
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-02",
+      "categoria": "contratacao",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.39,
+      "tipo": "documentada",
+      "situacao": "respondida",
+      "citacoes": 2,
+      "tokens": {
+        "tokens_embeddings": 13,
+        "tokens_entrada": 1779,
+        "tokens_saida": 109,
+        "tokens_raciocinio": 43
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-03",
+      "categoria": "vendaval",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.266,
+      "tipo": "documentada",
+      "situacao": "respondida",
+      "citacoes": 1,
+      "tokens": {
+        "tokens_embeddings": 29,
+        "tokens_entrada": 1756,
+        "tokens_saida": 84,
+        "tokens_raciocinio": 19
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-04",
+      "categoria": "analise",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.203,
+      "tipo": "documentada",
+      "situacao": "respondida",
+      "citacoes": 1,
+      "tokens": {
+        "tokens_embeddings": 16,
+        "tokens_entrada": 1560,
+        "tokens_saida": 127,
+        "tokens_raciocinio": 61
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-05",
+      "categoria": "franquias",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.359,
+      "tipo": "documentada",
+      "situacao": "respondida",
+      "citacoes": 2,
+      "tokens": {
+        "tokens_embeddings": 21,
+        "tokens_entrada": 1908,
+        "tokens_saida": 106,
+        "tokens_raciocinio": 15
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-06",
+      "categoria": "agravamento",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.235,
+      "tipo": "documentada",
+      "situacao": "respondida",
+      "citacoes": 1,
+      "tokens": {
+        "tokens_embeddings": 22,
+        "tokens_entrada": 1720,
+        "tokens_saida": 69,
+        "tokens_raciocinio": 8
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-07",
+      "categoria": "individual_eletrico",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.5,
+      "tipo": "contratacao_individual",
+      "situacao": "respondida",
+      "citacoes": 2,
+      "tokens": {
+        "tokens_embeddings": 28,
+        "tokens_entrada": 1807,
+        "tokens_saida": 157,
+        "tokens_raciocinio": 66
+      },
+      "simulada": false,
+      "texto_individual_fixo": true,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-08",
+      "categoria": "individual_desocupacao",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.984,
+      "tipo": "contratacao_individual",
+      "situacao": "respondida",
+      "citacoes": 2,
+      "tokens": {
+        "tokens_embeddings": 22,
+        "tokens_entrada": 1501,
+        "tokens_saida": 219,
+        "tokens_raciocinio": 129
+      },
+      "simulada": false,
+      "texto_individual_fixo": true,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-09",
+      "categoria": "individual_terceiro",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.688,
+      "tipo": "contratacao_individual",
+      "situacao": "respondida",
+      "citacoes": 1,
+      "tokens": {
+        "tokens_embeddings": 24,
+        "tokens_entrada": 1768,
+        "tokens_saida": 251,
+        "tokens_raciocinio": 160
+      },
+      "simulada": false,
+      "texto_individual_fixo": true,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-10",
+      "categoria": "ambigua_limite",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 1.796,
+      "tipo": "ambigua",
+      "situacao": "esclarecimento",
+      "citacoes": 0,
+      "tokens": {
+        "tokens_embeddings": 7,
+        "tokens_entrada": 1568,
+        "tokens_saida": 71,
+        "tokens_raciocinio": 20
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-11",
+      "categoria": "ambigua_condicao",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.36,
+      "tipo": "ambigua",
+      "situacao": "esclarecimento",
+      "citacoes": 0,
+      "tokens": {
+        "tokens_embeddings": 16,
+        "tokens_entrada": 1750,
+        "tokens_saida": 75,
+        "tokens_raciocinio": 27
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-12",
+      "categoria": "sem_endereco_aplicativo",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.156,
+      "tipo": "sem_evidencia",
+      "situacao": "recusada",
+      "citacoes": 0,
+      "tokens": {
+        "tokens_embeddings": 19,
+        "tokens_entrada": 1744,
+        "tokens_saida": 73,
+        "tokens_raciocinio": 44
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-13",
+      "categoria": "sem_desconto",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 2.203,
+      "tipo": "sem_evidencia",
+      "situacao": "recusada",
+      "citacoes": 0,
+      "tokens": {
+        "tokens_embeddings": 12,
+        "tokens_entrada": 1811,
+        "tokens_saida": 63,
+        "tokens_raciocinio": 34
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    },
+    {
+      "id": "DEV-14",
+      "categoria": "fora_astronomia",
+      "tipo_esperado": "fora_de_escopo",
+      "situacao_esperada": "recusada",
+      "resultado": "aprovado",
+      "motivos": [],
+      "http": 200,
+      "tempo_s": 1.875,
+      "tipo": "fora_de_escopo",
+      "situacao": "recusada",
+      "citacoes": 0,
+      "tokens": {
+        "tokens_embeddings": 13,
+        "tokens_entrada": 1873,
+        "tokens_saida": 43,
+        "tokens_raciocinio": 13
+      },
+      "simulada": false,
+      "texto_individual_fixo": false,
+      "erro": null,
+      "erro_do_chat": null
+    }
+  ]
+}
