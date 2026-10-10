@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "pacote": "vareleira-lar-l100",
+  "conjunto": "ajuste",
+  "sintetico": true,
+  "descricao": "Perguntas sintéticas para comparar configurações (modo de busca, quantidade de trechos e fluxo de resposta) e escolher a melhor. Podem ser lidas, discutidas e usadas quantas vezes for preciso. Não fazem parte da base documental: não são enviadas ao Blob Storage nem ao índice.",
+  "perguntas": [
+    {
+      "id": "AJ-01",
+      "pergunta": "Quanto tempo a Vareleira tem para analisar um sinistro?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "prazo de análise",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "A análise é concluída em até 30 dias corridos" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "Até 30 dias corridos, contados da entrega do último documento exigido" }
+          ]
+        }
+      ],
+      "fatos": ["30 dias"]
+    },
+    {
+      "id": "AJ-02",
+      "pergunta": "Qual é a franquia da cobertura de vendaval e granizo?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "franquia de vendaval e granizo",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "10% do prejuízo, com mínimo de R$ 500,00" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "vendaval e granizo, 10% com mínimo de R$ 500,00" }
+          ]
+        }
+      ],
+      "fatos": ["10%", "R$ 500,00"]
+    },
+    {
+      "id": "AJ-03",
+      "pergunta": "Quais documentos são exigidos quando o sinistro é um roubo?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "documento do roubo",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "roubo e furto qualificado: boletim de ocorrência" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "boletim de ocorrência para roubo e furto qualificado" }
+          ]
+        }
+      ],
+      "fatos": ["boletim de ocorrência"]
+    },
+    {
+      "id": "AJ-04",
+      "pergunta": "Se um imóvel ficar fechado por três meses, a cobertura de roubo continua valendo?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "desocupação",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "A partir do 61º dia de desocupação" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "A partir do 61º dia sem comunicação" }
+          ]
+        }
+      ],
+      "fatos": ["61"]
+    },
+    {
+      "id": "AJ-05",
+      "pergunta": "O que é endosso?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "definição de endosso",
+          "alternativas": [
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "Alteração formal da apólice individual" }
+          ]
+        }
+      ],
+      "fatos": ["apólice"]
+    },
+    {
+      "id": "AJ-06",
+      "pergunta": "Qual é a diferença entre franquia e sublimite?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "franquia",
+          "alternativas": [
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "Parte do prejuízo que fica por conta do segurado em cada sinistro" },
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "é a parte do prejuízo que fica por conta do segurado" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "A franquia é a parte do prejuízo que fica por conta do segurado" }
+          ]
+        },
+        {
+          "nome": "sublimite",
+          "alternativas": [
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "Limite menor, aplicado a certos bens dentro de uma cobertura" },
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "para joias, relógios, peças de arte e coleções são de R$ 5.000,00 por item" }
+          ]
+        }
+      ],
+      "fatos": ["prejuízo", "bens"]
+    },
+    {
+      "id": "AJ-07",
+      "pergunta": "Qual é a franquia da cobertura de roubo e furto qualificado e que documento ela exige no sinistro?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "franquia de roubo e furto qualificado",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "15% do prejuízo, com mínimo de R$ 800,00" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "roubo e furto qualificado, 15% com mínimo de R$ 800,00" }
+          ]
+        },
+        {
+          "nome": "documento exigido",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "roubo e furto qualificado: boletim de ocorrência" },
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "Exige boletim de ocorrência" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "boletim de ocorrência para roubo e furto qualificado" }
+          ]
+        }
+      ],
+      "fatos": ["15%", "R$ 800,00", "boletim de ocorrência"]
+    },
+    {
+      "id": "AJ-08",
+      "pergunta": "Meu seguro cobre vendaval se o telhado da minha casa voar?",
+      "tipo_esperado": "contratacao_individual",
+      "assuntos": [
+        {
+          "nome": "cobertura de vendaval",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "causados por vento forte ou granizo" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "vendaval e granizo, 10% com mínimo de R$ 500,00" },
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "danos elétricos, vendaval e granizo" }
+          ]
+        }
+      ],
+      "fatos": ["contratad"]
+    },
+    {
+      "id": "AJ-09",
+      "pergunta": "Minha apólice cobre as joias que foram roubadas da minha casa?",
+      "tipo_esperado": "contratacao_individual",
+      "assuntos": [
+        {
+          "nome": "sublimite de joias",
+          "alternativas": [
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "sublimites de R$ 5.000,00 por item e R$ 15.000,00 por sinistro" },
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "R$ 5.000,00 por item e de R$ 15.000,00 no total de cada sinistro" },
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "R$ 5.000,00 por item e R$ 15.000,00 por sinistro" }
+          ]
+        }
+      ],
+      "fatos": ["5.000,00"]
+    },
+    {
+      "id": "AJ-10",
+      "pergunta": "Qual é o telefone do Atendimento?",
+      "tipo_esperado": "sem_evidencia",
+      "assuntos": [],
+      "fatos": []
+    },
+    {
+      "id": "AJ-11",
+      "pergunta": "Quem ganhou a última Copa do Mundo de futebol?",
+      "tipo_esperado": "fora_de_escopo",
+      "assuntos": [],
+      "fatos": []
+    },
+    {
+      "id": "AJ-12",
+      "pergunta": "Qual é o limite?",
+      "tipo_esperado": "ambigua",
+      "assuntos": [],
+      "fatos": []
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "pacote": "vareleira-lar-l100",
+  "descricao": "Documentos sintéticos do Vareleira Lar usados no L100. Conteúdo novo, criado para o laboratório Vareleira RAG; não faz parte do contexto Vareleira 0.1.0.",
+  "sintetico": true,
+  "contexto": {
+    "vareleira_versao": "0.1.0",
+    "revisao_referencia": "d17a24bd9fdf16a5b3dba34e07764852a8477859",
+    "periodo_narrativo": "2025, piloto interno"
+  },
+  "documentos": [
+    {
+      "id": "VLAR-CG-1.0",
+      "titulo": "Vareleira Lar — Condições Gerais",
+      "tipo": "condicoes-gerais",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "vigencia_ficticia": {
+        "inicio": "2025-01-01",
+        "fim": null
+      },
+      "autoridade_narrativa": "Teresa Moura, diretora técnica de Subscrição",
+      "classificacao_acesso": {
+        "nivel": "interno-piloto",
+        "publico": [
+          "Atendimento",
+          "Corretores"
+        ],
+        "restricoes": "Nenhuma adicional no L100; o controle de acesso por documento será exercitado em níveis posteriores."
+      },
+      "origem": "Conteúdo sintético novo, criado para o laboratório Vareleira RAG.",
+      "licenca": "CC-BY-4.0",
+      "revisao_real": {
+        "status": "aprovada",
+        "responsavel": "mantenedor do projeto",
+        "observacao": "Aprovação do mantenedor confirmada em 9 de outubro de 2026 para uso educacional. Regras sintéticas novas; não são condições existentes no contexto Vareleira 0.1.0."
+      },
+      "arquivo": "documentos/vareleira-lar-condicoes-gerais-v1.0.md",
+      "blob": "vareleira-lar/condicoes-gerais-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 11171,
+      "sha256": "a43850c173f881929afc9cf70590c9807db5850aea7777da7bf22a47885ba1bc"
+    },
+    {
+      "id": "VLAR-GL-1.0",
+      "titulo": "Vareleira Lar — Glossário",
+      "tipo": "glossario",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "vigencia_ficticia": {
+        "inicio": "2025-01-01",
+        "fim": null
+      },
+      "autoridade_narrativa": "Teresa Moura, diretora técnica de Subscrição",
+      "classificacao_acesso": {
+        "nivel": "interno-piloto",
+        "publico": [
+          "Atendimento",
+          "Corretores"
+        ],
+        "restricoes": "Nenhuma adicional no L100; o controle de acesso por documento será exercitado em níveis posteriores."
+      },
+      "origem": "Conteúdo sintético novo, criado para o laboratório Vareleira RAG.",
+      "licenca": "CC-BY-4.0",
+      "revisao_real": {
+        "status": "aprovada",
+        "responsavel": "mantenedor do projeto",
+        "observacao": "Aprovação do mantenedor confirmada em 9 de outubro de 2026. Explica termos das Condições Gerais sintéticas VLAR-CG-1.0, aprovadas no mesmo pacote."
+      },
+      "arquivo": "documentos/vareleira-lar-glossario-v1.0.md",
+      "blob": "vareleira-lar/glossario-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 4527,
+      "sha256": "89c76858d94178982f56e89165a718a54dec8e7f15b126747e0c1decf5fd2d75"
+    },
+    {
+      "id": "VLAR-FAQ-1.0",
+      "titulo": "Vareleira Lar — Perguntas frequentes para Atendimento e corretores",
+      "tipo": "faq",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "vigencia_ficticia": {
+        "inicio": "2025-01-01",
+        "fim": null
+      },
+      "autoridade_narrativa": "Teresa Moura, diretora técnica de Subscrição",
+      "classificacao_acesso": {
+        "nivel": "interno-piloto",
+        "publico": [
+          "Atendimento",
+          "Corretores"
+        ],
+        "restricoes": "Nenhuma adicional no L100; o controle de acesso por documento será exercitado em níveis posteriores."
+      },
+      "origem": "Conteúdo sintético novo, criado para o laboratório Vareleira RAG.",
+      "licenca": "CC-BY-4.0",
+      "revisao_real": {
+        "status": "aprovada",
+        "responsavel": "mantenedor do projeto",
+        "observacao": "Aprovação do mantenedor confirmada em 9 de outubro de 2026. Resume as Condições Gerais sintéticas VLAR-CG-1.0, aprovadas no mesmo pacote."
+      },
+      "arquivo": "documentos/vareleira-lar-faq-v1.0.md",
+      "blob": "vareleira-lar/faq-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 5452,
+      "sha256": "1d0f2b26b3fac1d41f2c4f6fade0f5990f83cf3573086c851e37da195d606e66"
+    }
+  ]
+}

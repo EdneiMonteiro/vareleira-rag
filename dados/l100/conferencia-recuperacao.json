@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "pacote": "vareleira-lar-l100",
+  "descricao": "Perguntas sintéticas para conferir se o índice do L100 recupera trechos pertinentes. Não fazem parte da base documental: não são enviadas ao Blob Storage nem ao índice. Servem para perceber um índice quebrado, não para medir a qualidade da recuperação.",
+  "sintetico": true,
+  "perguntas": [
+    {
+      "id": "R1",
+      "pergunta": "O Vareleira Lar cobre alagamento ou enchente?",
+      "esperado": [
+        { "documento_id": "VLAR-CG-1.0", "texto_contem": "inundação, alagamento" },
+        { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "Inundação, alagamento, enchente" }
+      ]
+    },
+    {
+      "id": "R2",
+      "pergunta": "Em quantos dias preciso avisar que houve um sinistro?",
+      "esperado": [
+        { "documento_id": "VLAR-CG-1.0", "texto_contem": "7 dias corridos" },
+        { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "7 dias corridos" },
+        { "documento_id": "VLAR-GL-1.0", "texto_contem": "7 dias corridos" }
+      ]
+    },
+    {
+      "id": "R3",
+      "pergunta": "Qual é a franquia da cobertura de danos elétricos?",
+      "esperado": [
+        { "documento_id": "VLAR-CG-1.0", "texto_contem": "mínimo de R$ 300,00" },
+        { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "mínimo de R$ 300,00" }
+      ]
+    },
+    {
+      "id": "R4",
+      "pergunta": "O que significa carência?",
+      "esperado": [
+        { "documento_id": "VLAR-GL-1.0", "texto_contem": "Prazo de espera antes de uma cobertura" },
+        { "documento_id": "VLAR-CG-1.0", "texto_contem": "Não há carência" }
+      ]
+    },
+    {
+      "id": "R5",
+      "pergunta": "A assistência 24 horas é uma cobertura do seguro?",
+      "esperado": [
+        { "documento_id": "VLAR-CG-1.0", "texto_contem": "Ela não é uma cobertura de seguro" },
+        { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "A assistência 24 horas é um serviço de emergência" },
+        { "documento_id": "VLAR-GL-1.0", "texto_contem": "Não é uma cobertura de seguro" }
+      ]
+    },
+    {
+      "id": "R6",
+      "pergunta": "Posso alugar o imóvel por temporada sem avisar a seguradora?",
+      "esperado": [
+        { "documento_id": "VLAR-CG-1.0", "texto_contem": "locação por temporada" },
+        { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "locação por temporada" }
+      ]
+    }
+  ]
+}

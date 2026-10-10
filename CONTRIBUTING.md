@@ -18,6 +18,13 @@ entregas disponíveis de propostas. Documentos de seguros devem ser
 explicitamente sintéticos, com origem, produto, versão e vigência fictícia.
 Não invente regras do produto como se já fossem parte do contexto publicado.
 
+Para novos desafios, siga o [padrão de autoria](docs/guia-de-autoria.md).
+O público não se limita a desenvolvedores: inclua explicações, glossário,
+resultados esperados e orientação prática de GitHub Copilot no VS Code.
+Use o [primeiro desafio L100](desafios/L100/01-preparar-ambiente.md) como amostra
+de formato e de validação: o guia traz a situação da validação, e a pasta
+[docs/validacao](docs/validacao) guarda a matriz do que foi conferido e do que não foi.
+
 Não envie dados pessoais reais, segredos, arquivos de ambiente, resultados
 com informações sensíveis ou documentos sem autorização de redistribuição.
 
@@ -28,10 +35,36 @@ com informações sensíveis ou documentos sem autorização de redistribuição
 3. Confira links, coerência do contexto e ausência de dados sensíveis.
 4. Descreva no pull request a motivação, as mudanças e as verificações feitas.
 
-Nesta etapa documental, não há suíte de testes, build ou dependências para
-instalar. Ao introduzir código, inclua instruções reproduzíveis, dependências,
-testes proporcionais ao comportamento e, se houver serviços pagos, custos e
-encerramento de recursos. Não acrescente uma stack apenas para corrigir texto.
+## Verificações
+
+Prepare o ambiente com Python 3.12 ou superior e execute, na pasta do projeto:
+
+```powershell
+python -m pip install -r requirements\l100.txt
+python -m unittest discover -s tests
+```
+
+Os testes não acessam o Azure. Ao alterar o Bicep, execute também
+`az bicep lint --file infra/main.bicep` (a saída deve ficar vazia: o comando termina
+com código 0 mesmo com avisos) e `az bicep build --file infra/main.bicep --stdout`.
+Ao editar um documento de `dados`, execute `python scripts\atualizar_hashes_inventario.py`:
+ele mostra se o inventário precisa de novos hashes, e `--gravar` só deve ser usado
+depois de revisar o conteúdo. Como a divisão em trechos depende do texto, confira
+também `python scripts\visualizar_trechos.py` e os números citados no Desafio 02
+(quantidade de trechos, `dados\l100\conferencia-recuperacao.json`). Ao alterar os conjuntos
+de perguntas do Desafio 06, execute `python scripts\avaliar_respostas.py --etapa validar`.
+Mantenha as perguntas de `dados\l100\avaliacao\teste.json` fora de guias, registros, instruções,
+README e deste arquivo; um teste automático confere esses destinos.
+Um teste de saída em `tests\test_avaliacao.py` já contém perguntas do conjunto: a independência
+parcial está registrada na validação do D06. Evite ampliar essa exposição.
+
+Ao introduzir código, inclua instruções reproduzíveis, dependências com versões
+fixas, testes proporcionais ao comportamento e, se houver serviços pagos, custos
+e encerramento de recursos. Etapas que alteram o Azure só devem ser executadas em
+ambiente autorizado, com destino explícito e simulação ou `what-if` antes. Etapas que criam
+identidades, credenciais ou papéis (Desafio 07) exigem autorização de quem administra o
+tenant e a assinatura. Nunca inclua identificadores do seu ambiente, como assinatura, tenant,
+nome de conta ou ID de aplicação. Correções de texto usam as ferramentas existentes do projeto.
 
 ## Licenças e créditos
 
