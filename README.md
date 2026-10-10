@@ -56,8 +56,9 @@ Os Desafios 03 a 07 foram validados no Azure em 9 de outubro de 2026. Após auto
 o D07 confirmou a consulta ao índice, o uso dos modelos e três recusas HTTP 403 com a identidade da
 aplicação. A credencial, os papéis e a identidade foram removidos; o cofre e o recurso de modelos foram
 expurgados, e os recursos preexistentes foram preservados.
-O detector de veredito do D04 pode deixar passar uma conclusão sobre o caso
-individual; o teste do D06 teve duas falsas recusas em 12 e ficou abaixo da meta. Esses limites estão
+O detector original do D04 foi substituído por texto fixo para casos classificados como individuais,
+com citações e aviso. A correção foi conferida localmente; a classificação ainda pode falhar.
+O teste histórico do D06 teve duas falsas recusas em 12 e ficou abaixo da meta. Esses limites estão
 documentados nos guias. O mantenedor confirmou a aprovação do texto, do código, dos documentos
 sintéticos e dos conjuntos de perguntas em 9 de outubro de 2026.
 Essa aprovação não altera as medições nem elimina as limitações registradas.
@@ -109,6 +110,10 @@ O L100 contém sete desafios incrementais. Os próximos níveis também terão s
 de migração para mudanças de rede, índice ou identidade, com verificação e recuperação.
 Remova recursos temporários de comparação quando terminar a atividade.
 
+O [roteiro do L200](docs/roteiro-l200.md) define sete desafios, da ingestão gerenciada ao chat
+autenticado em Azure Container Apps. É planejamento: os componentes do nível ainda não foram
+implementados nem provisionados.
+
 ## O caso do laboratório
 
 Na narrativa, em **2025**, Beatriz Torres, responsável pelo Atendimento,
@@ -145,7 +150,8 @@ evolução do laboratório.
 Por exemplo, **“O meu seguro cobre danos elétricos?”** não pode ser respondida
 como confirmação de cobertura individual apenas com condições gerais.
 A análise de uma contratação depende dos documentos individuais. A política do protótipo aplica
-recusas, avisos e um detector de veredito com limites conhecidos; revise o texto antes de usá-lo.
+recusas e, no caminho individual, introdução fixa, citações e aviso. Confira também erros de
+classificação e a interpretação das fontes antes de usar o resultado.
 As coberturas, exclusões e franquias fictícias estão nas
 [Condições Gerais sintéticas](dados/l100/documentos/vareleira-lar-condicoes-gerais-v1.0.md)
 do L100: conteúdo sintético novo, aprovado pelo mantenedor para o exercício.

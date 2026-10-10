@@ -372,16 +372,19 @@ o programa descarta a resposta com código 3.
 python scripts\agente_maf.py --busca $busca --modelos $modelos --deployment-geracao $deploymentGeracao --pergunta "Roubaram meu notebook na rua. O seguro paga?"
 ```
 
-**O que conferir:** o tipo atribuído, a correspondência com as fontes, o aviso fixo de contratação
-individual e as buscas no rastro. O texto e a quantidade de buscas dependem do modelo.
+**O que conferir:** o tipo atribuído, a correspondência com as fontes, a introdução e o aviso fixos
+de contratação individual e as buscas no rastro. Nesse tipo, o texto livre do modelo é suprimido;
+as citações e a quantidade de buscas ainda dependem do modelo.
 
-**Atividade 5:** leia a resposta e procure uma frase que conclua sobre o caso da pessoa, mesmo sem usar as palavras que a regra do programa detecta ("Sim.", "Não.", "seu seguro cobre", "será indenizado" e semelhantes).
+**Atividade 5:** identifique quais partes vêm do programa e quais são citações dos documentos.
+Explique por que as citações de regras gerais não decidem o caso de quem perguntou.
 
 **Conferência:** compare a resposta com a regra de roubo e furto qualificado e procure conclusões sobre
-o caso individual. Uma execução registrada incluiu "Pela regra geral, a situação descrita na rua não se
-enquadra nessa cobertura". Essa frase passou pelo detector do Desafio 04. O aviso permanece fixo,
-e a conclusão sobre o caso ainda exige revisão. O Desafio 06 mede tipos, situações e fatos esperados,
-sem substituir essa análise do sentido.
+o caso individual. A implementação anterior incluiu "Pela regra geral, a situação descrita na rua não se
+enquadra nessa cobertura" em uma execução Azure. A política compartilhada agora suprime o texto
+livre de todo caso classificado como individual; essa mudança foi conferida localmente, com o MAF
+e transporte simulado. Classificação, recuperação e interpretação das citações continuam exigindo
+conferência; a medição histórica do Desafio 06 não foi repetida.
 
 ## Etapa 4: conhecer os limites do agente
 
@@ -620,7 +623,7 @@ e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini
 | Evidência | Par formado pelo id de um trecho e por uma frase copiada dele que sustenta a resposta |
 | Descarte (da resposta) | Decisão do programa de não mostrar a resposta porque ela não passou na verificação |
 | Veredito | Afirmação ou negação de que um caso está coberto ou será pago |
-| Falso negativo | Caso em que uma regra deixa de agir quando devia, como uma frase de veredito que a regra por palavras não reconhece |
+| Falso negativo | Caso em que a classificação e a regra por palavras deixam de reconhecer uma pergunta individual |
 | Ataque indireto | Instrução escondida em um documento ou em outro dado que o modelo lê, na tentativa de mudar o que ele faz |
 | FAQ | *Frequently Asked Questions*: perguntas frequentes |
 | HTTP | Protocolo de comunicação da web, usado nos pedidos ao serviço de modelos |

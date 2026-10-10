@@ -220,6 +220,22 @@ As perguntas, a configuração escolhida e o resultado de 10 situações correta
 falsas recusas, foram preservados. O teste não foi executado novamente.
 A aprovação recebida não transforma a amostra em independente nem significa que a meta foi atingida.
 
+## Efeito da nova apresentação na métrica de fatos
+
+O resultado histórico de 10 situações corretas em 12 foi medido antes de `4eb0408` e permanece
+inalterado. Não houve nova execução do conjunto de teste.
+
+A política atual mostra texto fixo nas respostas classificadas como individuais e mantém suas
+citações. A métrica de fatos continua procurando expressões somente em `decisao.texto`, não
+nas citações. Nos dublês do ajuste, os fatos escritos pelo modelo para AJ-08 e AJ-09 deixam
+de chegar ao texto mostrado: esses dois casos continuam com tipo e situação corretos, mas
+têm zero fatos contados. A definição da métrica não foi ampliada para esconder essa diferença.
+
+O teste de saída do avaliador foi ajustado para esse comportamento, preservando os conjuntos
+e as expectativas originais. Os 48 testes de avaliação passaram localmente.
+Uma nova medição de qualidade do assistente precisa de configuração e conjunto final próprios;
+o teste local da política usa respostas sintéticas e não mede geração ou recuperação Azure.
+
 ## Autoria
 
 Código, testes e texto produzidos com Claude Sonnet 5.5, no GitHub Copilot CLI. O Astra, modelo preferido do

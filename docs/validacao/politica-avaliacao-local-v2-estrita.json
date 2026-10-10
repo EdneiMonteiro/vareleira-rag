@@ -1,0 +1,1767 @@
+{
+  "schema_version": 2,
+  "escopo": {
+    "mede": "o que lab_politica.aplicar_politica devolve para saídas candidatas sintéticas (pós-processamento local)",
+    "nao_mede": [
+      "busca e recuperação de trechos",
+      "geração por modelo de linguagem",
+      "qualquer recurso do Azure"
+    ],
+    "trechos": "cada caso recebe o trecho real que contém a citação (a seleção já entrega a evidência ao programa); uma citação declarada fabricada recebe um trecho real do mesmo documento e continua inválida"
+  },
+  "criterio": {
+    "perfil": "estrito",
+    "esperado_literal": "tipo e situação iguais ao esperado do JSON, sem equivalências, e texto livre conforme esperado.texto_livre (conservado quando verdadeiro; não retransmitido quando falso)",
+    "apresentacao": "texto mostrado (o do modelo quando o texto livre é permitido; o texto fixo do programa nos demais casos), aviso e citações corretas mantidas; não considera tipo nem situação e não é aprovação total"
+  },
+  "casos": {
+    "caminho": "dados/l100/avaliacao-independente/politica-casos-v1.json",
+    "sha256": "c9e6d0110bb8aa9eaa0f66b65f6c1633ce0c0d3fbead5edef957823cef079138",
+    "quantidade": 24,
+    "por_categoria": {
+      "individual": 12,
+      "documentada_geral": 5,
+      "documentada_citacao_fabricada": 1,
+      "ambigua": 2,
+      "sem_evidencia": 2,
+      "fora_de_escopo": 2
+    }
+  },
+  "corpus": {
+    "inventario": {
+      "caminho": "dados/l100/inventario.json",
+      "sha256": "e1f4ec6600b67227e811bd6371fdd74009bc0aaa3615735e2afe668a74a88599"
+    },
+    "divisao_em_trechos": {
+      "modulo": "scripts/lab_indexacao.py",
+      "sha256": "ab2f3cb296df888557960772af13c6ffb1edc9d7fbe07acd61f4c9dffdf4fe3e",
+      "tamanho_maximo": 1200,
+      "trechos": 54
+    },
+    "documentos": [
+      {
+        "id": "VLAR-CG-1.0",
+        "arquivo": "dados/l100/documentos/vareleira-lar-condicoes-gerais-v1.0.md",
+        "sha256": "a43850c173f881929afc9cf70590c9807db5850aea7777da7bf22a47885ba1bc",
+        "tamanho_bytes": 11171,
+        "trechos": 15
+      },
+      {
+        "id": "VLAR-GL-1.0",
+        "arquivo": "dados/l100/documentos/vareleira-lar-glossario-v1.0.md",
+        "sha256": "89c76858d94178982f56e89165a718a54dec8e7f15b126747e0c1decf5fd2d75",
+        "tamanho_bytes": 4527,
+        "trechos": 24
+      },
+      {
+        "id": "VLAR-FAQ-1.0",
+        "arquivo": "dados/l100/documentos/vareleira-lar-faq-v1.0.md",
+        "sha256": "1d0f2b26b3fac1d41f2c4f6fade0f5990f83cf3573086c851e37da195d606e66",
+        "tamanho_bytes": 5452,
+        "trechos": 15
+      }
+    ]
+  },
+  "politicas": {
+    "baseline": {
+      "commit": "8fa5f0cec1e46ef9913a8718a6a26d984603c668",
+      "arquivo": "scripts/lab_politica.py",
+      "sha256": "8479eed42237e0255e26fc65d75f63479bade35739aa5fd4ec9f6d2fc9fe8880"
+    },
+    "candidata": {
+      "commit": "4eb04083aa183e09c3ec262e5266927db0485b2b",
+      "arquivo": "scripts/lab_politica.py",
+      "sha256": "d11144ab5c7a71b76241c6c9dfa8ae7ab8daadf5325d30c60558f8928a08b5b3"
+    }
+  },
+  "relatorios_anteriores": [
+    {
+      "arquivo": "politica-avaliacao-local-v1.json",
+      "sha256": "f95e0172a1d184f285248c409df34ce8f5e1a7107f705545c75f77e9c25e8eee",
+      "equivalencias_de_gabarito": [
+        {
+          "gabarito": "contratacao_individual / recusada",
+          "politica": "situação recusada ou respondida, desde que o texto seja o texto fixo do programa, o aviso do programa esteja presente e as citações corretas sejam mantidas",
+          "motivo": "no conjunto, recusada em pergunta individual significa recusar a decisão sobre o caso (origem.criterio_esperado); a política recusa a decisão respondendo com o texto fixo, o aviso e as citações conferidas"
+        }
+      ],
+      "contagens": {
+        "baseline": {
+          "casos": 24,
+          "aprovados": 12,
+          "situacao_aceita_por_equivalencia": 12
+        },
+        "candidata": {
+          "casos": 24,
+          "aprovados": 24,
+          "situacao_aceita_por_equivalencia": 12
+        }
+      },
+      "observacao": "Relatório anterior, preservado como histórico: suas contagens aprovadas usaram as equivalências acima e não são contagens estritas; não as compare com as deste relatório."
+    }
+  ],
+  "resultados": {
+    "baseline": {
+      "casos": 24,
+      "inconclusivos": 0,
+      "esperado_literal": {
+        "conformes": 12,
+        "divergentes": 12,
+        "ids_divergentes": [
+          "POL-01",
+          "POL-02",
+          "POL-03",
+          "POL-04",
+          "POL-05",
+          "POL-06",
+          "POL-07",
+          "POL-08",
+          "POL-09",
+          "POL-10",
+          "POL-11",
+          "POL-12"
+        ],
+        "verificacoes_divergentes": {
+          "situacao": 12,
+          "texto_livre": 12
+        },
+        "por_categoria": {
+          "individual": {
+            "casos": 12,
+            "conformes": 0
+          },
+          "documentada_geral": {
+            "casos": 5,
+            "conformes": 5
+          },
+          "documentada_citacao_fabricada": {
+            "casos": 1,
+            "conformes": 1
+          },
+          "ambigua": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "sem_evidencia": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "fora_de_escopo": {
+            "casos": 2,
+            "conformes": 2
+          }
+        }
+      },
+      "apresentacao": {
+        "conformes": 12,
+        "divergentes": 12,
+        "ids_divergentes": [
+          "POL-01",
+          "POL-02",
+          "POL-03",
+          "POL-04",
+          "POL-05",
+          "POL-06",
+          "POL-07",
+          "POL-08",
+          "POL-09",
+          "POL-10",
+          "POL-11",
+          "POL-12"
+        ],
+        "verificacoes_divergentes": {
+          "texto": 12
+        },
+        "por_categoria": {
+          "individual": {
+            "casos": 12,
+            "conformes": 0
+          },
+          "documentada_geral": {
+            "casos": 5,
+            "conformes": 5
+          },
+          "documentada_citacao_fabricada": {
+            "casos": 1,
+            "conformes": 1
+          },
+          "ambigua": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "sem_evidencia": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "fora_de_escopo": {
+            "casos": 2,
+            "conformes": 2
+          }
+        }
+      },
+      "por_id": [
+        {
+          "id": "POL-01",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-02",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-03",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-04",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-05",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-06",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-07",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-08",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-09",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-10",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-11",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-12",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": false
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": false,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": false,
+          "erro": null
+        },
+        {
+          "id": "POL-13",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 3
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 3,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-14",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-15",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 1
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 1,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-16",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 3
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 3,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-17",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 1
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 1,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-18",
+          "categoria": "documentada_citacao_fabricada",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "descartada",
+            "texto_livre": false,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "descartada",
+            "texto": "vazio",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 1
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-19",
+          "categoria": "ambigua",
+          "esperado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto_livre": true,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-20",
+          "categoria": "ambigua",
+          "esperado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto_livre": true,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-21",
+          "categoria": "sem_evidencia",
+          "esperado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_SEM_EVIDENCIA",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-22",
+          "categoria": "sem_evidencia",
+          "esperado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_SEM_EVIDENCIA",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-23",
+          "categoria": "fora_de_escopo",
+          "esperado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_FORA_DE_ESCOPO",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-24",
+          "categoria": "fora_de_escopo",
+          "esperado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_FORA_DE_ESCOPO",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        }
+      ]
+    },
+    "candidata": {
+      "casos": 24,
+      "inconclusivos": 0,
+      "esperado_literal": {
+        "conformes": 12,
+        "divergentes": 12,
+        "ids_divergentes": [
+          "POL-01",
+          "POL-02",
+          "POL-03",
+          "POL-04",
+          "POL-05",
+          "POL-06",
+          "POL-07",
+          "POL-08",
+          "POL-09",
+          "POL-10",
+          "POL-11",
+          "POL-12"
+        ],
+        "verificacoes_divergentes": {
+          "situacao": 12
+        },
+        "por_categoria": {
+          "individual": {
+            "casos": 12,
+            "conformes": 0
+          },
+          "documentada_geral": {
+            "casos": 5,
+            "conformes": 5
+          },
+          "documentada_citacao_fabricada": {
+            "casos": 1,
+            "conformes": 1
+          },
+          "ambigua": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "sem_evidencia": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "fora_de_escopo": {
+            "casos": 2,
+            "conformes": 2
+          }
+        }
+      },
+      "apresentacao": {
+        "conformes": 24,
+        "divergentes": 0,
+        "ids_divergentes": [],
+        "verificacoes_divergentes": {},
+        "por_categoria": {
+          "individual": {
+            "casos": 12,
+            "conformes": 12
+          },
+          "documentada_geral": {
+            "casos": 5,
+            "conformes": 5
+          },
+          "documentada_citacao_fabricada": {
+            "casos": 1,
+            "conformes": 1
+          },
+          "ambigua": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "sem_evidencia": {
+            "casos": 2,
+            "conformes": 2
+          },
+          "fora_de_escopo": {
+            "casos": 2,
+            "conformes": 2
+          }
+        }
+      },
+      "por_id": [
+        {
+          "id": "POL-01",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-02",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-03",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-04",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-05",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-06",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-07",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-08",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-09",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-10",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-11",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-12",
+          "categoria": "individual",
+          "esperado": {
+            "tipo": "contratacao_individual",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "contratacao_individual",
+            "situacao": "respondida",
+            "texto": "TEXTO_SEM_VEREDITO",
+            "aviso": "AVISO_CONTRATACAO_INDIVIDUAL",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": false,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": false,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-13",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 3
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 3,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-14",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 2,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-15",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 1
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 1,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-16",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 3
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 3,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-17",
+          "categoria": "documentada_geral",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto_livre": true,
+            "citacoes_corretas": 1
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "respondida",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 1,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-18",
+          "categoria": "documentada_citacao_fabricada",
+          "esperado": {
+            "tipo": "documentada",
+            "situacao": "descartada",
+            "texto_livre": false,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "documentada",
+            "situacao": "descartada",
+            "texto": "vazio",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 1
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true,
+            "citacoes": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-19",
+          "categoria": "ambigua",
+          "esperado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto_livre": true,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-20",
+          "categoria": "ambigua",
+          "esperado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto_livre": true,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "ambigua",
+            "situacao": "esclarecimento",
+            "texto": "texto_do_modelo",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-21",
+          "categoria": "sem_evidencia",
+          "esperado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_SEM_EVIDENCIA",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-22",
+          "categoria": "sem_evidencia",
+          "esperado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 2
+          },
+          "observado": {
+            "tipo": "sem_evidencia",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_SEM_EVIDENCIA",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-23",
+          "categoria": "fora_de_escopo",
+          "esperado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_FORA_DE_ESCOPO",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        },
+        {
+          "id": "POL-24",
+          "categoria": "fora_de_escopo",
+          "esperado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto_livre": false,
+            "citacoes_corretas": 0
+          },
+          "observado": {
+            "tipo": "fora_de_escopo",
+            "situacao": "recusada",
+            "texto": "MENSAGEM_FORA_DE_ESCOPO",
+            "aviso": "vazio",
+            "citacoes_mantidas": 0,
+            "problemas": 0
+          },
+          "esperado_literal": {
+            "tipo": true,
+            "situacao": true,
+            "texto_livre": true
+          },
+          "conforme_ao_esperado_literal": true,
+          "apresentacao": {
+            "texto": true,
+            "aviso": true
+          },
+          "conforme_na_apresentacao": true,
+          "erro": null
+        }
+      ]
+    }
+  }
+}

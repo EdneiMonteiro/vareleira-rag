@@ -62,7 +62,8 @@ Registro de 9 de outubro de 2026, feito durante os Desafios 05 a 07.
 | Windows PowerShell 5.1 | Pendente | A análise de sintaxe passou na versão 5.1.26100; falta executar os comandos nesse ambiente |
 | Outros modelos de geração e amostra maior de perguntas | Pendente | Só o `gpt-5.4-mini` foi validado, com poucas perguntas por tipo; o Desafio 06 amplia a amostra |
 | Resposta descartada por citação inventada no Azure | Pendente | Coberta só por testes automáticos |
-| Veredito atenuado ("Em regra, não.") que o detector não reconhece | Pendente | Estender o detector e medir de novo; como o conjunto de teste do Desafio 06 já foi usado, a nova medição final exige um conjunto novo, escrito por quem não escreveu o código |
+| Apresentação de casos classificados como individuais | Corrigida localmente | Texto livre suprimido em todo esse caminho; comparação local independente separada da medição Azure histórica |
+| Nova política na geração Azure | Pendente | Sem autorização confirmada para reconstruir o ambiente nesta rodada; não há nova medição de geração ou recuperação |
 | Prompts para o Copilot do guia, exemplo de pedido de mudança e modo construtor | Pendente | Executar no VS Code e registrar as respostas |
 | Medição de custo | Pendente | Consultar o Cost Management depois de uma execução completa |
 | Aprovação do conteúdo dos documentos sintéticos | Confirmada | Mantenedor, em 9 de outubro de 2026; registro no inventário |
@@ -103,6 +104,74 @@ dos comandos e conferência de referências, tabelas, links e testes locais.
 O mantenedor confirmou a aprovação do material existente em 9 de outubro de 2026.
 O limite do detector, inclusive os seis vereditos atenuados em nove execuções, continua registrado.
 Não houve alteração do detector nem nova medição; a aprovação não promete ausência de vereditos.
+
+## Reforço da política após o marco aprovado
+
+O marco `8fa5f0c` conserva a implementação aprovada e os resultados Azure anteriores.
+A correção `4eb0408`, solicitada pelo mantenedor para preparar a aplicação hospedada, remove
+o detector de frases e suprime o texto livre em todo caso classificado como contratação individual.
+Com evidências válidas, o programa mostra a introdução fixa, as citações e o aviso.
+Respostas documentadas gerais, recusas, esclarecimentos e descartes mantêm seus caminhos.
+
+A regra é compartilhada por `perguntar.py`, pelo agente do D05 e pelo avaliador do D06.
+O classificador e a regra por palavras continuam falíveis. Um caso individual não reconhecido
+pode seguir outro caminho; retirar texto livre não equivale a resolver essa classificação.
+As citações também precisam de contexto e revisão.
+
+Os testes locais da política passaram com 30 casos e os do agente com 38, usando MAF instalado
+sobre transporte simulado. A suíte completa permaneceu com 330 testes.
+O teste antigo que exigia texto livre individual foi substituído pela conferência do texto fixo,
+inclusive para conclusões atenuadas e conclusões no fim da resposta.
+Essa validação não repete as nove execuções Azure antigas nem substitui seu resultado.
+
+Nenhum documento ou pergunta do conjunto antigo foi alterado. A nova avaliação é local,
+com respostas candidatas sintéticas produzidas em contexto separado do implementador.
+A primeira consulta de autorização para reconstrução Azure não recebeu resposta; nenhum recurso
+foi criado naquele intervalo. O mantenedor autorizou posteriormente a validação Azure necessária.
+
+### Comparação local e correção do gabarito
+
+Os 24 casos foram escritos em contexto separado do implementador e congelados antes da comparação.
+O arquivo original manteve seu conteúdo e hash. Ele usou `recusada` nos 12 casos individuais no
+sentido de recusar a decisão de cobertura, mas o contrato do programa usa `respondida` quando
+mostra orientação geral, citações e aviso.
+
+A primeira comparação aceitou essa equivalência e apontou 24 de 24 na candidata. Esse resultado
+nunca representa aprovação estrita. O avaliador foi corrigido para comparar o valor literal:
+com o gabarito original, ambos os commits ficam em 12 de 24 quanto aos campos esperados, enquanto
+a apresentação passa de 12 de 24 no marco para 24 de 24 na candidata. Os valores crus ficaram
+preservados nos relatórios.
+
+Um revisor separado, sem acesso à implementação ou às métricas, confirmou o erro de definição.
+O arquivo `politica-casos-v2-contrato.json` altera somente esses 12 rótulos de situação e registra
+a revisão de gabarito; perguntas, candidatos e citações permanecem iguais. Ele não é um novo
+conjunto cego. A candidata continua no commit congelado `4eb0408`.
+
+| Comparação local | Marco `8fa5f0c` | Candidata `4eb0408` |
+| --- | --- | --- |
+| Gabarito original, valores literais | 12 de 24 | 12 de 24 |
+| Gabarito original, apresentação | 12 de 24 | 24 de 24 |
+| Contrato corrigido, valores literais | 12 de 24 | 24 de 24 |
+| Contrato corrigido, apresentação | 12 de 24 | 24 de 24 |
+
+O avaliador recebe saídas sintéticas e os trechos que contêm as citações. As contagens medem
+pós-processamento local, não qualidade da busca, geração ou respostas Azure. O erro de rótulo e
+sua correção permanecem explícitos; nenhuma pergunta do teste histórico foi usada para ajuste.
+
+Os relatórios derivados preservam a
+[comparação estrita do gabarito original](politica-avaliacao-local-v2-estrita.json) e a
+[comparação do contrato corrigido](politica-avaliacao-v2-contrato.json).
+Eles registram os commits e hashes, sem perguntas, respostas candidatas ou citações.
+
+Para reproduzir localmente a comparação, a partir da raiz e escolhendo uma saída que ainda não existe:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\avaliar_politica_local.py --casos dados\l100\avaliacao-independente\politica-casos-v2-contrato.json --baseline 8fa5f0c --candidata 4eb0408 --relatorio outputs\politica-comparacao.json
+```
+
+A pasta de saída deve existir. Esse comando foi executado com saída na pasta privada da sessão;
+o caminho acima é um exemplo local. O contrato corrigido retornou código 0; o original, sem
+equivalência de situações, retornou código 3 e conserva suas divergências.
 
 ## Autoria
 

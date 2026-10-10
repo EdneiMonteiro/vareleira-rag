@@ -22,8 +22,9 @@ Confira o sentido da resposta, a fonte citada e sua vigência.
 
 O assistente consulta condições gerais sintéticas para explicar o produto. Decisões sobre cobertura
 individual, indenização ou elegibilidade, emissão de contratos e ações em sistemas estão fora do
-escopo. O detector de veredito pode deixar passar conclusões individuais, e a citação literal apenas
-confere se a frase existe na fonte. Revise a correspondência entre a resposta e os documentos.
+escopo. Casos classificados como individuais mostram introdução fixa, citações e aviso, sem o texto
+livre do modelo. A classificação ainda pode falhar, e a citação literal apenas confere se a frase existe
+na fonte. Revise a correspondência entre a resposta e os documentos.
 As taxas do Desafio 06 descrevem os dois conjuntos de 12 perguntas usados na medição; sua generalização
 exige amostras maiores e representativas. O teste teve duas falsas recusas em 12,
 acima do máximo de uma admitido pelo critério de escolha.

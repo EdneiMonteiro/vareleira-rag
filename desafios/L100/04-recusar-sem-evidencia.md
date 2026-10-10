@@ -51,7 +51,7 @@ Ao concluir este desafio, você terá:
 - conferido que cada evidência é uma citação literal de um trecho recuperado, e que o programa descarta a resposta quando não é;
 - observado recusas com texto do programa para perguntas sem evidência e fora de escopo, e o aviso que acompanha a explicação geral de um caso individual;
 - executado os testes automáticos da política, sem Azure;
-- explicado os limites das regras: classificação errada, palavras que as regras não preveem, veredito escrito de outro modo e recuperação incompleta.
+- explicado os limites das regras: classificação errada, palavras que as regras não preveem e recuperação incompleta.
 
 **Próximos desafios:** o [Desafio 05](05-agente-com-maf.md) implementa o agente com Microsoft Agent Framework (MAF); o [Desafio 06](06-avaliar-respostas.md) mede a qualidade da recuperação e das respostas; o [Desafio 07](07-identidade-da-aplicacao.md) usa service principal (identidade de uma aplicação no Microsoft Entra ID) e Azure Key Vault (serviço de guarda de segredos).
 
@@ -84,16 +84,16 @@ Ao concluir este desafio, você terá:
 **Conceitos necessários:** quem decide, evidência literal, caso individual e limites das regras.
 
 **1. Quem decide.** O modelo **propõe** o tipo e a resposta; o programa aplica a política e **decide**
-o que a pessoa vê. As recusas e o aviso de contratação individual usam textos fixos de
-`lab_politica.py`. Quando a resposta passa pelas verificações, o conteúdo continua sendo proposto
-pelo modelo e precisa de revisão.
+o que a pessoa vê. As recusas, a introdução de contratação individual e o aviso usam textos fixos de
+`lab_politica.py`. Perguntas documentadas gerais mantêm a resposta do modelo; casos classificados
+como individuais apresentam a introdução fixa, as citações conferidas e o aviso.
 
 Os cinco tipos de pergunta e a conduta do programa:
 
 | Tipo | Quando ocorre | O que o programa mostra |
 | --- | --- | --- |
 | `documentada` | Os trechos trazem a regra pedida | A resposta do modelo, com as evidências conferidas |
-| `contratacao_individual` | A pessoa pergunta se o seguro dela cobre ou paga um caso dela | Texto do modelo ou frase padrão quando o detector reconhece um veredito, com evidências e aviso fixo |
+| `contratacao_individual` | A pessoa pergunta se o seguro dela cobre ou paga um caso dela | Introdução fixa do programa, evidências conferidas e aviso; o texto livre do modelo é suprimido |
 | `sem_evidencia` | O assunto é do produto, mas os trechos não trazem a informação | Uma recusa com texto do programa; nada do que o modelo escreveu |
 | `fora_de_escopo` | A pergunta não trata do Vareleira Lar nem de seguro residencial | Uma recusa com texto do programa |
 | `ambigua` | A pergunta admite mais de um sentido | A pergunta de esclarecimento escrita pelo modelo |
@@ -104,17 +104,18 @@ Os cinco tipos de pergunta e a conduta do programa:
 
 **3. Caso individual.** O modelo propõe o tipo. A regra do programa muda `documentada` para
 `contratacao_individual` quando encontra um possessivo ("meu", "minha") junto de um assunto de seguro
-("seguro", "apólice", "imóvel", "sinistro"). Se o detector de veredito reconhece formas como "Sim.",
-"Não.", "seu seguro cobre" ou "será indenizado", o programa substitui o texto por uma frase padrão
-e mantém as evidências. Todo caso classificado como individual recebe o aviso fixo.
+("seguro", "apólice", "imóvel", "sinistro"). Todo caso classificado como individual, com evidências
+válidas, usa a introdução e o aviso do programa. A explicação geral fica nas citações conferidas;
+o programa não tenta decidir se o texto livre contém um veredito antes de suprimi-lo.
 
 **4. Limites.** Confira quatro situações:
 
 1. **Classificação:** o modelo pode propor o tipo errado.
 2. **Regra por palavras:** uma pergunta geral com "meu corretor" pode receber o aviso de caso individual
    (falso positivo), enquanto um caso sem possessivo pode passar pela regra (falso negativo).
-3. **Veredito:** o detector procura formas específicas. Uma abertura como "Em regra, não." pode passar
-   mesmo quando conclui sobre o caso da pessoa.
+3. **Apresentação:** retirar o texto livre protege somente o caminho classificado como individual.
+   Se o modelo e a regra por palavras não reconhecerem esse tipo, uma pergunta individual pode
+   seguir o caminho de `documentada`. As citações também precisam ser interpretadas em seu contexto.
 4. **Recuperação:** a ausência de um trecho necessário limita a informação disponível para a resposta.
 
 Uma citação literal também pode acompanhar uma explicação que distorce seu sentido. Compare o texto da
@@ -250,16 +251,14 @@ As evidências variam a cada execução. O que não varia é a regra: cada cita�
 python scripts\perguntar.py --busca $busca --modelos $modelos --deployment-geracao $deploymentGeracao --pergunta "Roubaram meu notebook na rua. O seguro paga?" --k 10 --politica completa
 ```
 
-**Exemplo de saída registrada** (resumido):
+**Formato da versão atual**, conferido localmente. A citação abaixo vem da execução Azure anterior;
+a política de texto fixo ainda não foi reexecutada no Azure:
 
 ```text
 Tipo da pergunta: contratação individual
 
 Resposta:
-  Pela regra geral do produto, bens portáteis levados para fora do imóvel segurado não são
-  indenizados. A cobertura de roubo e furto qualificado indeniza o conteúdo do imóvel subtraído
-  mediante arrombamento ou mediante roubo no imóvel. Portanto, a análise do caso concreto depende da
-  apólice e das circunstâncias do evento, ...
+  As Condições Gerais trazem as regras abaixo, mas elas não permitem dizer se o seu caso está coberto.
 
 Evidências conferidas (cada citação aparece literalmente no trecho):
   [VLAR-CG-1_0-007] "h) bens portáteis levados para fora do imóvel segurado;"
@@ -272,13 +271,14 @@ Aviso:
   consulte o Atendimento ou o seu corretor.
 ```
 
-**Atividade 2:** compare esta resposta com a da Etapa 1. Liste três diferenças e diga se a resposta ainda traz algum veredito, mesmo atenuado.
+**Atividade 2:** compare esta resposta com a da Etapa 1. Identifique a introdução do programa,
+a citação da fonte e o aviso; explique por que eles não autorizam decidir a cobertura do caso.
 
 **Conferência:** compare a resposta com a exclusão da cláusula 5.1, item h, e confira as evidências e o
-aviso fixo. Procure uma conclusão sobre o caso da pessoa, inclusive aberturas como "Em regra, não.".
-Essa forma passa pelo detector. No ambiente testado, vereditos atenuados apareceram em 6 de 9 execuções;
-a distribuição está no
-[registro do limite do detector](../../docs/validacao/l100-04-recusar-sem-evidencia.md#alterações-posteriores-à-validação).
+aviso fixo. O texto livre do modelo não aparece no caminho de contratação individual.
+A implementação anterior deixou passar vereditos atenuados em 6 de 9 execuções Azure;
+esse histórico permanece no
+[registro anterior à correção](../../docs/validacao/l100-04-recusar-sem-evidencia.md#alterações-posteriores-à-validação).
 
 ### 2.4 Pergunta sem evidência
 
@@ -357,9 +357,9 @@ python scripts\perguntar.py --busca $busca --modelos $modelos --deployment-gerac
 **Atividade 5:** compare esta resposta com a da Etapa 2.3, que usou `--k 10`. Que informação falta, e por quê?
 
 **Conferência:** no exemplo registrado com `--k 5`, o trecho das exclusões (cláusula 5.1) ficou fora do
-pedido. A resposta explicou a cobertura de roubo e furto qualificado e trouxe o aviso. Confira a lista
-da sua execução e procure também vereditos atenuados: o aviso acompanha a resposta, mas a revisão do
-texto continua necessária.
+pedido. A resposta anterior à correção explicou a cobertura de roubo e furto qualificado e trouxe
+o aviso. Na política atual, confira se as citações do caminho individual incluem a informação
+necessária: suprimir o texto livre não recupera o trecho ausente.
 
 ### 4.2 Falso positivo da regra por palavras
 
@@ -435,7 +435,7 @@ Qualquer ação que altere o Azure continua dependendo da sua decisão.
 | Limite da política básica | Etapa 1 e a Atividade 1 | Você identifica o veredito sobre o caso individual |
 | Pedido da política completa | Etapa 2.1 | Instruções com os cinco tipos e a exigência de citação literal |
 | Pergunta documentada | Etapa 2.2 | Tipo `documentada`, resposta e evidências conferidas |
-| Caso individual | Etapa 2.3 e a Atividade 2 | Regra geral, evidências e aviso fixo; um veredito atenuado pode passar pela regra |
+| Caso individual | Etapa 2.3 e a Atividade 2 | Introdução do programa, evidências e aviso fixo; nenhum texto livre do modelo nesse caminho |
 | Pergunta sem evidência | Etapa 2.4 | Recusa com o texto do programa, sem fontes |
 | Pergunta fora de escopo | Etapa 2.5 | Recusa com o texto do programa |
 | Pergunta ambígua | Etapa 2.6 | Pergunta de esclarecimento |
@@ -453,7 +453,7 @@ Antes de encerrar, registre em local privado o grupo de recursos, os nomes da bu
 | `[FALHA]` com "a fonte ... não está entre os trechos recuperados" (código 3) | Repita o comando; a citação de um id inexistente é o sinal de uma resposta inventada | Aceitar a resposta |
 | Recusa "sem evidência" para uma pergunta que os documentos respondem | Se o trecho necessário foi recuperado (`--mostrar-prompt`); aumente `--k` ou mude `--modo` | Concluir que os documentos não têm a resposta |
 | Aviso de caso individual em uma pergunta geral | A pergunta tem um possessivo junto de um assunto de seguro (Atividade 6); reformule sem "meu" ou "minha" | Remover o aviso do programa |
-| Resposta de caso individual com a frase padrão no lugar do texto do modelo | O modelo afirmou ou negou a cobertura do caso; o programa trocou o texto e manteve as evidências | Reaproveitar o texto original do modelo |
+| Resposta de caso individual com a frase padrão no lugar do texto do modelo | É o comportamento previsto: o programa sempre suprime o texto livre nesse tipo e mantém as evidências | Reaproveitar o texto original do modelo |
 | Erros dos desafios anteriores (login, tenant, papéis, deployment, cota) | [Solução de problemas do Desafio 03](03-responder-com-fontes.md#solução-de-problemas) | Pular a conferência |
 
 Se precisar de ajuda, consulte os [canais e limites do suporte](../../SUPPORT.md). Não conceda papéis,
@@ -475,15 +475,16 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 
 | Item | Situação | Detalhe |
 | --- | --- | --- |
-| Comandos das Etapas 1 a 4 | Concluído | Executados em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03 |
+| Comandos das Etapas 1 a 4 da implementação original | Concluído | Executados em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03; a correção de texto fixo tem validação local separada |
 | Scripts e testes automáticos (sem Azure) | Concluído | Testes aprovados |
 | Links, âncoras, URLs e referências dos guias | Concluído | Nenhum link ou âncora inválido |
 | Aprovação do conteúdo dos documentos sintéticos | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; registro no inventário |
-| Aprovação do texto, do código e dos resultados | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; limites do detector preservados |
+| Aprovação do material original | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; a correção posterior foi solicitada separadamente e preserva os resultados históricos |
 | Outros ambientes: macOS, Linux, WSL (Windows Subsystem for Linux), Python diferente do 3.12 e Windows PowerShell 5.1 | Pendente | Executar os comandos do guia nesses ambientes e registrar as diferenças |
 | Outros modelos de geração e outras perguntas | Pendente | Só o `gpt-5.4-mini` foi validado, com poucas perguntas por tipo; o Desafio 06 amplia a amostra |
 | Resposta descartada por citação inventada no Azure | Pendente | Coberta só por testes automáticos; não ocorreu nas execuções da validação |
-| Detector de veredito | Limite conhecido | Reconhece só "Sim" ou "Não" no início e frases fixas; um veredito atenuado, como "Em regra, não.", passou em 6 de 9 execuções do caso do notebook (detalhes no registro de validação) |
+| Apresentação de casos classificados como individuais | Corrigida localmente | Texto fixo aplicado a todo esse tipo, com citações e aviso; o detector antigo foi removido. Classificação e recuperação continuam falíveis |
+| Nova política no Azure | Pendente | A correção não foi reexecutada no Azure; não há nova medição de geração, custo ou qualidade do D06 |
 | Interações com o Copilot: prompts do guia, exemplo de pedido de mudança e modo construtor | Pendente | Executar no VS Code e registrar as respostas |
 | Custo | Pendente | Medir o custo no Cost Management após uma execução completa |
 

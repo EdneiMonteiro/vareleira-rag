@@ -149,6 +149,19 @@ O mantenedor confirmou a aprovação do material existente em 9 de outubro de 20
 Código, configuração e séries medidas permanecem iguais. Essa confirmação não amplia as
 permissões da ferramenta do agente nem comprova a fidelidade de todas as respostas.
 
+## Alterações após o marco aprovado
+
+A correção da política em `4eb0408` é usada também pelo agente: casos classificados como
+individuais mostram texto fixo, citações e aviso, sem a explicação livre do modelo.
+Os exemplos e séries Azure anteriores permanecem históricos.
+
+No mesmo commit, `_falha_da_busca` passou a relançar `ErroLab` sem tradução adicional.
+Um erro de dimensões do vetor mantém sua orientação e o código 1 no modo com ferramenta,
+em vez de virar erro inesperado com código 4. O teste exerce o caminho MAF completo com
+transporte simulado e comprova que a recusa do modelo não oculta o erro da busca.
+
+Os 38 testes do agente passaram localmente. Não houve nova execução Azure do D05 nesta rodada.
+
 ## Autoria
 
 Código, testes e texto produzidos com Claude Sonnet 5.5, no GitHub Copilot CLI. O Astra, modelo preferido do

@@ -311,6 +311,12 @@ python scripts\buscar_trechos.py --busca $busca --modelos $modelos --pergunta "M
 
 ## Etapa 3: medir as respostas com a recuperação obrigatória
 
+**Referência histórica:** os exemplos e números das Etapas 3 a 6 foram medidos com a política
+anterior à correção de apresentação dos casos individuais. A política atual mantém tipo e situação,
+mas substitui o texto individual por uma introdução fixa e citações. A métrica de fatos continua
+olhando somente o texto mostrado, não as citações; por isso os fatos individuais dos exemplos
+não são uma previsão de nova execução. O conjunto de teste original permanece medido uma única vez.
+
 **Objetivo:** medir, para cada pergunta do conjunto de ajuste, o tipo, a situação e os fatos do fluxo dos Desafios 03 e 04: o programa busca antes (modo híbrido, `k=5`) e entrega os trechos ao modelo. Esta etapa não altera o Azure; consome cerca de 19 mil tokens de entrada e leva cerca de 45 segundos.
 
 ```powershell
