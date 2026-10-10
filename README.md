@@ -214,6 +214,10 @@ sincroniza aprovação e avaliação posterior, sem incorporar o L200. As mediç
 [registro do D04](docs/validacao/l100-04-recusar-sem-evidencia.md).
 O L200 está na [pré-release experimental `v0.2.0-l200`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.2.0-l200),
 no commit `5b70b37`, com o teste reprovado e a limpeza concluída registrados.
+A [pré-release corrigida `v0.2.1-l200`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.2.1-l200)
+preserva essa história e acrescenta referências restritas, novo teste de 16 de 18 sem descartes
+e o encerramento da rodada de correção. O [PR #1](https://github.com/EdneiMonteiro/vareleira-rag/pull/1)
+disponibiliza a entrega para revisão; a branch principal não foi mesclada automaticamente.
 A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
 Azure quando você executa os comandos deles; permissões, custos e limpeza estão
 descritos em cada guia.
