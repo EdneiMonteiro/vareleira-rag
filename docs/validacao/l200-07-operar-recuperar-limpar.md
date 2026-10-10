@@ -44,11 +44,18 @@ do nome do grupo impedem tratar o retorno como isolamento do custo L200.
 | Referência L100 | 54 trechos, seis consultas de fumaça e acesso anônimo recusado conferidos antes da exclusão do grupo |
 | Credencial de login | Identificador específico conferido, credencial removida e lista restante vazia |
 | Registro e principal de login | Ambos próprios, removidos e ausência conferida por identificador da aplicação |
-| Grupo exclusivo | Exclusão enviada após inventário completo; na conferência intermediária, estado `Deleting` com somente o ambiente Container Apps ainda presente |
-| Modelos e preservação final | Expurgo específico e comparação final serão conferidos quando a exclusão remota concluir |
+| Grupo exclusivo | Removido; ausência conferida após 1.641,5 s de execução. A conferência intermediária mostrou `Deleting` com somente o ambiente Container Apps ainda presente |
+| Recurso de modelos | Expurgado pelo nome, grupo e região exatos; ausência na lista de excluídos conferida |
+| Atribuições das identidades próprias | Nenhuma remanescente na consulta direta ao ARM |
+| Recursos preexistentes | Sete grupos e oito papéis do operador iguais à linha de base; outros recursos excluídos preservados |
 
 A remoção do grupo foi uma única operação. A espera pelo ambiente Container Apps não causou
 novo pedido de exclusão. Não se deixou a aplicação atendendo enquanto os dados de custo eram processados.
+
+O [resumo sanitizado da limpeza](l200-limpeza-final-sumario.json) registra a conferência final.
+A listagem de atribuições usou o ARM, sem depender da resolução no Microsoft Graph de identidades
+gerenciadas já removidas. Registro e principal de login foram conferidos separadamente no Entra ID.
+Nenhum recurso desta rodada permaneceu ativo.
 
 ## Revisão editorial e documentação
 

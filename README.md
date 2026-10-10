@@ -16,7 +16,8 @@ residencial, recuperar evidências e responder com fontes verificáveis.
 O L100 usa Python, Microsoft Agent Framework (MAF) e infraestrutura Azure em Bicep; seus sete desafios
 foram executados no Azure e aprovados pelo mantenedor. O L200 reutiliza a base e a política, acrescenta
 Text Split, comparação dos índices e chat FastAPI em Azure Container Apps com identidade gerenciada
-e autenticação obrigatória. O fechamento da avaliação e da limpeza L200 está em seus registros.
+e autenticação obrigatória. Os recursos de validação foram removidos, as identidades temporárias
+foram retiradas e os recursos preexistentes foram preservados.
 O teste final do chat teve 11 de 18 casos conformes; a entrega continua experimental e não homologa
 o atendimento completo.
 
@@ -203,7 +204,7 @@ sintéticos do repositório.
 | L100, Desafio 07: Key Vault, service principal e privilégio mínimo | Disponível e validado no Azure: identidade temporária, dois papéis, cinco operações, pergunta como aplicação e limpeza conferidos |
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
-| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; teste final 11 de 18, reprovado para o contrato completo; limites e limpeza nos registros |
+| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; teste final 11 de 18, reprovado para o contrato completo; limpeza concluída e preexistentes preservados |
 | Níveis L300 e L400 | Planejados |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),

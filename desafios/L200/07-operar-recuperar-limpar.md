@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável. Troca de revisão e retorno foram conferidos no Azure; a situação da limpeza fica no registro de validação. |
+| Situação | Exercício executável. Troca de revisão, retorno, remoção do grupo e expurgo foram conferidos no Azure em 10 de outubro de 2026; recursos preexistentes preservados. |
 | Público | Pessoas de operações, arquitetura e desenvolvimento, com autorização para os alvos da limpeza. |
 | Resultado | Revisão anterior recuperada, falhas localizadas por código de suporte e recursos temporários removidos ou mantidos com decisão explícita. |
 | Custo | Duas revisões podem executar réplicas durante a recuperação; busca, registro, logs e modelos têm cobranças próprias. |
@@ -281,8 +281,9 @@ Sem essa decisão, remova os temporários ao terminar.
 ## Situação da validação
 
 A troca e o retorno de tráfego foram conferidos com a mesma imagem, preservando autenticação.
-A revisão de teste foi desativada. A remoção de objetos, grupo e identidades, o expurgo e a preservação
-dos recursos preexistentes são registrados em
+A revisão de teste foi desativada. Após a avaliação, a aplicação, os quatro objetos L200, o grupo
+exclusivo e a credencial e identidade de login foram removidos; o recurso de modelos foi expurgado.
+Sete grupos e oito papéis preexistentes permaneceram iguais à linha de base. A conferência está em
 [docs/validacao/l200-07-operar-recuperar-limpar.md](../../docs/validacao/l200-07-operar-recuperar-limpar.md).
 O exercício não mediu recuperação de dados de produção nem simulou falha de código.
 

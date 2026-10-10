@@ -2,7 +2,7 @@
 
 | Item | Definição |
 | --- | --- |
-| Situação | Implementação e sete guias disponíveis; validação Azure executada por etapas, com avaliação final e limpeza registradas separadamente |
+| Situação | Implementação e sete guias disponíveis; atividades Azure e limpeza executadas. O teste final teve 11 de 18 casos conformes e ficou reprovado para o contrato completo |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento que concluíram o L100 |
 | Resultado | Comparar duas formas de ingestão e hospedar um chat com fontes, identidade própria e acesso autenticado em Azure Container Apps |
 | Continuidade | Reutilizar documentos sintéticos, inventário, política, testes e parâmetros do L100; reconstruir recursos apenas em destino autorizado |
