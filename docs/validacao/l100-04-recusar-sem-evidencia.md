@@ -200,6 +200,21 @@ O executor não repetiu perguntas nem alterou código ou gabarito. O retorno de 
 o deployment `geracao`, e não comprovou a versão do modelo; a configuração do recurso foi conferida
 separadamente na reconstrução.
 
+### Formato dos bytes e reprodução pela release
+
+Os relatórios registram o hash dos bytes efetivamente lidos na árvore de trabalho Windows.
+O Git normaliza os finais de linha conforme `.gitattributes`; a exportação da release usa LF.
+O JSON e seus rótulos permanecem iguais, mas o checksum de bytes CRLF difere do checksum de bytes LF.
+
+| Arquivo | SHA-256 dos bytes avaliados no Windows | SHA-256 dos bytes Git/LF da release |
+| --- | --- | --- |
+| `politica-casos-v1.json` | `c9e6d0110bb8aa9eaa0f66b65f6c1633ce0c0d3fbead5edef957823cef079138` | `f8ebedee3ba4ecd1a401ec2d84931a38864124da24c7cd405bcabf408ae52219` |
+| `politica-casos-v2-contrato.json` | `de94f21c133efc09fada5e175bc9432a6a6efdd6362401485c0b3e4161bb9cf2` | `d02c473f7c4004e38c767affa266dea60c315e649db63621081b38e155dc5bf2` |
+
+Essa distinção foi conferida numa exportação do commit `8bafb69`, cuja suíte exata passou com
+341 testes. Não houve edição de perguntas, candidatos, citações ou situações por causa da medição.
+Ao comparar hashes, use o formato de bytes indicado, em vez de alterar o conjunto para obter um valor esperado.
+
 Essa rodada mede o fluxo fixo de busca, geração e política, não a escolha de ferramentas pelo agente
 MAF, fidelidade semântica integral ou repetibilidade. A revisão de rótulos do conjunto v2 continua
 explícita. O resultado não substitui as medições históricas nem o teste D06, que não foi repetido.
