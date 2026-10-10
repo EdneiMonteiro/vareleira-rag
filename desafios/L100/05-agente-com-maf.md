@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável, validado no Azure em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos e novos. Estão pendentes a revisão do conteúdo pelo mantenedor e a revisão humana do texto; veja [Situação da validação](#situação-da-validação). |
+| Situação | Exercício executável, validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos. Veja os limites em [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e conferir os resultados; escrever código é opcional. |
 | Pré-requisito | [Desafio 04](04-recusar-sem-evidencia.md) concluído: este desafio reaproveita a política de resposta, o deployment de geração e o índice. |
 | Resultado | O programa `agente_maf.py`: um agente do Microsoft Agent Framework (MAF) que decide quando e o que buscar nos documentos por uma ferramenta de busca. O programa limita as buscas, registra o rastro e confere a resposta com a política do Desafio 04. |

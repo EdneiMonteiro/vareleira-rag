@@ -62,8 +62,8 @@ Registro de 9 de outubro de 2026, feito durante os Desafios 05 a 07.
 | Windows PowerShell 5.1 | Pendente | A análise de sintaxe passou na versão 5.1.26100; falta executar os comandos nesse ambiente |
 | Outros modelos de geração e amostra maior de perguntas | Pendente | Só o `gpt-5.4-mini` foi validado, com poucas perguntas por tipo; o Desafio 06 amplia a amostra |
 | Resposta descartada por citação inventada no Azure | Pendente | Coberta só por testes automáticos |
-| Apresentação de casos classificados como individuais | Corrigida localmente | Texto livre suprimido em todo esse caminho; comparação local independente separada da medição Azure histórica |
-| Nova política na geração Azure | Pendente | Sem autorização confirmada para reconstruir o ambiente nesta rodada; não há nova medição de geração ou recuperação |
+| Apresentação de casos classificados como individuais | Conferida localmente e no Azure | Texto livre suprimido nesse caminho; comparações local e Azure posteriores separadas da medição histórica |
+| Nova política na geração Azure | Medida em 10 de outubro de 2026 | Rodada autorizada com 24 perguntas do conjunto novo: 22 de 23 casos comparáveis conformes; nenhuma repetição ou ajuste pelo resultado |
 | Prompts para o Copilot do guia, exemplo de pedido de mudança e modo construtor | Pendente | Executar no VS Code e registrar as respostas |
 | Medição de custo | Pendente | Consultar o Cost Management depois de uma execução completa |
 | Aprovação do conteúdo dos documentos sintéticos | Confirmada | Mantenedor, em 9 de outubro de 2026; registro no inventário |
@@ -172,6 +172,37 @@ Para reproduzir localmente a comparação, a partir da raiz e escolhendo uma sa�
 A pasta de saída deve existir. Esse comando foi executado com saída na pasta privada da sessão;
 o caminho acima é um exemplo local. O contrato corrigido retornou código 0; o original, sem
 equivalência de situações, retornou código 3 e conserva suas divergências.
+
+## Nova rodada Azure com a política congelada
+
+Após autorização explícita do mantenedor, a base L100 foi reconstruída no destino de teste anterior.
+Em 10 de outubro de 2026, um executor em contexto separado fez uma resposta para cada uma das
+24 perguntas de `politica-casos-v2-contrato.json`. Usou recuperação obrigatória híbrida, `k=3`,
+esforço `low`, índice L100 com 54 trechos e código conferido contra o commit `4eb0408`.
+Os candidatos sintéticos do conjunto não foram enviados ao modelo.
+
+| Critério da rodada | Resultado |
+| --- | --- |
+| Decisões obtidas | 24 de 24; nenhum erro Azure ou de formato |
+| Tipo, situação e origem do texto esperados | 22 de 23 casos comparáveis conformes |
+| Caso não comparável | POL-18: a citação fabricada é estímulo local e não foi injetada; seu descarte artificial não é gabarito para geração real |
+| Divergência | POL-19: esperado `ambigua`/`esclarecimento`, observado `sem_evidencia`/`recusada` |
+| Casos individuais | 12 de 12 classificados como individuais, com texto fixo, aviso e ao menos uma citação mantida |
+| Apresentação conforme a decisão tomada | 24 de 24; essa medida não julga se a decisão estava correta |
+| Citações de referência presentes nos três trechos | 24 de 34; diagnóstico de recuperação, não nota de fidelidade |
+| Pedidos HTTP | 73 com status 200: 24 de embeddings, 24 de geração e 25 de busca, incluindo uma contagem prévia |
+| Tokens | 1.025 de embeddings, 33.268 de entrada e 5.578 de saída; 1.535 de raciocínio já incluídos na saída |
+| Tempo | Média de 3,07 s, máximo de 8,77 s por pergunta; 74 s para a rodada |
+
+O [relatório sanitizado](politica-avaliacao-azure-v1.json) preserva hashes, configuração, contagens e
+resultados por identificador, sem perguntas, texto do modelo, citações ou identificadores do destino.
+O executor não repetiu perguntas nem alterou código ou gabarito. O retorno de geração identificou
+o deployment `geracao`, e não comprovou a versão do modelo; a configuração do recurso foi conferida
+separadamente na reconstrução.
+
+Essa rodada mede o fluxo fixo de busca, geração e política, não a escolha de ferramentas pelo agente
+MAF, fidelidade semântica integral ou repetibilidade. A revisão de rótulos do conjunto v2 continua
+explícita. O resultado não substitui as medições históricas nem o teste D06, que não foi repetido.
 
 ## Autoria
 

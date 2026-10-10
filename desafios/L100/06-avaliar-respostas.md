@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável, validado no Azure em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro e as perguntas são sintéticos e novos. Estão pendentes a revisão do conteúdo pelo mantenedor e a revisão humana do texto; veja [Situação da validação](#situação-da-validação). |
+| Situação | Exercício executável, validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026 (Windows e PowerShell). Documentos e perguntas são sintéticos; o resultado histórico abaixo da meta permanece registrado em [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e interpretar os números; escrever código é opcional. |
 | Pré-requisito | [Desafio 05](05-agente-com-maf.md) concluído: este desafio mede os dois fluxos de resposta, a recuperação obrigatória (Desafios 03 e 04) e a recuperação por ferramenta (Desafio 05), com a política do Desafio 04. |
 | Resultado | O programa `avaliar_respostas.py` e dois conjuntos de 12 perguntas, um de ajuste e um de teste. Você mede a recuperação e as respostas, escolhe uma configuração por um critério definido antes e mede o conjunto de teste uma única vez. |

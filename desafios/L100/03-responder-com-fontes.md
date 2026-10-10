@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável, validado no Azure em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos e novos. Estão pendentes a revisão do conteúdo pelo mantenedor e a revisão humana do texto; veja [Situação da validação](#situação-da-validação). |
+| Situação | Exercício executável, validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos. Veja os limites em [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e conferir os resultados; escrever código é opcional. |
 | Pré-requisito | [Desafio 02](02-indexar-documentos.md) concluído: este desafio consulta o índice e o recurso de modelos que ele criou. |
 | Resultado | Um programa de console que recebe uma pergunta, recupera trechos do índice, pede a um modelo de geração que responda só com esses trechos e mostra a resposta, as fontes citadas e o caminho percorrido. |

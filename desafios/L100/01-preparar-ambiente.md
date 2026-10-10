@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável, validado no Azure em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos e novos. Estão pendentes a revisão do conteúdo pelo mantenedor e a revisão humana do texto; veja [Situação da validação](#situação-da-validação). |
+| Situação | Exercício executável, validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos. Veja os limites em [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e conferir os resultados; escrever código é opcional. |
 | Resultado | Uma conta de armazenamento no Azure com os três documentos sintéticos do Vareleira Lar, enviados e conferidos por script. |
 | Custo | O Azure Blob Storage cobra por capacidade armazenada e por operações; este desafio armazena cerca de 21 KB. A remoção dos recursos está em [Custos, pausa e limpeza](#custos-pausa-e-limpeza). |

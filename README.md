@@ -57,7 +57,9 @@ o D07 confirmou a consulta ao índice, o uso dos modelos e três recusas HTTP 40
 aplicação. A credencial, os papéis e a identidade foram removidos; o cofre e o recurso de modelos foram
 expurgados, e os recursos preexistentes foram preservados.
 O detector original do D04 foi substituído por texto fixo para casos classificados como individuais,
-com citações e aviso. A correção foi conferida localmente; a classificação ainda pode falhar.
+com citações e aviso. A comparação local foi seguida de uma rodada Azure com 24 perguntas novas:
+22 de 23 casos comparáveis seguiram o contrato, e os 12 individuais tiveram texto fixo e aviso.
+Uma pergunta esperada como ambígua foi recusada como sem evidência; a classificação ainda pode falhar.
 O teste histórico do D06 teve duas falsas recusas em 12 e ficou abaixo da meta. Esses limites estão
 documentados nos guias. O mantenedor confirmou a aprovação do texto, do código, dos documentos
 sintéticos e dos conjuntos de perguntas em 9 de outubro de 2026.
@@ -179,8 +181,10 @@ sintéticos do repositório.
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
 | Níveis L200 a L400 | Planejados |
 
-Ainda não existe uma release do laboratório. A versão 0.1.0 citada acima é
-**do contexto Vareleira**, não deste código. Os desafios só criam recursos no
+O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
+no commit `d4a93cc`. As medições posteriores permanecem separadas no
+[registro do D04](docs/validacao/l100-04-recusar-sem-evidencia.md).
+A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
 Azure quando você executa os comandos deles; permissões, custos e limpeza estão
 descritos em cada guia.
 

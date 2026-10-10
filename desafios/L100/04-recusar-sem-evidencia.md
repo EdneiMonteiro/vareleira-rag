@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável, validado no Azure em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos e novos. Estão pendentes a revisão do conteúdo pelo mantenedor e a revisão humana do texto; veja [Situação da validação](#situação-da-validação). |
+| Situação | Exercício executável; o material original foi validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026. A política posterior teve avaliação separada em 10 de outubro. Veja [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e conferir os resultados; escrever código é opcional. |
 | Pré-requisito | [Desafio 03](03-responder-com-fontes.md) concluído: este desafio usa o deployment de geração e o programa `perguntar.py` que ele criou. |
 | Resultado | A opção `--politica completa` do `perguntar.py`: o modelo propõe o tipo e a resposta; o programa aplica as regras de classificação, confere as citações literais e escolhe entre resposta, recusa, esclarecimento e descarte. |
@@ -251,8 +251,9 @@ As evidências variam a cada execução. O que não varia é a regra: cada cita�
 python scripts\perguntar.py --busca $busca --modelos $modelos --deployment-geracao $deploymentGeracao --pergunta "Roubaram meu notebook na rua. O seguro paga?" --k 10 --politica completa
 ```
 
-**Formato da versão atual**, conferido localmente. A citação abaixo vem da execução Azure anterior;
-a política de texto fixo ainda não foi reexecutada no Azure:
+**Formato da versão atual**, conferido localmente e em uma rodada Azure posterior.
+A citação abaixo pertence à execução original; os resultados posteriores estão no
+[registro da nova rodada](../../docs/validacao/l100-04-recusar-sem-evidencia.md#nova-rodada-azure-com-a-política-congelada):
 
 ```text
 Tipo da pergunta: contratação individual
@@ -475,7 +476,7 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 
 | Item | Situação | Detalhe |
 | --- | --- | --- |
-| Comandos das Etapas 1 a 4 da implementação original | Concluído | Executados em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03; a correção de texto fixo tem validação local separada |
+| Comandos das Etapas 1 a 4 da implementação original | Concluído | Executados em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03; a correção de texto fixo tem avaliações local e Azure separadas |
 | Scripts e testes automáticos (sem Azure) | Concluído | Testes aprovados |
 | Links, âncoras, URLs e referências dos guias | Concluído | Nenhum link ou âncora inválido |
 | Aprovação do conteúdo dos documentos sintéticos | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; registro no inventário |
@@ -483,8 +484,8 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 | Outros ambientes: macOS, Linux, WSL (Windows Subsystem for Linux), Python diferente do 3.12 e Windows PowerShell 5.1 | Pendente | Executar os comandos do guia nesses ambientes e registrar as diferenças |
 | Outros modelos de geração e outras perguntas | Pendente | Só o `gpt-5.4-mini` foi validado, com poucas perguntas por tipo; o Desafio 06 amplia a amostra |
 | Resposta descartada por citação inventada no Azure | Pendente | Coberta só por testes automáticos; não ocorreu nas execuções da validação |
-| Apresentação de casos classificados como individuais | Corrigida localmente | Texto fixo aplicado a todo esse tipo, com citações e aviso; o detector antigo foi removido. Classificação e recuperação continuam falíveis |
-| Nova política no Azure | Pendente | A correção não foi reexecutada no Azure; não há nova medição de geração, custo ou qualidade do D06 |
+| Apresentação de casos classificados como individuais | Conferida localmente e no Azure | Texto fixo aplicado a todo esse tipo, com citações e aviso; 12 de 12 individuais na nova rodada seguiram esse caminho. Classificação e recuperação continuam falíveis |
+| Nova política no Azure | Medida em 10 de outubro de 2026 | Uma resposta para cada uma das 24 perguntas do novo conjunto: 22 de 23 casos comparáveis conforme o contrato; uma divergência entre pergunta ambígua e sem evidência. O teste histórico D06 foi preservado |
 | Interações com o Copilot: prompts do guia, exemplo de pedido de mudança e modo construtor | Pendente | Executar no VS Code e registrar as respostas |
 | Custo | Pendente | Medir o custo no Cost Management após uma execução completa |
 
