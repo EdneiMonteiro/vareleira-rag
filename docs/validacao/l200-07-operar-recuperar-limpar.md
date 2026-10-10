@@ -57,6 +57,10 @@ A listagem de atribuições usou o ARM, sem depender da resolução no Microsoft
 gerenciadas já removidas. Registro e principal de login foram conferidos separadamente no Entra ID.
 Nenhum recurso desta rodada permaneceu ativo.
 
+A [correção posterior](l200-correcao-v2.md#acesso-e-encerramento) teve uma rodada própria,
+também removida e conferida. Seu resumo de limpeza preserva os mesmos sete grupos e oito papéis
+preexistentes. As duas rodadas e suas medições permanecem separadas.
+
 ## Revisão editorial e documentação
 
 Os sete guias foram lidos integralmente contra o guia de estilo do mantenedor: objetivo, cenários,

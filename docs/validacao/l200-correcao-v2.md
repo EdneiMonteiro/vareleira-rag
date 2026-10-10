@@ -112,7 +112,14 @@ leitura de blob, administração de índices e leitura administrativa do armazen
 
 A consulta de custos recebeu HTTP 200 sem linhas disponíveis; não confirmou o valor total da rodada.
 Aplicação, pipeline, registro, principal e credencial próprios foram removidos após guardar o resultado.
-A exclusão do grupo e o expurgo dos modelos continuam sendo conferidos no encerramento desta rodada.
+A exclusão do grupo e o expurgo dos modelos concluíram. A conferência final confirmou grupo ausente,
+nenhuma atribuição das identidades próprias, registro e principal de login ausentes e modelos
+expurgados. Sete grupos e oito papéis do operador foram preservados, assim como outros recursos
+em exclusão reversível.
+
+O [resumo sanitizado da limpeza](l200-correcao-limpeza-sumario.json) registra o encerramento.
+A exclusão do grupo levou 1.640,5 s; a espera pelo ambiente Container Apps foi acompanhada sem
+enviar nova exclusão. Não restam recursos desta rodada nem servidores locais de validação em execução.
 
 ## Limites da entrega
 

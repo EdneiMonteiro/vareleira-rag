@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "conferido_em": "2026-10-10T14:20:18.6948571Z",
+  "grupo_proprio_ausente": true,
+  "aplicacao_e_revisoes_removidas": true,
+  "objetos_l200_removidos": 4,
+  "indice_l100_preservado_antes_de_excluir_grupo": true,
+  "registro_e_principal_login_ausentes": true,
+  "credencial_propria_removida": true,
+  "atribuicoes_proprias_remanescentes": 0,
+  "modelos_expurgados": true,
+  "outros_recursos_excluidos_preservados": true,
+  "grupos_preexistentes_preservados": 7,
+  "papeis_operador_preservados": 8,
+  "duracao_remocao_grupo_s": 1640.5,
+  "avaliacao_nova": "16/18, sem descartes e com duas divergências de classificação",
+  "avaliacao_original_preservada": "11/18",
+  "custo_total_confirmado": false,
+  "codigo_avaliado": "2c39a21e9437e6f7a4f2edf7c9ca4b1fdbb729f1"
+}
