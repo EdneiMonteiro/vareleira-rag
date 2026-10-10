@@ -52,20 +52,6 @@ class NormalizacaoEDeteccaoTests(unittest.TestCase):
             with self.subTest(pergunta=pergunta):
                 self.assertFalse(lp.parece_contratacao_individual(pergunta))
 
-    def test_veredito_detecta_afirmar_ou_negar_a_cobertura_de_um_caso(self):
-        sim = ["Sim, está coberto.", "Não. O seguro não indeniza bens portáteis.", "  \"Sim!\" Seu caso tem cobertura.",
-               "Seu seguro cobre esse caso.", "Seu seguro não paga isso.", "O sinistro será indenizado.",
-               "O imóvel não está coberto.", "Você tem direito à indenização."]
-        nao = ["Não há carência nas coberturas do produto.", "A regra geral exclui bens portáteis levados para fora.",
-               "Danos elétricos é uma cobertura adicional e só vale se estiver contratada.",
-               "Existe uma cobertura adicional para danos elétricos."]
-        for texto in sim:
-            with self.subTest(texto=texto):
-                self.assertTrue(lp.afirma_veredito(texto))
-        for texto in nao:
-            with self.subTest(texto=texto):
-                self.assertFalse(lp.afirma_veredito(texto))
-
 
 class EvidenciasTests(unittest.TestCase):
     def verificar(self, *evidencias, resultados=None):
@@ -125,23 +111,32 @@ class PoliticaTests(unittest.TestCase):
         decisao = self.aplicar(saida(), pergunta="O meu seguro cobre danos elétricos?")
         self.assertEqual((decisao.tipo, decisao.tipo_do_modelo), (lp.CONTRATACAO_INDIVIDUAL, lp.DOCUMENTADA))
         self.assertEqual(decisao.aviso, lp.AVISO_CONTRATACAO_INDIVIDUAL)
+        self.assertEqual(decisao.texto, lp.TEXTO_SEM_VEREDITO, "a regra do programa também tira o texto livre do modelo")
         self.assertEqual(decisao.situacao, lp.RESPONDIDA)
 
-    def test_veredito_do_modelo_sobre_o_caso_e_trocado_pelo_texto_padrao_mantendo_as_evidencias(self):
-        decisao = self.aplicar(saida(lp.CONTRATACAO_INDIVIDUAL, "Sim, seu seguro cobre isso."))
-        self.assertEqual(decisao.texto, lp.TEXTO_SEM_VEREDITO)
-        self.assertEqual(len(decisao.evidencias), 1)
-        self.assertEqual(decisao.aviso, lp.AVISO_CONTRATACAO_INDIVIDUAL)
-
-    def test_contratacao_individual_sem_veredito_mantem_o_texto_do_modelo(self):
-        decisao = self.aplicar(saida(lp.CONTRATACAO_INDIVIDUAL, "A regra geral é a cláusula 3.1."))
-        self.assertEqual(decisao.texto, "A regra geral é a cláusula 3.1.")
+    def test_contratacao_individual_mostra_sempre_o_texto_do_programa_e_mantem_as_evidencias_literais(self):
+        respostas = {
+            "veredito explícito": "Sim, seu seguro cobre isso.",
+            "veredito atenuado no início": "Em regra, não. A regra geral está na cláusula 3.1.",
+            "veredito atenuado no meio": "A regra geral é a cláusula 3.1, e esse caso se encaixa nessa exclusão geral.",
+            "veredito no fim da resposta": "A regra geral exige que a cobertura conste da apólice individual. Portanto, não.",
+            "regra geral sem veredito": "A regra geral é a cláusula 3.1.",
+        }
+        esperadas = (lp.Evidencia("VLAR-CG-1_0-004", "as coberturas adicionais são contratadas à parte"),)
+        for rotulo, resposta in respostas.items():
+            with self.subTest(rotulo=rotulo):
+                decisao = self.aplicar(saida(lp.CONTRATACAO_INDIVIDUAL, resposta))
+                self.assertEqual((decisao.situacao, decisao.tipo, decisao.texto, decisao.aviso),
+                                 (lp.RESPONDIDA, lp.CONTRATACAO_INDIVIDUAL, lp.TEXTO_SEM_VEREDITO, lp.AVISO_CONTRATACAO_INDIVIDUAL))
+                self.assertEqual(decisao.evidencias, esperadas)
 
     def test_sem_evidencia_e_fora_de_escopo_usam_o_texto_do_programa_e_ignoram_o_do_modelo(self):
         for tipo, esperado in ((lp.SEM_EVIDENCIA, lp.MENSAGEM_SEM_EVIDENCIA), (lp.FORA_DE_ESCOPO, lp.MENSAGEM_FORA_DE_ESCOPO)):
-            with self.subTest(tipo=tipo):
-                decisao = self.aplicar(saida(tipo, "Sim, cobre tudo!"))
-                self.assertEqual((decisao.situacao, decisao.texto, decisao.evidencias), (lp.RECUSADA, esperado, ()))
+            for pergunta in ("Qual é a franquia de danos elétricos?", "O meu seguro cobre danos elétricos?"):
+                with self.subTest(tipo=tipo, pergunta=pergunta):
+                    decisao = self.aplicar(saida(tipo, "Sim, cobre tudo!"), pergunta=pergunta)
+                    self.assertEqual((decisao.situacao, decisao.texto, decisao.evidencias, decisao.aviso),
+                                     (lp.RECUSADA, esperado, (), ""))
 
     def test_pergunta_ambigua_mostra_o_esclarecimento_do_modelo_ou_o_padrao(self):
         decisao = self.aplicar(saida(lp.AMBIGUA, "Prazo de quê?", []))
@@ -156,12 +151,15 @@ class PoliticaTests(unittest.TestCase):
             "citação inventada": saida(evidencias=[{"fonte": "VLAR-CG-1_0-004", "citacao": "Todas as coberturas estão incluídas sempre."}]),
             "resposta vazia": saida(resposta="  "),
             "tipo inexistente": saida(tipo="outro"),
+            "individual sem evidências": saida(lp.CONTRATACAO_INDIVIDUAL, "Em regra, não.", []),
+            "individual com citação inventada": saida(lp.CONTRATACAO_INDIVIDUAL, "Em regra, não.", [
+                {"fonte": "VLAR-CG-1_0-004", "citacao": "Todas as coberturas estão incluídas sempre."}]),
         }
         for rotulo, dados in casos.items():
             with self.subTest(rotulo=rotulo):
                 decisao = self.aplicar(dados)
                 self.assertEqual(decisao.situacao, lp.DESCARTADA)
-                self.assertEqual((decisao.texto, decisao.evidencias), ("", ()))
+                self.assertEqual((decisao.texto, decisao.aviso, decisao.evidencias), ("", "", ()))
                 self.assertTrue(decisao.problemas)
 
     def test_uma_citacao_inventada_descarta_a_resposta_mesmo_com_outras_validas(self):
@@ -192,7 +190,7 @@ class ContratoETextosTests(unittest.TestCase):
         for tipo in lp.TIPOS:
             self.assertIn(tipo, lp.INSTRUCOES_COMPLETAS)
         for exigido in ("exatamente como está", f"{lp.MINIMO_DA_CITACAO} caracteres", "<trecho>", "conhecimento próprio",
-                        "sem afirmar nem negar"):
+                        "sem afirmar nem negar", "O programa não mostra esse texto"):
             self.assertIn(exigido, lp.INSTRUCOES_COMPLETAS)
 
     def test_aviso_cita_clausulas_que_existem_nas_condicoes_gerais(self):
@@ -273,6 +271,9 @@ class PerguntarComPoliticaTests(unittest.TestCase):
                       "uma regra do programa mudou o tipo)", texto)
         self.assertIn("Aviso:", texto)
         self.assertIn("cláusulas 1.3 e 11.1", texto)
+        self.assertIn(lp.TEXTO_SEM_VEREDITO, " ".join(texto.split()), "o texto é quebrado em linhas ao imprimir")
+        self.assertNotIn("Resposta de teste.", texto, "o texto livre do modelo não chega à pessoa")
+        self.assertIn("Evidências conferidas", texto)
 
     def test_sem_evidencia_e_fora_de_escopo_viram_recusas_com_o_texto_do_programa(self):
         for tipo, mensagem in ((lp.SEM_EVIDENCIA, lp.MENSAGEM_SEM_EVIDENCIA), (lp.FORA_DE_ESCOPO, lp.MENSAGEM_FORA_DE_ESCOPO)):

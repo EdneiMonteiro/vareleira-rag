@@ -469,16 +469,31 @@ class AvaliarRespostasCLITests(unittest.TestCase):
         self.assertIn("[FALHA]", saida)
         self.assertIn("frase que não existe", saida)
 
-    def test_respostas_perfeitas_no_ajuste_dao_tudo_certo_e_mostram_o_texto_so_nas_falhas(self):
+    def test_respostas_perfeitas_no_ajuste_acertam_tipo_e_situacao_e_o_texto_do_programa_nao_conta_fatos(self):
+        ajuste = list(self.conjuntos["ajuste"].values())
+        individuais = [item for item in ajuste if item.tipo_esperado == lp.CONTRATACAO_INDIVIDUAL]
+        self.assertTrue(individuais, "o ajuste tem perguntas de contratação individual")
+        fatos_individuais = sum(len(item.fatos) for item in individuais)
+        fatos_esperados = sum(len(item.fatos) for item in ajuste)
         codigo, saida = self.avaliar()
         self.assertEqual(codigo, lab_comum.CODIGO_OK, saida)
         for esperado in ("Respostas · conjunto ajuste · 12 pergunta(s) · recuperação obrigatória · modo vetorial · k 3",
-                         "Tipo da pergunta correto ........", "12 de 12", "Falsas recusas ..", "Falsas respostas ..",
+                         "Falsas recusas ..", "Falsas respostas ..",
                          "categoria       perguntas  tipo certo  situação certa  fatos", "composta"):
             self.assertIn(esperado, saida)
-        self.assertEqual(saida.count("[ok]"), 12)
-        self.assertNotIn("[falha]", saida)
-        self.assertNotIn("Quanto tempo a Vareleira", saida, "sem falhas, o texto das perguntas não aparece")
+        self.assertRegex(saida, r"Tipo da pergunta correto \.+ 12 de 12")
+        self.assertRegex(saida, r"Situação correta \.+ 12 de 12")
+        # Na contratação individual o texto é do programa: os fatos que o modelo "perfeito" escreve não chegam à pessoa.
+        self.assertEqual(saida.count("[ok]"), 12 - len(individuais))
+        self.assertEqual(saida.count("[falha]"), len(individuais))
+        for item in individuais:
+            self.assertRegex(saida, rf"\[falha\] {item.id}\s+individual\s+tipo contratacao_individual\s+respondida\s+"
+                                    rf"fatos 0/{len(item.fatos)}\b")
+            self.assertIn(f'"{item.pergunta}"', saida, "a falha mostra o texto da pergunta")
+        self.assertRegex(saida, rf"Fatos esperados presentes \.+ {fatos_esperados - fatos_individuais} de {fatos_esperados}\b")
+        total = len(individuais)
+        self.assertRegex(saida, rf"individual\s+{total}\s+{total}\s+{total}\s+0/{fatos_individuais}\b")
+        self.assertNotIn("Quanto tempo a Vareleira", saida, "só as falhas mostram o texto das perguntas")
         self.assertEqual(len(self.geracao.chamadas), 12)
         self.assertEqual(len(self.embeddings.chamadas) - self.chamadas_de_embeddings, 12, "uma busca vetorial por pergunta")
 

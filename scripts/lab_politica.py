@@ -1,7 +1,7 @@
 """Regras do Desafio 04 (L100): classificar a pergunta, exigir evidência verificável e recusar o que os documentos não autorizam.
 
-O modelo classifica a pergunta e propõe a resposta; o programa decide o que a pessoa vê. Os textos de recusa e
-de aviso vêm deste arquivo, não do modelo, e cada evidência é conferida contra o texto dos trechos recuperados.
+O modelo classifica a pergunta e propõe a resposta; o programa decide o que a pessoa vê. Os textos de recusa, de aviso e o da
+contratação individual vêm deste arquivo, não do modelo, e cada evidência é conferida contra o texto dos trechos recuperados.
 Todas as funções são puras: podem ser testadas sem Azure.
 """
 
@@ -44,7 +44,7 @@ MENSAGEM_ESCLARECIMENTO = "Preciso de mais detalhes para responder. Sobre qual c
 AVISO_CONTRATACAO_INDIVIDUAL = (
     "Esta resposta explica a regra geral do produto. Só a apólice individual comprova as coberturas contratadas "
     "(Condições Gerais, cláusulas 1.3 e 11.1). Para saber se o seu caso está coberto, consulte o Atendimento ou o seu corretor.")
-TEXTO_SEM_VEREDITO = (
+TEXTO_SEM_VEREDITO = (  # fixo em toda contratação individual: a regra geral fica nas citações conferidas, mostradas abaixo dele
     "As Condições Gerais trazem as regras abaixo, mas elas não permitem dizer se o seu caso está coberto.")
 
 INSTRUCOES_COMPLETAS = """\
@@ -59,7 +59,7 @@ Primeiro, classifique a pergunta em "tipo":
 
 Depois, preencha os campos conforme o tipo:
 - documentada: em "resposta", explique a regra.
-- contratacao_individual: em "resposta", explique a regra geral que se aplica ao assunto, sem afirmar nem negar que o caso da pessoa está coberto e sem prometer pagamento.
+- contratacao_individual: em "resposta", resuma em uma frase a regra geral que se aplica ao assunto, sem afirmar nem negar que o caso da pessoa está coberto e sem prometer pagamento. O programa não mostra esse texto: a pessoa lê uma frase fixa do programa e as citações de "evidencias". Por isso, cite em "evidencias" as frases dos trechos que trazem a regra geral do assunto, inclusive condições e exclusões.
 - ambigua: em "resposta", escreva uma única pergunta de esclarecimento.
 - sem_evidencia e fora_de_escopo: deixe "resposta" vazia e "evidencias" vazia.
 
@@ -104,12 +104,6 @@ CONTRATO_COMPLETO = Contrato(
 
 _POSSESSIVOS = {"meu", "minha", "meus", "minhas", "nosso", "nossa", "nossos", "nossas"}
 _ASSUNTOS = {"seguro", "apolice", "contrato", "cobertura", "sinistro", "imovel", "casa", "apartamento"}
-_VEREDITO = re.compile(
-    r"^\W*(sim|nao)\s*[,.:;!]"
-    r"|\bseu seguro (nao )?(cobre|paga|indeniza)\b"
-    r"|\b(esta|nao esta) cobert[oa]\b"
-    r"|\b(sera|nao sera) indenizad[oa]\b"
-    r"|\bvoce (nao )?tem direito\b")
 
 
 def normalizar(texto: str) -> str:
@@ -129,14 +123,13 @@ def _sem_acentos(texto: str) -> str:
 
 
 def parece_contratacao_individual(pergunta: str) -> bool:
-    """Regra do programa, independente do modelo: um possessivo ("meu", "minha") junto de um assunto de seguro."""
+    """Regra do programa, independente do modelo: um possessivo ("meu", "minha") junto de um assunto de seguro.
+
+    É uma heurística e erra nos dois sentidos: não reconhece o caso da pessoa escrito sem possessivo e reconhece
+    perguntas em que o possessivo não se refere ao caso dela. Ela complementa a classificação do modelo; não a substitui.
+    """
     palavras = set(re.findall(r"[a-z]+", _sem_acentos(pergunta)))
     return bool(palavras & _POSSESSIVOS) and bool(palavras & _ASSUNTOS)
-
-
-def afirma_veredito(resposta: str) -> bool:
-    """Detecta frases que afirmam ou negam a cobertura de um caso: "Sim.", "Não.", "seu seguro cobre", "será indenizado"."""
-    return bool(_VEREDITO.search(_sem_acentos(resposta)))
 
 
 @dataclass(frozen=True)
@@ -190,6 +183,13 @@ class Decisao:
 
 
 def aplicar_politica(saida: Mapping[str, Any], resultados: Sequence[Mapping[str, Any]], pergunta: str) -> Decisao:
+    """Decide o que a pessoa vê a partir da saída do modelo, dos trechos recuperados e da pergunta.
+
+    Em contratacao_individual o texto do modelo nunca é mostrado: a pessoa vê TEXTO_SEM_VEREDITO, as citações conferidas
+    e o aviso, sem que o programa tente reconhecer vereditos escritos de formas variadas. O tipo ainda depende da
+    classificação do modelo e da regra por palavras, ambas falíveis: uma pergunta sobre o caso da pessoa que nenhuma
+    das duas reconheça segue o caminho de `documentada` e mostra o texto do modelo.
+    """
     tipo_do_modelo = str(saida.get("tipo"))
     if tipo_do_modelo not in TIPOS:
         return Decisao(DESCARTADA, tipo_do_modelo, tipo_do_modelo, "", "", (), ("o tipo informado pelo modelo não existe",))
@@ -214,6 +214,6 @@ def aplicar_politica(saida: Mapping[str, Any], resultados: Sequence[Mapping[str,
     if problemas:
         return Decisao(DESCARTADA, tipo, tipo_do_modelo, "", "", (), tuple(problemas), curtas)
     if tipo == CONTRATACAO_INDIVIDUAL:
-        texto = TEXTO_SEM_VEREDITO if afirma_veredito(resposta) else resposta
-        return Decisao(RESPONDIDA, tipo, tipo_do_modelo, texto, AVISO_CONTRATACAO_INDIVIDUAL, tuple(evidencias), (), curtas)
+        return Decisao(RESPONDIDA, tipo, tipo_do_modelo, TEXTO_SEM_VEREDITO, AVISO_CONTRATACAO_INDIVIDUAL,
+                       tuple(evidencias), (), curtas)
     return Decisao(RESPONDIDA, tipo, tipo_do_modelo, resposta, "", tuple(evidencias), (), curtas)

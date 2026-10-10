@@ -231,9 +231,13 @@ def traduzir_erro_do_agente(erro: Exception, args: argparse.Namespace) -> tuple[
 
 
 def _falha_da_busca(busca: FerramentaBusca | None, args: argparse.Namespace) -> None:
-    if busca is not None and busca.erro is not None:
-        mensagem, codigo = lab_indexacao.traduzir_erro_indexacao(busca.erro, args)
-        raise ErroLab(mensagem, codigo) from busca.erro
+    if busca is None or busca.erro is None:
+        return
+    if isinstance(busca.erro, ErroLab):
+        # Já tem a mensagem e o código certos: traduzir de novo o transformaria em "erro inesperado" (código 4).
+        raise busca.erro
+    mensagem, codigo = lab_indexacao.traduzir_erro_indexacao(busca.erro, args)
+    raise ErroLab(mensagem, codigo) from busca.erro
 
 
 async def _perguntar(cliente: Any, agente: Any, entrada: str, esforco: str) -> Any:

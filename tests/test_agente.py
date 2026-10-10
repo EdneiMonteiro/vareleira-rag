@@ -231,6 +231,18 @@ class AgenteMafTests(unittest.TestCase):
         self.assertIn("Tipo da pergunta: documentada nos trechos", saida)
         self.assertNotIn("Vou buscar", saida)
 
+    def test_contratacao_individual_mostra_o_texto_do_programa_e_as_citacoes_conferidas(self):
+        roteiro = [("buscar", self.pergunta), self.final(lp.CONTRATACAO_INDIVIDUAL, "Em regra, não.")]
+        codigo, saida = self.agente(roteiro)
+        self.assertEqual(codigo, lab_comum.CODIGO_OK, saida)
+        identificador, texto = ServicoRespostasFalso.primeiro_trecho(self.servico.pedidos[1])
+        citacao = " ".join(texto.strip()[-60:].split())
+        lido = " ".join(saida.split())  # o texto é quebrado em linhas ao imprimir
+        for esperado in ("Tipo da pergunta: contratação individual", lp.TEXTO_SEM_VEREDITO, f'[{identificador}] "{citacao}"',
+                         "cláusulas 1.3 e 11.1"):
+            self.assertIn(esperado, lido)
+        self.assertNotIn("Em regra, não.", saida, "o texto livre do modelo não chega à pessoa")
+
     def test_o_pedido_ao_modelo_leva_as_instrucoes_a_ferramenta_e_as_opcoes_de_privacidade_e_custo(self):
         self.agente([("buscar", self.pergunta), self.final()])
         primeiro, segundo = self.servico.pedidos
@@ -321,6 +333,18 @@ class AgenteMafTests(unittest.TestCase):
         self.assertNotIn("Recusa", saida, "a recusa do agente não esconde a falha da busca")
         self.assertNotIn("Traceback", saida)
         self.assertNotIn("Function failed", saida, "o log bruto do MAF fica de fora sem --detalhes")
+
+    def test_erro_do_laboratorio_levantado_pela_busca_chega_com_a_mensagem_e_o_codigo_originais(self):
+        menor = DIMENSOES // 2
+        self.embeddings.dimensoes = menor  # o deployment passa a devolver vetores incompatíveis com o índice
+        codigo, saida = self.agente([("buscar", self.pergunta), self.sem_evidencias(lp.SEM_EVIDENCIA)])
+        self.assertEqual(codigo, lab_comum.CODIGO_USO, "o código 1 do erro original não vira o 4 de defeito do script")
+        lido = " ".join(saida.split())
+        self.assertIn(f"devolveu vetores de {menor} dimensões, mas o índice espera {DIMENSOES}", lido)
+        self.assertIn(f"Use --dimensoes {menor} com um índice novo", lido)
+        self.assertNotIn("Erro inesperado do script", saida)
+        self.assertNotIn("Recusa", saida, "a recusa do agente não esconde a falha da busca")
+        self.assertNotIn("Traceback", saida)
 
     def test_detalhes_mostra_o_erro_bruto_da_ferramenta(self):
         self.embeddings.erro = erro_openai("NotFoundError", 404)
