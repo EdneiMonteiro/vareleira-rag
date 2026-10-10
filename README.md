@@ -17,6 +17,8 @@ O L100 usa Python, Microsoft Agent Framework (MAF) e infraestrutura Azure em Bic
 foram executados no Azure e aprovados pelo mantenedor. O L200 reutiliza a base e a política, acrescenta
 Text Split, comparação dos índices e chat FastAPI em Azure Container Apps com identidade gerenciada
 e autenticação obrigatória. O fechamento da avaliação e da limpeza L200 está em seus registros.
+O teste final do chat teve 11 de 18 casos conformes; a entrega continua experimental e não homologa
+o atendimento completo.
 
 No L100 e L200, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
 `gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` em 9 e 10 de outubro de 2026.
@@ -201,7 +203,7 @@ sintéticos do repositório.
 | L100, Desafio 07: Key Vault, service principal e privilégio mínimo | Disponível e validado no Azure: identidade temporária, dois papéis, cinco operações, pergunta como aplicação e limpeza conferidos |
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
-| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; avaliação final e limpeza em fechamento nos registros |
+| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; teste final 11 de 18, reprovado para o contrato completo; limites e limpeza nos registros |
 | Níveis L300 e L400 | Planejados |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),

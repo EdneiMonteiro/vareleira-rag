@@ -47,6 +47,17 @@ Rodada intermediária do coordenador, após integrar ingestão, chat e infraestr
 Essa contagem antecede o avaliador HTTP adicional do Desafio 06. O fechamento final registra
 a suíte após os últimos arquivos e correções, sem somar execuções repetidas como casos novos.
 
+Depois do avaliador e das correções de limite de `k` e identificadores longos:
+`.\.venv\Scripts\python.exe -m unittest discover -s tests` passou com **592 testes** em 60,6 s.
+`pip check`, lint/build de `infra\main.bicep` e `infra\l200.bicep` e `node --check web\app.js` passaram.
+As verificações mecânicas dos 14 guias conferiram 159 blocos PowerShell sem erro de sintaxe.
+Os 108 blocos originais L100 foram preservados.
+
+Na limpeza, o verificador L100 recebeu inicialmente um comando documental sem o obrigatório
+`--modelos` e parou antes de consultar serviços. A família de comandos foi corrigida nos guias L200
+01, 03 e 07; a execução com o parâmetro passou. Essa correção foi documental e não mudou código,
+gabarito ou resultados da rodada final.
+
 ## Limites
 
 O ambiente de implantação tinha permissões suficientes para criar recursos e atribuir papéis.

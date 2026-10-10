@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Avaliador e conjunto sintético disponíveis; o resultado da execução final fica no registro separado. |
+| Situação | Exercício executável e medido no Azure: 11 de 18 casos conformes. Duas divergências e cinco descartes HTTP 503 impedem homologar o conjunto; veja o registro. |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento. |
 | Resultado | Relatório de uma resposta por pergunta, com contrato esperado, erros, apresentação e consumo conhecido, sem registrar o texto da conversa. |
 | Custo | Perguntas ao chat consomem modelos e requisições. Descartes também podem consumir tokens; seu consumo pode não aparecer no relatório público. |
@@ -232,7 +232,10 @@ Não mantenha a aplicação ativa esperando a atualização da fatura.
 
 ## Situação da validação
 
-O conjunto e o avaliador têm origem separada. A rodada final e seus resultados por caso ficam em
+O conjunto e o avaliador têm origem separada. A rodada final teve 11 de 18 casos conformes,
+duas divergências de classificação e cinco HTTP 503 por descarte. O avaliador retornou código 3;
+o teste completo ficou reprovado. Código e gabarito permaneceram congelados, sem repetição dos casos.
+Os resultados por identificador ficam em
 [docs/validacao/l200-06-avaliar-chat.md](../../docs/validacao/l200-06-avaliar-chat.md).
 As seis consultas de fumaça, a comparação local da política L100 e a rodada Azure L100 de 24 perguntas
 são medições distintas. Nenhuma delas substitui o teste HTTP L200 ou uma revisão humana de fidelidade.

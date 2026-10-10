@@ -23,6 +23,11 @@ glossário, boas práticas e fontes conforme o [padrão de autoria](guia-de-auto
 O roteiro inicialmente publicado no commit `d4a93cc` era planejamento; esta versão registra
 a implementação iniciada após a autorização posterior do mantenedor.
 
+O teste final HTTP teve 11 de 18 casos conformes, duas divergências e cinco descartes HTTP 503.
+As atividades foram executadas, mas o conjunto completo de atendimento ficou reprovado.
+O [registro do Desafio 06](validacao/l200-06-avaliar-chat.md) conserva a medição única, sem alterar
+perguntas ou parâmetros para eliminar os erros.
+
 ## Continuidade com o L100
 
 Os recursos Azure da validação anterior foram removidos. Reaproveitar o L100 significa começar
@@ -144,7 +149,7 @@ L300 e L400 ainda não têm implementação autorizada nesta entrega.
 | Vetorização integrada | Geração de vetores incorporada ao caminho de ingestão ou de consulta |
 | Identidade gerenciada | Identidade vinculada a um recurso ou criada separadamente, cuja credencial é administrada pelo Azure |
 | Ingresso | Configuração que determina como requisições chegam à aplicação |
-| Revisão da aplicação | Versão implantada de sua configuração e imagem; a estratégia de recuperação será exercitada no nível |
+| Revisão da aplicação | Versão implantada de sua configuração e imagem; sua recuperação é exercitada no nível |
 
 ## Fontes e autoria
 

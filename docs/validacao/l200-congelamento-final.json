@@ -1,0 +1,35 @@
+{
+  "congeladoEm": "2026-10-10T12:21:49.7017716Z",
+  "commit": "e57c5959cc8608309ccde8e8d4c9f33749f980b4",
+  "casos_sha256": "94c1f0ed73e38076a0b268b44a3110bd4a4c8ec18c94bfc587bd0ef91c86be01",
+  "imagem_digest": "sha256:826c13b030f0d33ec8ceb94f42d7c78d9269aded41aefa3a41f994731e4598cc",
+  "run": "cq3",
+  "configuracao": {
+    "VARELEIRA_EXIGIR_AUTENTICACAO": "true",
+    "VARELEIRA_DEPLOYMENT_EMBEDDINGS": "embeddings",
+    "VARELEIRA_ESFORCO": "low",
+    "VARELEIRA_INDICE": "vareleira-lar-l200",
+    "VARELEIRA_DIMENSOES": "1536",
+    "VARELEIRA_DEPLOYMENT_GERACAO": "geracao",
+    "VARELEIRA_K": "3",
+    "VARELEIRA_MODO_BUSCA": "hibrida"
+  },
+  "modelos": [
+    {
+      "deployment": "embeddings",
+      "modelo": "text-embedding-3-small",
+      "versao": "1",
+      "tipo": "GlobalStandard"
+    },
+    {
+      "deployment": "geracao",
+      "modelo": "gpt-5.4-mini",
+      "versao": "2026-03-17",
+      "tipo": "GlobalStandard"
+    }
+  ],
+  "revisao_pronta": true,
+  "modo": "Single",
+  "tokens_de_teste": "identidade temporaria, nao pessoa",
+  "codigo_inalterado": true
+}

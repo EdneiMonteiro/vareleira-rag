@@ -201,7 +201,7 @@ python scripts\carregar_documentos.py --conta $conta --tenant-id $tenant --execu
 python scripts\verificar_documentos.py --conta $conta --tenant-id $tenant
 python scripts\indexar_documentos.py --conta $conta --busca $busca --modelos $modelos --tenant-id $tenant
 python scripts\indexar_documentos.py --conta $conta --busca $busca --modelos $modelos --tenant-id $tenant --executar
-python scripts\verificar_indice.py --busca $busca --tenant-id $tenant
+python scripts\verificar_indice.py --busca $busca --modelos $modelos --tenant-id $tenant
 ```
 
 **Resultado esperado:** conferência dos três blobs aprovada; `vareleira-lar-l100` com 54 trechos
@@ -220,11 +220,12 @@ Para alterar Bicep, exija `lint`, `build` e um novo `what-if`; gerar uma altera�
 
 ## Conferência do resultado
 
-Repita somente os verificadores, que não gravam dados:
+Repita somente os verificadores, que não gravam dados. A conferência vetorial do índice
+calcula embeddings de perguntas conhecidas, cobrados por uso:
 
 ```powershell
 python scripts\verificar_documentos.py --conta $conta --tenant-id $tenant
-python scripts\verificar_indice.py --busca $busca --tenant-id $tenant
+python scripts\verificar_indice.py --busca $busca --modelos $modelos --tenant-id $tenant
 ```
 
 Guarde revisão, região, configuração dos deployments e resultado de cada comando em um registro privado.

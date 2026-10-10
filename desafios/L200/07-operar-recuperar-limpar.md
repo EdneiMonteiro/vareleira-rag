@@ -184,10 +184,11 @@ Após aprovar esses alvos, **[altera o Azure]**:
 
 ```powershell
 python scripts\gerenciar_ingestao.py --etapa remover --busca $busca --tenant-id $tenant --executar
-python scripts\verificar_indice.py --busca $busca --tenant-id $tenant
+python scripts\verificar_indice.py --busca $busca --modelos $modelos --tenant-id $tenant
 ```
 
 **Resultado esperado:** quatro objetos removidos e índice L100 preservado.
+A conferência vetorial L100 calcula embeddings de perguntas conhecidas, sem gerar respostas.
 O chat configurado para o índice L200 deixa de responder consultas depois da remoção: encerre sua
 exposição antes, ou escolha conscientemente continuar pelo índice L100 com nova configuração e avaliação.
 Essa etapa não remove registro de imagens, ambiente, logs ou identidades.

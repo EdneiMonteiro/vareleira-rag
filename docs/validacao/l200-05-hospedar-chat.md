@@ -79,3 +79,11 @@ com mais de 128 caracteres eram truncados pela apresentação. Dois trechos de u
 podiam aparecer com o mesmo ID, impedindo localizar a chave inteira. A correção preserva IDs válidos
 de até 1.024 caracteres, limite do Azure AI Search. A imagem final precisa incorporar essa correção
 antes da medição; nenhum caso final foi usado para descobri-la ou corrigir a política.
+
+A correção foi incorporada ao build `cq3`, cuja revisão ficou pronta em modo `Single`.
+Saúde/prontidão `200` e acesso anônimo `401` foram conferidos antes da avaliação.
+A resposta inicial do plano de controle antecedeu a prontidão; a conferência aguardou o recurso
+existente, sem repetir a implantação.
+
+A [rodada final](l200-06-avaliar-chat.md) teve 11 de 18 casos conformes e cinco descartes HTTP 503.
+Transporte e autenticação funcionaram, mas esse resultado não homologa a qualidade completa do chat.

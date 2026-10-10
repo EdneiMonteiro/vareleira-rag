@@ -84,10 +84,10 @@ Autorize separadamente uma exclusão reversível, incluindo o blob exato e o pla
 
 ## Etapa 1: explicar as diferenças dos índices
 
-Execute as conferências sem gravar:
+Execute as conferências sem gravar. O verificador L100 calcula embeddings das perguntas conhecidas:
 
 ```powershell
-python scripts\verificar_indice.py --busca $busca --tenant-id $tenant
+python scripts\verificar_indice.py --busca $busca --modelos $modelos --tenant-id $tenant
 python scripts\gerenciar_ingestao.py --etapa conferir --busca $busca --tenant-id $tenant
 ```
 

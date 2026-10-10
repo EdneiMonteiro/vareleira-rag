@@ -30,16 +30,41 @@ Essa ação é separada do retorno à revisão anterior demonstrado acima.
 Os registros do chat mostraram identificador, rota fechada, status, tempo e causa curta.
 Descarte de política foi identificado como `resposta_descartada`, sem texto bruto ou credencial.
 
-A consulta preliminar ao Cost Management, API `2025-03-01`, recebeu HTTP 200 e zero linhas
-para o dia e grupo da execução. Não há total monetário confirmado. Atraso de cobrança e reutilização
+A consulta preliminar e a posterior à avaliação no Cost Management, API `2025-03-01`,
+receberam HTTP 200 e zero linhas para o dia e grupo da execução. Não há total monetário confirmado.
+Atraso de cobrança e reutilização
 do nome do grupo impedem tratar o retorno como isolamento do custo L200.
 
 ## Limpeza
 
-O plano contempla retirada da credencial pelo identificador específico, registro e principal próprios,
-aplicação e revisões, quatro objetos de busca L200, recursos da rodada e expurgo do recurso de modelos.
-Os resultados de remoção e a comparação final com o inventário inicial serão acrescentados depois da
-execução. Recursos Azure continuam ativos enquanto a avaliação final estiver em andamento.
+| Operação | Resultado conferido |
+| --- | --- |
+| Aplicação e revisões | Aplicação removida após encerrar a rodada final |
+| Objetos da busca L200 | Indexador, skillset, fonte e índice removidos; simulação posterior confirmou ausência dos quatro |
+| Referência L100 | 54 trechos, seis consultas de fumaça e acesso anônimo recusado conferidos antes da exclusão do grupo |
+| Credencial de login | Identificador específico conferido, credencial removida e lista restante vazia |
+| Registro e principal de login | Ambos próprios, removidos e ausência conferida por identificador da aplicação |
+| Grupo exclusivo | Exclusão enviada após inventário completo; na conferência intermediária, estado `Deleting` com somente o ambiente Container Apps ainda presente |
+| Modelos e preservação final | Expurgo específico e comparação final serão conferidos quando a exclusão remota concluir |
+
+A remoção do grupo foi uma única operação. A espera pelo ambiente Container Apps não causou
+novo pedido de exclusão. Não se deixou a aplicação atendendo enquanto os dados de custo eram processados.
+
+## Revisão editorial e documentação
+
+Os sete guias foram lidos integralmente contra o guia de estilo do mantenedor: objetivo, cenários,
+siglas, referentes, sequência operacional, custo, limites e fontes. A releitura corrigiu uma família
+de comandos de conferência sem `--modelos`, sem mudar o código ou o conjunto final.
+
+A prévia Markdown usou Markdig já disponível no PowerShell, sem instalar bibliotecas. Foram
+conferidas 38 tabelas e 108 âncoras internas nos sete guias, sem colunas inconsistentes ou destinos
+ausentes. A inspeção do conteúdo no navegador não encontrou caracteres de substituição nem
+transbordamento horizontal da página; tabelas e código conservaram rolagem própria.
+
+A conferência documental examinou 47 arquivos, links locais, referências e 105 URLs externas reais.
+Sete URLs locais ou parametrizadas dos exemplos ficaram separadas da verificação pública.
+Os 159 blocos PowerShell dos 14 guias passaram na análise de sintaxe, e os 108 L100 permaneceram
+idênticos ao marco anterior. Servidor e aba da prévia foram encerrados, preservando a aba preexistente.
 
 ## Limites
 
