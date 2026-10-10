@@ -2,7 +2,7 @@
 
 | Item | Definição |
 | --- | --- |
-| Situação | Implementação e sete guias disponíveis; atividades Azure e limpeza executadas. O teste final teve 11 de 18 casos conformes e ficou reprovado para o contrato completo |
+| Situação | Implementação e sete guias disponíveis; atividades Azure executadas. A nova avaliação teve 16 de 18 casos conformes, sem descartes; duas divergências de classificação permanecem |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento que concluíram o L100 |
 | Resultado | Comparar duas formas de ingestão e hospedar um chat com fontes, identidade própria e acesso autenticado em Azure Container Apps |
 | Continuidade | Reutilizar documentos sintéticos, inventário, política, testes e parâmetros do L100; reconstruir recursos apenas em destino autorizado |
@@ -27,6 +27,11 @@ O teste final HTTP teve 11 de 18 casos conformes, duas divergências e cinco des
 As atividades foram executadas, mas o conjunto completo de atendimento ficou reprovado.
 O [registro do Desafio 06](validacao/l200-06-avaliar-chat.md) conserva a medição única, sem alterar
 perguntas ou parâmetros para eliminar os erros.
+
+A [correção posterior](validacao/l200-correcao-v2.md) acrescenta referências curtas restritas e
+citações montadas pelo programa. Um conjunto final novo teve 16 de 18 casos conformes e nenhum
+descarte HTTP. Os conjuntos são diferentes; os resultados não constituem comparação controlada
+e não autorizam homologar o atendimento completo.
 
 ## Continuidade com o L100
 

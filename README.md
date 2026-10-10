@@ -18,8 +18,9 @@ foram executados no Azure e aprovados pelo mantenedor. O L200 reutiliza a base e
 Text Split, comparação dos índices e chat FastAPI em Azure Container Apps com identidade gerenciada
 e autenticação obrigatória. Os recursos de validação foram removidos, as identidades temporárias
 foram retiradas e os recursos preexistentes foram preservados.
-O teste final do chat teve 11 de 18 casos conformes; a entrega continua experimental e não homologa
-o atendimento completo.
+O novo teste do chat teve 16 de 18 casos conformes, sem descartes, após uma correção de referências.
+A rodada original com 11 de 18 foi preservada. A entrega continua experimental, com duas divergências
+de classificação e sem homologação do atendimento completo.
 
 No L100 e L200, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
 `gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` em 9 e 10 de outubro de 2026.
@@ -204,7 +205,7 @@ sintéticos do repositório.
 | L100, Desafio 07: Key Vault, service principal e privilégio mínimo | Disponível e validado no Azure: identidade temporária, dois papéis, cinco operações, pergunta como aplicação e limpeza conferidos |
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
-| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; teste final 11 de 18, reprovado para o contrato completo; limpeza concluída e preexistentes preservados |
+| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
 | Níveis L300 e L400 | Planejados |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),

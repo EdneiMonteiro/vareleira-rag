@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável. A primeira rodada teve 11 de 18 casos conformes e permanece registrada; a correção usa desenvolvimento separado e um novo conjunto final. |
+| Situação | Exercício executável. A correção teve 16 de 18 casos conformes, sem descartes; duas divergências de classificação permanecem. A primeira rodada, com 11 de 18, foi preservada. |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento. |
 | Resultado | Relatório de uma resposta por pergunta, com contrato esperado, erros, apresentação e consumo conhecido, sem registrar o texto da conversa. |
 | Custo | Perguntas ao chat consomem modelos e requisições. Descartes também podem consumir tokens; seu consumo pode não aparecer no relatório público. |
@@ -237,17 +237,19 @@ Não mantenha a aplicação ativa esperando a atualização da fatura.
 
 ## Situação da validação
 
-O conjunto e o avaliador têm origem separada. A rodada final teve 11 de 18 casos conformes,
-duas divergências de classificação e cinco HTTP 503 por descarte. O avaliador retornou código 3;
-o teste completo ficou reprovado. Código e gabarito permaneceram congelados, sem repetição dos casos.
+O conjunto e o avaliador têm origem separada. A primeira rodada teve 11 de 18 casos conformes,
+duas divergências de classificação e cinco HTTP 503 por descarte. O avaliador retornou código 3,
+e essa medição permanece intacta. Código e gabarito foram preservados, sem repetição dos casos.
 Os resultados por identificador ficam em
 [docs/validacao/l200-06-avaliar-chat.md](../../docs/validacao/l200-06-avaliar-chat.md).
 As seis consultas de fumaça, a comparação local da política L100 e a rodada Azure L100 de 24 perguntas
 são medições distintas. Nenhuma delas substitui o teste HTTP L200 ou uma revisão humana de fidelidade.
 
 A [correção posterior](../../docs/validacao/l200-correcao-v2.md) foi desenvolvida sem repetir esse teste.
-Referências curtas e citações montadas pelo programa tiveram 14 de 14 casos conformes no desenvolvimento;
-o novo conjunto final foi escrito em outro contexto e congelado separadamente.
+Referências curtas e citações montadas pelo programa tiveram 14 de 14 casos conformes no desenvolvimento.
+O novo conjunto final, escrito em outro contexto, teve 16 de 18 casos conformes e nenhum descarte,
+erro HTTP, transporte ou formato. Duas classificações divergiram; o avaliador voltou a retornar código 3.
+Os conjuntos diferentes não permitem tratar os dois resultados como um benchmark comparativo.
 
 ## Glossário
 

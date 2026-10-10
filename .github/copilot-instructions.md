@@ -83,6 +83,10 @@
   externo. Pessoas autenticadas do tenant são o público atual; não invente filtro por pessoa/documento.
 - Avaliações locais, consultas de fumaça, geração Azure e contrato HTTP são medições diferentes.
   Preserve gabaritos e código congelados após observar o teste final; falhas contam como falhas.
+- A correção L200 envia referências curtas restritas por requisição e monta citações dos trechos
+  selecionados no código, preservando a política L100 e os IDs originais na apresentação.
+  O teste v1 ficou em 11/18 e foi preservado; o novo v2 teve 16/18, sem descartes e com duas
+  divergências. Conjuntos distintos não são uma comparação controlada; a entrega é experimental.
 - O mantenedor indicou uma assinatura de teste fora do repositório para validar
   os laboratórios. Nunca registre o ID dela, de tenants ou de pessoas em arquivos
   versionados; guarde esse tipo de evidência apenas em local privado.

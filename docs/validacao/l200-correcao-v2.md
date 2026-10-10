@@ -46,6 +46,12 @@ Os testes de regressão cobrem referências curtas restritas, remapeamento para 
 originais, citações integrais, campos inválidos e referências desconhecidas.
 Código L100, Bicep, dependências e documentos sintéticos permaneceram inalterados.
 
+Uma conferência adicional de navegador usou serviço explicitamente simulado, sem Azure.
+A página apresentou uma citação de 2.463 caracteres e seu identificador longo completos,
+como texto, sem cortar o fim da condição. O envio pelo botão funcionou; em largura de 390 pixels,
+a página, a citação e a origem não transbordaram horizontalmente. Servidor e aba próprios foram
+encerrados depois da conferência.
+
 ## Novo conjunto final
 
 `dados\l200\avaliacao\chat-teste-v2.json` foi escrito em outro contexto, que leu somente os três
@@ -55,14 +61,70 @@ anteriores. O contrato foi fornecido antes da escrita.
 | Item | Registro |
 | --- | --- |
 | Composição | 18 casos: seis documentados, seis individuais, dois ambíguos, dois sem evidência e dois fora de escopo |
-| Referências de origem | 17 citações literais conferidas pelo autor; não serão injetadas como respostas do modelo |
+| Referências de origem | 17 citações literais conferidas pelo autor; não foram injetadas como respostas do modelo |
 | SHA-256 dos bytes Windows/CRLF | `41e06b32049c955d3f9f71016221a495aa77c4c4f348f86b67dcf69615d89999` |
 | SHA-256 normalizado para LF | `1b30ee43f6df56797c05d02b0ffd5f09f386ff25f2d747464c3c82b0aadd0508` |
-| Situação | Congelado antes da medição; configuração efetiva e resultado serão registrados separadamente |
+| Situação | Congelado antes da medição; configuração efetiva e resultado registrados em arquivos separados |
 
-O teste original, seus bytes e a rodada 11 de 18 foram preservados. A nova medição será feita uma
-vez na aplicação hospedada, após congelar código, imagem e configuração. A aprovação de contrato
-não substitui revisão semântica humana, autorização por documento ou avaliação de produção.
+O teste original, seus bytes e a rodada 11 de 18 foram preservados. A nova medição foi feita uma
+vez na aplicação hospedada, após congelar código, imagem e configuração.
+
+## Resultado final da correção
+
+| Critério | Resultado |
+| --- | --- |
+| Código congelado | `2c39a21e9437e6f7a4f2edf7c9ca4b1fdbb729f1` |
+| Imagem | `sha256:fe6f1f959ff40d9f34eb4bf51c167e31bd69008b8a4c68f681edc08f9f3403f1` |
+| Configuração | Índice L200, busca híbrida, `k=3`, esforço `low`, modo `Single` e autenticação obrigatória |
+| Pedidos HTTP | 18 de 18 receberam HTTP 200, com uma tentativa por pergunta |
+| Contrato esperado | 16 de 18 conformes; duas divergências de classificação |
+| Erros e descartes | Nenhum erro de transporte, formato, resposta descartada ou caso não avaliado |
+| Casos individuais | Cinco de seis conformes, com introdução fixa, aviso e evidências |
+| Uso informado | 390 tokens de embeddings, 31.588 de entrada e 1.978 de saída; 848 de raciocínio já incluídos na saída |
+| Tempo | Aproximadamente 44,9 s para a rodada |
+| Código do avaliador | `3`, porque o conjunto completo ainda contém divergências |
+
+| Tipo esperado | Casos | Conformes |
+| --- | --- | --- |
+| Documentada | 6 | 6 |
+| Contratação individual | 6 | 5 |
+| Ambígua | 2 | 1 |
+| Sem evidência | 2 | 2 |
+| Fora de escopo | 2 | 2 |
+
+L200-V2-11 foi classificado como `sem_evidencia`/`recusada`, quando o gabarito esperava orientação
+individual. L200-V2-14 foi classificado como `documentada`/`respondida`, quando o gabarito esperava
+esclarecimento. Essas divergências foram preservadas; nenhum rótulo ou parâmetro foi alterado para
+aprovar os dois casos.
+
+O [relatório da rodada](l200-chat-avaliacao-final-v2.json) e o
+[congelamento](l200-congelamento-final-v2.json) são arquivos sanitizados, sem perguntas, respostas,
+credenciais ou identificadores privados do destino.
+Os conjuntos v1 e v2 são diferentes: 11 de 18 e 16 de 18 não constituem uma comparação controlada
+de qualidade. A comparação no mesmo conjunto foi a de desenvolvimento, registrada acima.
+
+## Acesso e encerramento
+
+A aplicação foi criada com ingresso interno, recebeu autenticação e só depois foi aberta externamente.
+Token real de identidade temporária permitiu consultar o chat; um cabeçalho artificial de principal
+foi recusado com HTTP 401. A identidade gerenciada da réplica recebeu três recusas HTTP 403:
+leitura de blob, administração de índices e leitura administrativa do armazenamento.
+
+A consulta de custos recebeu HTTP 200 sem linhas disponíveis; não confirmou o valor total da rodada.
+Aplicação, pipeline, registro, principal e credencial próprios foram removidos após guardar o resultado.
+A exclusão do grupo e o expurgo dos modelos continuam sendo conferidos no encerramento desta rodada.
+
+## Limites da entrega
+
+Implementação, testes locais, exercícios de infraestrutura e resultados de avaliação são entregas
+distintas de homologação de negócio. O conjunto completo de contrato ainda ficou reprovado, apesar
+da ausência de descartes na nova rodada. A entrega permanece experimental, com as duas divergências
+explicitamente registradas.
+
+Uma aprovação de contrato não substituiria revisão semântica humana, autorização por documento,
+teste de carga ou avaliação de produção. A classificação por modelo continua falível; gerar um novo
+conjunto até obter um resultado favorável não resolveria essa limitação. As rodadas foram encerradas
+sem repetir as perguntas finais nem ajustar o código com elas.
 
 ## Autoria
 
