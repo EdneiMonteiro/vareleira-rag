@@ -40,10 +40,11 @@ com informações sensíveis ou documentos sem autorização de redistribuição
 Prepare o ambiente com Python 3.12 ou superior e execute, na pasta do projeto:
 
 ```powershell
-python -m pip install -r requirements\l100.txt
+python -m pip install -r requirements\l200.txt
 python -m unittest discover -s tests
 ```
 
+Use `requirements\l100.txt` para uma cópia que contenha somente o L100.
 Os testes não acessam o Azure. Ao alterar o Bicep, execute também
 `az bicep lint --file infra/main.bicep` (a saída deve ficar vazia: o comando termina
 com código 0 mesmo com avisos) e `az bicep build --file infra/main.bicep --stdout`.
@@ -57,6 +58,13 @@ Mantenha as perguntas de `dados\l100\avaliacao\teste.json` fora de guias, regist
 README e deste arquivo; um teste automático confere esses destinos.
 Um teste de saída em `tests\test_avaliacao.py` já contém perguntas do conjunto: a independência
 parcial está registrada na validação do D06. Evite ampliar essa exposição.
+
+No L200, os guias e o avaliador HTTP usam `dados\l200\avaliacao\chat-teste-v1.json`.
+Preserve as perguntas finais fora de guias, registros, prompts de desenvolvimento e conteúdo
+recuperável. Conserve arquivo, código e configuração após a medição; correções de comportamento
+precisam de casos de desenvolvimento e novo teste final. Ao alterar a infraestrutura L200,
+execute `az bicep lint --file infra\l200.bicep` e `az bicep build --file infra\l200.bicep --stdout`.
+Para JavaScript da interface, use `node --check web\app.js` e confira o navegador.
 
 Ao introduzir código, inclua instruções reproduzíveis, dependências com versões
 fixas, testes proporcionais ao comportamento e, se houver serviços pagos, custos

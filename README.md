@@ -12,14 +12,14 @@ recuperação (RAG, do inglês Retrieval-Augmented Generation)** da
 O objetivo é aprender a consultar condições gerais sintéticas de seguro
 residencial, recuperar evidências e responder com fontes verificáveis.
 
-**L100 disponível:** sete desafios de fundamentos, com scripts de console em Python, Microsoft Agent
-Framework (MAF) e infraestrutura Azure descrita em Bicep. Os sete desafios foram executados no Azure,
-em Windows com PowerShell. No Desafio 07, a identidade temporária da aplicação, seus papéis e os
-recursos do laboratório foram removidos após a validação.
-O chat está planejado para o L200.
+**L100 e L200:** fundamentos em console e evolução para ingestão gerenciada e chat.
+O L100 usa Python, Microsoft Agent Framework (MAF) e infraestrutura Azure em Bicep; seus sete desafios
+foram executados no Azure e aprovados pelo mantenedor. O L200 reutiliza a base e a política, acrescenta
+Text Split, comparação dos índices e chat FastAPI em Azure Container Apps com identidade gerenciada
+e autenticação obrigatória. O fechamento da avaliação e da limpeza L200 está em seus registros.
 
-No L100, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
-`gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` em 9 de outubro de 2026.
+No L100 e L200, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
+`gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` em 9 e 10 de outubro de 2026.
 O modelo usado pelo aluno no Copilot e os modelos de autoria e revisão da documentação são escolhas
 separadas. Modelos dos próximos níveis dependem de disponibilidade, cota e avaliação.
 
@@ -88,6 +88,7 @@ descritos no próprio guia.
 | `requirements` | Dependências Python por nível |
 | `tests` | Testes automáticos, sem acesso ao Azure |
 | `docs` | Padrão de autoria dos desafios e registros de validação (`docs/validacao`) |
+| `web` | Página do chat, interação JavaScript e estilos |
 | `.github` | Instruções do Copilot, modelos de issue e de pull request |
 
 Para verificar o projeto localmente, sem Azure, use Python 3.12 ou superior:
@@ -95,9 +96,11 @@ Para verificar o projeto localmente, sem Azure, use Python 3.12 ou superior:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements\l100.txt
+python -m pip install -r requirements\l200.txt
 python -m unittest discover -s tests
 ```
+
+Para uma cópia somente do L100, use `requirements\l100.txt`.
 
 ### Evolução planejada
 
@@ -112,9 +115,28 @@ O L100 contém sete desafios incrementais. Os próximos níveis também terão s
 de migração para mudanças de rede, índice ou identidade, com verificação e recuperação.
 Remova recursos temporários de comparação quando terminar a atividade.
 
-O [roteiro do L200](docs/roteiro-l200.md) define sete desafios, da ingestão gerenciada ao chat
-autenticado em Azure Container Apps. É planejamento: os componentes do nível ainda não foram
-implementados nem provisionados.
+### Continue pelo L200
+
+O [roteiro L200](docs/roteiro-l200.md) explica decisões, reaproveitamento e limites. Comece pela
+reconstrução da base: os recursos das validações anteriores foram removidos, e a continuidade depende
+dos arquivos versionados, não da existência de um ambiente do instrutor.
+
+| Desafio | Prática e registro |
+| --- | --- |
+| [01: reconstruir a base](desafios/L200/01-reconstruir-base.md) | Versão, destino, documentos e índice Python; [registro](docs/validacao/l200-01-reconstruir-base.md) |
+| [02: ingestão gerenciada](desafios/L200/02-ingestao-gerenciada.md) | Identidade da busca e pipeline separado; [registro](docs/validacao/l200-02-ingestao-gerenciada.md) |
+| [03: comparar ingestão](desafios/L200/03-comparar-ingestao.md) | 54 e 21 trechos, três modos e recuperação documental; [registro](docs/validacao/l200-03-comparar-ingestao.md) |
+| [04: chat local](desafios/L200/04-chat-local.md) | Interface, fontes, isolamento e falhas; [registro](docs/validacao/l200-04-chat-local.md) |
+| [05: hospedar o chat](desafios/L200/05-hospedar-chat.md) | Imagem, identidade gerenciada e autenticação na borda; [registro](docs/validacao/l200-05-hospedar-chat.md) |
+| [06: avaliar o chat](desafios/L200/06-avaliar-chat.md) | Avaliador HTTP e conjunto próprio, separado das consultas de fumaça; [registro](docs/validacao/l200-06-avaliar-chat.md) |
+| [07: operar, recuperar e limpar](desafios/L200/07-operar-recuperar-limpar.md) | Revisões, custos e remoções com alvo explícito; [registro](docs/validacao/l200-07-operar-recuperar-limpar.md) |
+
+A ingestão gerenciada recuperou os assuntos das seis consultas de fumaça nos dois índices e três
+modos; isso não é um benchmark independente. O chat teve respostas reais e também descartes HTTP 503.
+A borda recusou pedidos anônimos e um cabeçalho artificial com 401. A identidade gerenciada recebeu
+três recusas 403 fora de seus papéis. A autenticação testada usou identidade temporária, não login
+interativo de uma pessoa; autorização por documento e público restrito a pessoas específicas ficam
+fora desta implementação.
 
 ## O caso do laboratório
 
@@ -179,10 +201,12 @@ sintéticos do repositório.
 | L100, Desafio 07: Key Vault, service principal e privilégio mínimo | Disponível e validado no Azure: identidade temporária, dois papéis, cinco operações, pergunta como aplicação e limpeza conferidos |
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
-| Níveis L200 a L400 | Planejados |
+| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; avaliação final e limpeza em fechamento nos registros |
+| Níveis L300 e L400 | Planejados |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
-no commit `d4a93cc`. As medições posteriores permanecem separadas no
+no commit `d4a93cc`; a [pré-release `v0.1.1-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.1-l100)
+sincroniza aprovação e avaliação posterior, sem incorporar o L200. As medições permanecem separadas no
 [registro do D04](docs/validacao/l100-04-recusar-sem-evidencia.md).
 A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
 Azure quando você executa os comandos deles; permissões, custos e limpeza estão

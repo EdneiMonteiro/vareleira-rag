@@ -7,12 +7,13 @@ fictícios. Este laboratório não representa uma seguradora autorizada, não
 comercializa seguros e não recebe propostas ou documentos de segurados.
 Não presta aconselhamento jurídico, regulatório ou securitário.
 
-O repositório está em desenvolvimento. Hoje existem os sete desafios do L100: o
+O repositório está em desenvolvimento. O L100 oferece sete desafios: o
 armazenamento, a carga e a indexação de documentos sintéticos, respostas com
 fontes e recusas, um agente, a avaliação das respostas e a identidade da
-aplicação com um cofre de segredos. O assistente é um exercício de console: não
-há aplicação de chat. A narrativa de soluções em produção não significa que
-exista uma implementação operacional neste projeto.
+aplicação com um cofre de segredos. O L200 acrescenta ingestão gerenciada, comparação dos índices,
+chat local e hospedagem autenticada em Azure Container Apps. As validações e limitações ficam nos
+registros dos desafios. A narrativa de soluções em produção continua sendo ficção, não uma
+garantia operacional deste projeto.
 
 ## Limites das respostas
 
@@ -51,8 +52,13 @@ registrar aplicações no tenant, e guarda a credencial no cofre. Isso gera cust
 de armazenamento, operações, busca (cobrada por hora enquanto o serviço existir),
 uso de modelos (cobrado por tokens) e operações do cofre, e exige permissões na
 sua assinatura e, no Desafio 07, no tenant.
-Implementações futuras poderão gerar também outros custos de modelos e
-infraestrutura. Quem executa é responsável por verificar preços, limites e
+O L200 acrescenta identidade da busca, fonte, skillset, indexador, registro e construção de imagens,
+ambiente e aplicação Container Apps, identidade gerenciada e logs. Seu provedor de login exige
+registro e credencial próprios no Entra ID. Perguntas do chat e da avaliação são enviadas aos modelos
+do destino autorizado. O endereço externo exige autenticação; o público atual é o tenant configurado,
+sem filtro por pessoa ou documento. Conversas ficam apenas na memória da página.
+
+Quem executa é responsável por verificar preços, limites e
 políticas da organização e por excluir os recursos, as identidades e as
 credenciais que criou; o guia de cada desafio descreve a limpeza.
 

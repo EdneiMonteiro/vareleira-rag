@@ -23,7 +23,8 @@
   não as apresente como condições já existentes no contexto.
 - A direção técnica é Python, Microsoft Agent Framework e Azure, com Bicep
   em `infra`. No L100, os deployments são o `gpt-5.4-mini` (geração) e o
-  `text-embedding-3-small` (embeddings); os modelos dos demais níveis ainda precisam ser definidos.
+  `text-embedding-3-small` (embeddings). O L200 reutiliza esses deployments e suas versões;
+  os modelos dos demais níveis ainda precisam ser definidos.
 - Diferencie o modelo que auxilia a autoria, o modelo usado pelo aluno no
   Copilot e os deployments de geração e embeddings da aplicação Azure.
 
@@ -54,7 +55,8 @@
 - O mantenedor também pediu a implementação do L100, Desafio 02, sob a mesma
   regra, e depois a de todos os desafios do L100 (Desafios 03 a 07), em 9 de outubro de 2026.
   Como o Astra não estava disponível, o Sonnet 5.5 escreveu também a documentação deles, e cada guia
-  declara isso na seção "Autoria". Os níveis L200 a L400 continuam sem implementação até nova orientação.
+  declara isso na seção "Autoria". O L200 recebeu autorização posterior, descrita abaixo;
+  L300 e L400 permanecem planejados.
 - Em 9 de outubro de 2026, o mantenedor pediu uma nova revisão documental do L100 com GPT-6.1 Sol,
   contra seu guia de estilo. Preserve a autoria inicial e identifique o modelo da revisão separadamente.
 - Criar identidades, credenciais ou papéis (Desafio 07) exige autorização explícita de quem administra o
@@ -68,6 +70,19 @@
   O inventário registra os três documentos sintéticos como `aprovada`, sem alteração de seu texto,
   versão, tamanho ou hash. Preserve as medições e as limitações; a aprovação não transforma o
   conjunto de teste em uma amostra independente nem autoriza novas regras ou novos destinos.
+- Em 10 de outubro de 2026, o mantenedor autorizou executar as etapas de publicação e avaliação e,
+  depois, implementar e testar o L200, incluindo validação Azure necessária no destino anterior.
+  Código e testes L200 usam Sonnet 5.5; guias e coordenação usam GPT-6.1 Sol, com Astra indisponível.
+  Preserve essa autorização como registro da execução, não como permissão para outros destinos.
+- O L200 usa fluxo fixo de recuperação, geração e política no chat FastAPI. O agente MAF do L100
+  continua no console. Não apresente o chat como uma nova validação de escolha de ferramentas.
+- Ingestão gerenciada: índice separado, Text Split e embeddings; `secao` e `clausulas` vazios nesta
+  implementação. O indexador lê o prefixo do contêiner; o inventário controla a carga Python.
+- Hospedagem L200: identidade gerenciada para imagem, busca e modelos; segredo somente do provedor
+  de login em Container Apps Secrets. Crie com ingresso interno, confira EasyAuth e só depois abra
+  externo. Pessoas autenticadas do tenant são o público atual; não invente filtro por pessoa/documento.
+- Avaliações locais, consultas de fumaça, geração Azure e contrato HTTP são medições diferentes.
+  Preserve gabaritos e código congelados após observar o teste final; falhas contam como falhas.
 - O mantenedor indicou uma assinatura de teste fora do repositório para validar
   os laboratórios. Nunca registre o ID dela, de tenants ou de pessoas em arquivos
   versionados; guarde esse tipo de evidência apenas em local privado.
@@ -78,7 +93,9 @@
 
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.
-- Ambiente: Python 3.12 ou superior; `python -m pip install -r requirements/l100.txt`.
+- Ambiente: Python 3.12 ou superior; L100 usa `requirements/l100.txt`, L200 usa `requirements/l200.txt`.
 - Testes sem Azure: `python -m unittest discover -s tests`.
 - Bicep: `az bicep lint --file infra/main.bicep` e `az bicep build --file infra/main.bicep --stdout`.
+- Bicep L200: os mesmos comandos com `infra/l200.bicep`; parâmetros sem segredos antes de
+  `build-params --stdout`. Sintaxe da interface: `node --check web/app.js`.
 - Instruções por tipo de arquivo ficam em `.github/instructions/`.

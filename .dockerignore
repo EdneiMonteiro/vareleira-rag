@@ -1,0 +1,34 @@
+# Lista de permissão: só o que o Dockerfile copia entra no contexto de build, tanto no Docker local quanto em um
+# build remoto, que envia o contexto ao serviço. Segredos, histórico do Git, sessões e ambientes virtuais ficam de fora.
+**
+!requirements/l100.txt
+!requirements/l200.txt
+!scripts/lab_comum.py
+!scripts/lab_indexacao.py
+!scripts/lab_geracao.py
+!scripts/lab_politica.py
+!scripts/lab_chat.py
+!scripts/chat_web.py
+!web/index.html
+!web/app.js
+!web/style.css
+
+# A última regra que combina decide: estas exclusões valem mesmo que uma permissão futura as alcance.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.log
+**/__pycache__
+**/*.pyc
+.git
+.github
+.venv
+venv
+.playwright-mcp
+.copilot
+session-state
+context.md
+data/local
+outputs

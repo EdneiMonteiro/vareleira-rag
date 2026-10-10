@@ -1,0 +1,6 @@
+# Dependências do L200 (Python 3.12 ou superior): as do L100 mais a interface HTTP do chat.
+# Versões diretas fixadas para um resultado reprodutível; o pip resolve as dependências delas.
+# Instalação: python -m pip install -r requirements/l200.txt
+-r l100.txt
+fastapi==0.142.2
+uvicorn==0.54.0

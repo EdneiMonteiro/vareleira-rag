@@ -2,9 +2,9 @@
 
 | Item | Definição |
 | --- | --- |
-| Situação | Planejamento: sete desafios definidos; código, infraestrutura e guias executáveis do L200 ainda não implementados |
+| Situação | Implementação e sete guias disponíveis; validação Azure executada por etapas, com avaliação final e limpeza registradas separadamente |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento que concluíram o L100 |
-| Resultado pretendido | Comparar duas formas de ingestão e hospedar um chat com fontes, identidade própria e acesso autenticado em Azure Container Apps |
+| Resultado | Comparar duas formas de ingestão e hospedar um chat com fontes, identidade própria e acesso autenticado em Azure Container Apps |
 | Continuidade | Reutilizar documentos sintéticos, inventário, política, testes e parâmetros do L100; reconstruir recursos apenas em destino autorizado |
 | Fora do escopo | Produção, documentos reais de segurados, decisões individuais de cobertura e as dependências privadas previstas para o L300 |
 
@@ -18,8 +18,10 @@ nos documentos sintéticos aprovados; a mudança de interface não amplia o que 
 O nível termina quando a equipe consegue identificar a origem de cada trecho, comparar os dois
 índices com critérios previamente definidos, consultar o chat com uma identidade autorizada,
 observar recusas de acesso, recuperar uma revisão anterior e remover exclusivamente seus recursos.
-Cada desafio terá cenário, objetivos, artefatos, conceitos, pré-requisitos, prática, conferência,
+Os guias incluem cenário, objetivos, artefatos, conceitos, pré-requisitos, prática, conferência,
 glossário, boas práticas e fontes conforme o [padrão de autoria](guia-de-autoria.md).
+O roteiro inicialmente publicado no commit `d4a93cc` era planejamento; esta versão registra
+a implementação iniciada após a autorização posterior do mantenedor.
 
 ## Continuidade com o L100
 
@@ -31,29 +33,30 @@ pelos arquivos versionados, não presumir a existência de armazenamento, busca 
 | [Documentos e inventário](../dados/l100/inventario.json) | Mesmo produto e mesmas fontes na comparação | Preservar textos, versões e hashes; novas regras exigem aprovação |
 | [Infraestrutura](../infra/main.bicep) | Base de armazenamento, busca e modelos | Conferir destino, compatibilidade, permissões e what-if antes da reconstrução |
 | [Carga e indexação Python](../scripts/indexar_documentos.py) | Caminho de referência da comparação | Conservar o índice do L100 enquanto o novo é avaliado |
-| [Política de resposta](../scripts/lab_politica.py) | Decisão compartilhada por console, agente e futura interface | A interface apresenta o tipo, as evidências e o aviso; não recupera o texto livre suprimido de casos individuais |
-| [Agente do Microsoft Agent Framework](../scripts/lab_agente.py) | Reutilização da lógica de consulta | Separar lógica da aplicação e transporte HTTP, protocolo de comunicação da interface |
+| [Política de resposta](../scripts/lab_politica.py) | Decisão compartilhada por console, agente e chat | A interface apresenta o tipo, as evidências e o aviso; não recupera o texto livre suprimido de casos individuais |
+| [Agente do Microsoft Agent Framework](../scripts/lab_agente.py) | Referência de limites e rastro no console | O chat reutiliza recuperação, geração e política em fluxo fixo, sem escolha de ferramentas pelo agente |
 | [Avaliação](../scripts/lab_avaliacao.py) | Métricas e separação entre ajuste e teste | Manter o resultado histórico do D06; nova medição final usa novo conjunto congelado |
-| [Identidade do L100](../desafios/L100/07-identidade-da-aplicacao.md) | Referência para papéis e recusas esperadas | O registro e o segredo temporários foram removidos; a aplicação hospedada adotará identidade gerenciada |
+| [Identidade do L100](../desafios/L100/07-identidade-da-aplicacao.md) | Referência para papéis e recusas esperadas | O registro e o segredo anteriores foram removidos; a aplicação hospedada usa identidade gerenciada |
 
-Modelos, versões, região e cotas do L200 serão definidos na implementação. A prioridade é
-reaproveitar os deployments do laboratório quando forem compatíveis com o novo caminho.
+O L200 reutiliza `text-embedding-3-small`, versão `1`, com 1.536 dimensões, e `gpt-5.4-mini`,
+versão `2026-03-17`, conferidos em `brazilsouth`. Catálogo, região e cotas precisam ser conferidos
+no destino do aluno antes de executar.
 O modelo do Copilot, o de autoria e os deployments Azure continuam sendo escolhas separadas.
 
 ## Sequência dos sete desafios
 
-| Desafio planejado | Prática e conceitos | Resultado a conferir | Dependência |
+| Desafio disponível | Prática e conceitos | Resultado a conferir | Dependência |
 | --- | --- | --- | --- |
-| 01. Reconstruir a base a partir da release | Identificar a versão do código, definir o destino e simular a infraestrutura; reconstruir somente a base necessária | Documentos e hashes conferidos, busca por scripts reproduzível e custos previstos registrados | L100 e autorização específica para o ambiente |
-| 02. Ler o Blob Storage com um indexador | Criar uma fonte de dados e um indexador, processo que lê dados e alimenta o índice; usar identidade gerenciada para acesso ao contêiner [1][2] | Conteúdo e metadados importados em um índice separado, com falhas e repetição observáveis | Desafio 01 |
-| 03. Dividir e vetorizar com o serviço | Definir um skillset, conjunto de etapas de processamento, e comparar divisão, embeddings e campos com o caminho Python [3] | Índices comparáveis quanto a documentos, evidências e recuperação; diferenças explicadas, sem exigir IDs ou trechos idênticos | Desafio 02 |
-| 04. Construir o chat local com fontes | Separar a lógica Python da interface HTTP; apresentar perguntas, tipos, citações, avisos e erros; isolar o estado de cada conversa | Testes locais da interface e da política, sem segredo no navegador e sem mistura de conversas | Desafio 03 e política compartilhada |
-| 05. Hospedar o chat com acesso autenticado | Empacotar a aplicação, configurar identidade gerenciada, papéis de dados, ingresso e autenticação dos usuários [4][5][6] | Aplicação acessível por usuários autorizados; identidade da aplicação consulta busca e modelos, mas não administra a base | Desafio 04 e autorização para implantação, papéis e configuração de autenticação |
-| 06. Avaliar o chat e a migração | Congelar configuração e conjunto independente; testar respostas, evidências, recusas, isolamento e falhas; distinguir teste local de execução Azure | Resultados por critério, limites e consumo registrados, sem ajustar a aplicação com o conjunto final | Desafio 05 |
-| 07. Operar revisões, recuperar e limpar | Conferir configuração, revisão da aplicação, logs sanitizados, custos, retorno à versão anterior e remoção com alvos explícitos | Recuperação demonstrada e recursos temporários removidos; dependências preservadas ou migradas para o L300 | Desafio 06 |
+| [01. Reconstruir a base](../desafios/L200/01-reconstruir-base.md) | Versão, destino, plano e base Python | Três documentos e índice de referência com 54 trechos | L100 e autorização do destino |
+| [02. Ingestão gerenciada](../desafios/L200/02-ingestao-gerenciada.md) | Fonte, indexador, identidade e papéis [1][2] | Três documentos no índice separado, execução e falhas observáveis | Desafio 01 |
+| [03. Dividir, vetorizar e comparar](../desafios/L200/03-comparar-ingestao.md) | Skillset, divisão, embeddings e comparação [3] | Diferenças 54/21 trechos explicadas e recuperação documental conferida | Desafio 02 |
+| [04. Chat local com fontes](../desafios/L200/04-chat-local.md) | FastAPI, interface HTTP e conversas isoladas | Texto, citações, avisos e erros, sem histórico no servidor | Desafio 03 |
+| [05. Hospedar com autenticação](../desafios/L200/05-hospedar-chat.md) | Imagem, identidade gerenciada, ingresso e login [4][5][6] | Consulta real, acesso anônimo recusado e papéis limitados | Desafio 04 e autorização de implantação e identidade |
+| [06. Avaliar o contrato do chat](../desafios/L200/06-avaliar-chat.md) | Conjunto próprio e configuração congelada | Uma resposta por caso, divergências e uso conhecido, sem retunar pelo teste | Desafio 05 |
+| [07. Operar, recuperar e limpar](../desafios/L200/07-operar-recuperar-limpar.md) | Revisões, logs, custo e alvos de remoção | Retorno à revisão anterior e preservação de recursos preexistentes | Desafio 06 |
 
-Os títulos identificam desafios planejados, não guias disponíveis. Este roteiro não cria links
-para arquivos futuros nem fornece comandos de implantação ainda não exercitados.
+Os [registros de validação](validacao) distinguem o que foi executado, as falhas e as limitações.
+Sucesso de build, leitura de papéis, teste de fumaça e contrato de resposta têm evidências distintas.
 
 ## Decisões técnicas e fronteiras
 
@@ -61,50 +64,55 @@ para arquivos futuros nem fornece comandos de implantação ainda não exercitad
 
 O indexador de blobs recebe conteúdo de um contêiner e grava um índice de busca [1]. A identidade
 gerenciada do serviço de busca precisa de papéis adequados no armazenamento e nos recursos
-usados pelo processamento [2]. O exercício continuará sem chaves de conta ou conexões com segredo.
+usados pelo processamento [2]. O exercício usa `ResourceId` e identidade gerenciada, sem chaves de conta.
 
 A vetorização integrada acrescenta divisão e geração de vetores à ingestão. A vetorização na
 consulta é uma configuração separada; quando adotada, deve usar um modelo compatível com o que
-gerou os vetores dos documentos [3]. O L200 decidirá explicitamente qual caminho usar.
+gerou os vetores dos documentos [3]. O L200 usa vetorização integrada **na ingestão** e cálculo
+do embedding da pergunta em Python. Não configura um vetorizador de consulta no serviço.
 
-O novo índice terá nome próprio. Critérios de comparação serão definidos antes das medições:
-correspondência com as fontes, cobertura dos assuntos recuperados, evidências localizáveis,
-tratamento de atualizações e exclusões, custo e operação. Um tamanho de trecho diferente não é,
-sozinho, defeito ou melhoria. A migração dependerá dos resultados e manterá um caminho de retorno.
+O índice `vareleira-lar-l200` conserva o L100 como referência. A comparação operacional conferiu
+fontes, campos, seis assuntos de fumaça e exclusão/reposição de documento. A adoção ainda depende
+de avaliação de contrato e de fidelidade correspondente ao uso. Quantidade menor de trechos,
+isoladamente, não demonstra melhoria de qualidade.
+
+O pipeline gerenciado produziu 21 trechos para os mesmos três documentos, contra 54 do Python.
+Os campos de seção e cláusulas ficam vazios; os identificadores dos trechos são gerados pela projeção.
+Documento, versão e citação localizam a origem. O indexador lê o prefixo do contêiner, enquanto
+a carga Python usa o inventário como lista de permissão.
 
 ### Separar a identidade da aplicação do login de quem usa o chat
 
 A identidade gerenciada permite à aplicação hospedada obter acesso a recursos compatíveis sem
-distribuir um segredo de cliente para a consulta a busca e modelos [4]. Ela receberá somente os
-papéis necessários nesses recursos. A identidade do indexador e a da aplicação terão funções
-distintas: ingerir conteúdo não exige que o chat possa gravá-lo.
+distribuir um segredo de cliente para a consulta a busca e modelos [4]. Ela recebe somente os
+papéis necessários nesses recursos. A identidade do indexador e a da aplicação têm funções
+distintas: o chat não grava blobs nem administra índices.
 
 O login do usuário é outra relação. Azure Container Apps oferece autenticação integrada com
-Microsoft Entra ID e outros provedores [5]. O exercício exigirá autenticação e definirá quem pode
-usar a aplicação. Credenciais e permissões eventualmente exigidas pela configuração do provedor
-de login precisam de autorização própria; identidade gerenciada não elimina essa configuração.
+Microsoft Entra ID e outros provedores [5]. O exercício exige autenticação e aceita o público
+autenticado do tenant configurado. O registro empresarial não exige atribuição a pessoas específicas.
+A credencial do provedor fica em Container Apps Secrets; sua criação e remoção têm autorização própria.
 
-Acesso autenticado ao chat não implica autorização para todos os documentos de uma organização.
-O L200 continua com a base sintética compartilhada do piloto. Restrições por documento e
+O L200 usa uma base sintética compartilhada pelo público do piloto. Autorização por documento e
 dependências privadas serão aprofundadas no L300, sem atribuir essas capacidades ao protótipo atual.
 
 ### Publicar uma interface sem transformar o piloto em serviço público
 
 Ingresso externo e interno controlam caminhos diferentes de acesso em Container Apps [6].
-A implementação escolherá o caminho de teste compatível com o ambiente autorizado e manterá
-HTTPS. A exposição de um endereço externo exige autenticação; não será um chat anônimo.
+O caminho conferido mantém HTTPS e cria a aplicação com ingresso interno.
+A exposição externa ocorre somente depois de conferir autenticação obrigatória.
 
-A interface terá tratamento explícito de indisponibilidade, limites de consulta e apresentação
-das fontes. Logs serão sanitizados e não guardarão credenciais ou conteúdo real de segurados.
-Decisões de retenção de conversas, framework HTTP, interface, registro de imagens e coleta de
-telemetria serão documentadas antes de implementar seus componentes.
+A interface trata indisponibilidade, limites e fontes. O servidor não guarda conversa; o navegador
+mantém mensagens apenas em memória e envia a pergunta atual. Logs usam rota e causa em vocabulário
+fechado, sem pergunta ou resposta. O chat usa FastAPI; a imagem fica no ACR e logs no Log Analytics.
+Descartes de política retornam HTTP 503, sem apresentar texto rejeitado.
 
 ## Uso do Copilot e portões de execução
 
-Em cada desafio, o aluno abrirá a pasta completa no VS Code, identificará o terminal e anexará
-somente os arquivos necessários. Os prompts separarão explicar, planejar, editar e executar.
-O aluno revisará o diff, as dependências e a conferência prevista antes de qualquer ação externa.
-Nomes e permissões recebidos pelo programa serão parâmetros, não valores do ambiente do instrutor.
+Em cada desafio, o aluno abre a pasta completa no VS Code, identifica o terminal e anexa
+somente os arquivos necessários. Os prompts separam explicar, planejar, editar e executar.
+O aluno revisa o diff, as dependências e as conferências antes de qualquer ação externa.
+Nomes e permissões são parâmetros, não valores do ambiente do instrutor.
 
 | Etapa de trabalho | O que precisa estar definido antes |
 | --- | --- |
@@ -118,15 +126,14 @@ A publicação do roteiro não autoriza a execução desses passos no Azure.
 
 ## Custo, recuperação e transição
 
-O planejamento considera busca cobrada enquanto o serviço existir, uso de modelos, operações de
-armazenamento e os futuros recursos de hospedagem, imagens e telemetria. Preços e consumo serão
-verificados na região escolhida; este roteiro não estima um valor monetário.
+O nível acrescenta hospedagem, imagens e telemetria à busca, modelos e armazenamento.
+Confira preços e consumo na região escolhida; este roteiro não estima um valor monetário.
 Pausar a interface não equivale a pausar todas as suas dependências.
 
-Cada desafio registrará os objetos que acrescenta e o que precisa permanecer para o seguinte.
-A limpeza removerá somente os recursos criados no destino autorizado. Antes da transição para
-o L300, a equipe conservará parâmetros, fontes e resultados, definirá a migração de rede e
-identidade e demonstrará o retorno ao caminho anterior.
+Cada desafio registra objetos acrescentados e dependências para o seguinte.
+A limpeza usa alvos identificados e preserva recursos preexistentes. Para a transição ao
+L300, conserve parâmetros, fontes e resultados e defina a migração de rede e identidade.
+L300 e L400 ainda não têm implementação autorizada nesta entrega.
 
 ## Glossário
 
@@ -141,8 +148,8 @@ identidade e demonstrará o retorno ao caminho anterior.
 
 ## Fontes e autoria
 
-Fontes oficiais consultadas em 9 de outubro de 2026. Capacidades e configurações precisam ser
-conferidas novamente antes da implementação.
+Fontes oficiais consultadas em 9 e 10 de outubro de 2026. Confira capacidades e cotas no destino
+de cada execução.
 
 1. [Indexador de Azure Blob Storage](https://learn.microsoft.com/en-us/azure/search/search-how-to-index-azure-blob-storage).
 2. [Identidades gerenciadas no Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-how-to-managed-identities).
@@ -151,5 +158,5 @@ conferidas novamente antes da implementação.
 5. [Autenticação e autorização em Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/authentication).
 6. [Ingresso em Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/ingress-overview).
 
-Roteiro elaborado com GPT-6.1 Sol no GitHub Copilot CLI. O Astra, preferido para documentação,
-não estava disponível na sessão. Nenhum componente do L200 foi implementado ou provisionado.
+Roteiro e guias elaborados com GPT-6.1 Sol no GitHub Copilot CLI. O Astra, preferido para documentação,
+não estava disponível. Implementação e testes por Claude Sonnet 5.5. Nenhum Document Swarm foi iniciado.

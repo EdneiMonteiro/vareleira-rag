@@ -22,6 +22,8 @@ GUIDS_PERMITIDOS = {
     "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",  # Cognitive Services OpenAI User
     "1407120a-92aa-4202-b7e9-c0e197c71c8f",  # Search Index Data Reader
     "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",  # Key Vault Secrets Officer
+    "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",  # Storage Blob Data Reader
+    "7f951dda-4ed3-4680-a7ca-43fe172d538d",  # AcrPull
     "00000000-0000-0000-0000-000000000000",
 }
 

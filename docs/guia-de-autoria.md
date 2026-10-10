@@ -12,6 +12,12 @@ A situação de execução, as revisões e as pendências de cada guia ficam em 
 O material existente do L100 recebeu a aprovação do mantenedor em 9 de outubro de 2026.
 Novos conteúdos e alterações continuam sujeitos à revisão correspondente.
 
+O L200 acrescenta sete guias, começando por
+[reconstruir a base](../desafios/L200/01-reconstruir-base.md) e terminando em
+[operar, recuperar e limpar](../desafios/L200/07-operar-recuperar-limpar.md).
+Suas validações distinguem ingestão, testes de fumaça, interface, identidade e avaliação HTTP.
+A aprovação anterior do L100 não representa aprovação automática de novos materiais.
+
 ## Público e linguagem
 
 Escreva em português do Brasil para pessoas de negócio, arquitetura, operações

@@ -50,5 +50,10 @@ são instaladas por quem executa o laboratório (`requirements/l100.txt`) e mant
 suas próprias licenças; seu código não é incorporado a este repositório.
 O Bicep CLI, a Azure CLI e o Python são ferramentas instaladas à parte.
 
+O L200 usa também FastAPI, sob MIT, e Uvicorn, sob BSD de três cláusulas, com dependências próprias
+em `requirements/l200.txt`. O código dessas bibliotecas não é incorporado ao repositório.
+O conjunto sintético de avaliação L200 foi escrito em contexto separado de implementação e medições,
+com contrato prévio; sua autoria assistida não equivale a revisão humana certificada.
+
 Novos materiais externos devem registrar origem, licença e adaptações aqui.
 DOIs, versões e resultados de outros projetos não identificam este laboratório.

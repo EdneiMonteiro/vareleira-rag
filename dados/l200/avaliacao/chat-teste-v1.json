@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "nome": "Chat L200 - conjunto sintético de teste v1",
+  "origem": "contexto separado, contrato fornecido antes da autoria; sem acesso aos demais conjuntos/código/resultados. Documento sintético para fins educacionais: perguntas sintéticas sobre o Vareleira Lar, seguradora fictícia, escritas só a partir dos 3 documentos sintéticos VLAR-CG-1.0, VLAR-FAQ-1.0 e VLAR-GL-1.0; sem dados reais.",
+  "configuracao_avaliada": "a congelar antes da execução",
+  "casos": [
+    {
+      "id": "L200-01",
+      "categoria": "limites",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "O que é o LMI e o que acontece quando o prejuízo é maior do que ele?",
+      "justificativa": "Pergunta geral sobre regra existente: significado do Limite Máximo de Indenização e efeito de um prejuízo acima dele (CG 6.1 e glossário). Sem referência a contratação própria. Contrato: respondida.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Em cada sinistro, a Vareleira nunca paga, por cobertura, mais do que o LMI, ainda que o prejuízo seja maior."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Valor máximo que a Vareleira paga, por cobertura e por sinistro."
+        }
+      ]
+    },
+    {
+      "id": "L200-02",
+      "categoria": "danos_eletricos",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Depois de uma oscilação de energia na rua, a minha geladeira parou de funcionar. O meu seguro Vareleira Lar paga o conserto?",
+      "justificativa": "Pede veredito sobre a própria contratação (minha geladeira, meu seguro). Contrato: respondida somente com orientação geral (introdução fixa, aviso e citações), sem confirmar nem negar a cobertura do usuário e sem recusar. Regras gerais relacionadas: danos elétricos como cobertura adicional que depende da apólice individual (CG 3.1 e 3.2; FAQ).",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "causados por curto-circuito, sobrecarga ou variação anormal de tensão elétrica"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "só valem se constarem como contratadas na apólice individual"
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "Para saber se uma pessoa específica tem essa cobertura, é preciso consultar a apólice individual."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "a análise exige laudo técnico"
+        }
+      ]
+    },
+    {
+      "id": "L200-03",
+      "categoria": "culinaria",
+      "tipo_esperado": "fora_de_escopo",
+      "situacao_esperada": "recusada",
+      "pergunta": "Qual é a receita de um bolo de cenoura fofinho para o café da tarde?",
+      "justificativa": "Assunto alheio ao seguro Vareleira Lar (culinária), sem relação com o produto, suas regras ou qualquer contratação. Contrato: recusada por estar fora de escopo.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-04",
+      "categoria": "vendaval_granizo",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Na cobertura de vendaval e granizo, como se comprova a causa do dano e em que situação os móveis e objetos dentro do imóvel são indenizados?",
+      "justificativa": "Pergunta geral sobre regra existente (CG 3.3): comprovação da causa e condição para indenizar o conteúdo. Sem referência a contratação própria. Contrato: respondida.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "desde que a causa possa ser comprovada, por exemplo, por registro meteorológico ou por perícia"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Os danos ao conteúdo só são indenizados se o vento ou o granizo tiver danificado antes o telhado, as paredes, as janelas ou as portas do imóvel."
+        }
+      ]
+    },
+    {
+      "id": "L200-05",
+      "categoria": "eventos_climaticos",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "pergunta": "Os danos causados por chuva forte são cobertos pelo Vareleira Lar?",
+      "justificativa": "Dentro do assunto, mas a pergunta não diz que dano a chuva forte causou. Cada hipótese cai em uma regra diferente, com resultado oposto: vento forte ou granizo (CG 3.3, cobertura adicional), alagamento ou enchente (CG 5.1, alínea d, risco excluído) e infiltração gradual (CG 5.1, alínea c, risco excluído). A lacuna impede escolher uma regra. Contrato: esclarecimento sobre o que a chuva causou. Não é sem_evidencia: os documentos têm regra para cada hipótese.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-06",
+      "categoria": "roubo_furto",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Entraram na minha casa arrombando a porta e levaram uma televisão e um relógio caro. A minha apólice paga tudo isso? O que preciso fazer primeiro?",
+      "justificativa": "Situação própria clara com pedido de veredito (minha casa, minha apólice). Contrato: respondida somente com orientação geral (introdução fixa, aviso e citações), sem afirmar que a apólice paga e sem recusar. Regras gerais relacionadas: roubo e furto qualificado, boletim de ocorrência, sublimite para relógios e aviso do sinistro (CG 3.4, 6.4 e 9.1).",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza o conteúdo do imóvel subtraído mediante arrombamento, com vestígios de força em portas, janelas ou fechaduras"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Exige boletim de ocorrência e está sujeita aos sublimites da cláusula 6.4."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "para joias, relógios, peças de arte e coleções são de R$ 5.000,00 por item e de R$ 15.000,00 no total de cada sinistro"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "assim que o segurado souber do evento e, no máximo, em 7 dias corridos"
+        }
+      ]
+    },
+    {
+      "id": "L200-07",
+      "categoria": "salvamento_desentulho",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Depois de um incêndio, as despesas com a remoção do entulho são reembolsadas pela Vareleira? Existe algum teto para esse reembolso?",
+      "justificativa": "Pergunta geral sobre regra existente (CG 2.2): reembolso do desentulho depois de sinistro coberto pela cláusula 2.1 e seu limite. Sem referência a contratação própria. Contrato: respondida.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "para remover o entulho de um sinistro coberto pela cláusula 2.1, até o limite de 10% da indenização paga por essa cobertura"
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Remoção dos restos de materiais danificados por um sinistro coberto (CG 2.2)."
+        }
+      ]
+    },
+    {
+      "id": "L200-08",
+      "categoria": "contestacao_sinistro",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "pergunta": "Se a Vareleira negar um pedido de indenização, em quantos dias o segurado pode contestar a decisão?",
+      "justificativa": "Pergunta completa sobre o produto, mas os documentos não tratam de negativa de indenização nem de contestação ou recurso, e não há prazo desse tipo. Os prazos existentes (aviso em 7 dias corridos, análise em 30, pagamento em 10) são de outras etapas e não podem ser transpostos. Contrato: recusada por falta de evidência. Não é ambigua: nada falta na pergunta, falta o fato nos documentos.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-09",
+      "categoria": "assistencia_24h",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Se eu perder a chave de casa de madrugada e ficar do lado de fora, o meu seguro paga o chaveiro?",
+      "justificativa": "Situação própria com pedido de veredito (meu seguro). Contrato: respondida somente com orientação geral (introdução fixa, aviso e citações), sem afirmar o que a apólice do usuário prevê e sem recusar. Regras gerais relacionadas: chaveiro como serviço da assistência 24 horas, que não é cobertura, com limites de acionamentos e de mão de obra (CG 4).",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Os serviços disponíveis são chaveiro, eletricista e encanador, para emergências no imóvel segurado."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "acionar a assistência não abre um sinistro e não garante indenização"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Em cada vigência, a assistência atende até 2 acionamentos por tipo de serviço. A Vareleira paga a mão de obra até R$ 400,00 por acionamento."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A assistência 24 horas está incluída em todas as contratações, salvo indicação diferente na apólice individual."
+        }
+      ]
+    },
+    {
+      "id": "L200-10",
+      "categoria": "analise_sinistro",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Se a Vareleira pedir documentos adicionais durante a análise de um sinistro, o prazo de análise continua correndo? Ela pode fazer esse pedido mais de uma vez?",
+      "justificativa": "Pergunta geral sobre regras existentes (CG 9.4 e 9.5; FAQ): pedido único de documentos adicionais e suspensão do prazo de análise. Sem referência a contratação própria. Contrato: respondida.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A Vareleira pode pedir documentos adicionais uma única vez."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Se houver pedido de documentos adicionais, o prazo fica suspenso até a entrega."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A Vareleira pode pedir documentos adicionais uma única vez, e o prazo fica suspenso até a entrega"
+        }
+      ]
+    },
+    {
+      "id": "L200-11",
+      "categoria": "manutencao_residencial",
+      "tipo_esperado": "fora_de_escopo",
+      "situacao_esperada": "recusada",
+      "pergunta": "Qual tinta é a mais indicada para pintar a parede externa de uma casa e como preparar a superfície antes da pintura?",
+      "justificativa": "Assunto alheio ao seguro Vareleira Lar (pintura e manutenção de imóvel). Casa e parede aparecem nos documentos, mas a pergunta não trata de seguro. Contrato: recusada por estar fora de escopo.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-12",
+      "categoria": "vigencia_proposta",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Enviei a proposta do Vareleira Lar hoje cedo e ainda não recebi a apólice. Se um raio atingir a casa amanhã, já estarei protegido ou existe um prazo de espera?",
+      "justificativa": "Situação própria clara, sem pronome possessivo, com pedido de veredito sobre a própria proteção (proposta enviada, apólice não recebida). Contrato: respondida somente com orientação geral (introdução fixa, aviso e citações), sem afirmar que o usuário já está protegido e sem recusar. Regras gerais relacionadas: vigência só começa após o aceite da proposta, ausência de carência e coberturas básicas (CG 2.1, 2.3, 7.1 e 7.4).",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Pedido de contratação feito pelo interessado. A vigência só começa depois que a Vareleira aceita a proposta (CG 7.1)."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Não há carência, isto é, prazo de espera, nas coberturas do Vareleira Lar versão 1.0."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "causados diretamente por incêndio, queda de raio ou explosão"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "As coberturas básicas fazem parte de toda contratação do Vareleira Lar."
+        }
+      ]
+    },
+    {
+      "id": "L200-13",
+      "categoria": "responsabilidade_civil",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "A cobertura de responsabilidade civil familiar paga a vidraça do vizinho, quebrada sem querer por uma criança que mora no imóvel segurado?",
+      "justificativa": "Pergunta geral que aplica a regra da CG 3.5 a um exemplo hipotético em terceira pessoa, sem contratação própria nem pronome possessivo. Contrato: respondida.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza danos materiais ou corporais causados involuntariamente a terceiros pelo segurado e pelas pessoas que vivem com ele no imóvel, na vida privada."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "só valem se constarem como contratadas na apólice individual"
+        }
+      ]
+    },
+    {
+      "id": "L200-14",
+      "categoria": "prazos_comunicacao",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "pergunta": "Qual é o prazo para comunicar à Vareleira?",
+      "justificativa": "Dentro do assunto, mas a pergunta não diz o que será comunicado. Há regras de tempo distintas: sinistro em até 7 dias corridos (CG 9.1), agravamento do risco antes da mudança (CG 8.3) e desocupação por mais de 60 dias consecutivos (CG 8.4). A lacuna impede escolher uma regra. Contrato: esclarecimento sobre o que será comunicado. Não é sem_evidencia: cada hipótese está nos documentos.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-15",
+      "categoria": "agravamento_risco",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Vou fazer uma reforma que mexe na estrutura da minha casa, derrubando uma parede. Preciso avisar a Vareleira antes? O meu seguro continua valendo durante a obra?",
+      "justificativa": "Situação própria clara com pedido de veredito (minha casa, meu seguro). Contrato: respondida somente com orientação geral (introdução fixa, aviso e citações), sem afirmar o que vale na apólice do usuário e sem recusar. Regras gerais relacionadas: comunicação prévia de agravamento do risco, incluindo reforma estrutural (CG 8.3), e risco excluído de imóvel em reforma estrutural (CG 5.1, alínea j).",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "como a mudança de uso do imóvel de residencial para comercial, a reforma estrutural ou a locação por temporada"
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Deve ser comunicado à Vareleira antes da mudança (CG 8.3)."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "imóvel em construção, em reforma estrutural ou em demolição"
+        }
+      ]
+    },
+    {
+      "id": "L200-16",
+      "categoria": "pagamento_premio",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "pergunta": "Dá para pagar o prêmio do Vareleira Lar por Pix?",
+      "justificativa": "Pergunta completa sobre o produto, mas os documentos só dizem que o prêmio pode ser pago à vista ou em parcelas, conforme a apólice individual (CG 7.3); não mencionam meios de pagamento. Não há evidência para afirmar nem negar. Contrato: recusada por falta de evidência. Não é ambigua: nada falta na pergunta, falta o fato nos documentos.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "L200-17",
+      "categoria": "renovacao",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Quando a vigência de 12 meses termina, o Vareleira Lar se renova sozinho? Com que antecedência a Vareleira envia a proposta de renovação?",
+      "justificativa": "Pergunta geral sobre regra existente (CG 10.2; vigência em CG 7.1). Sem referência a contratação própria. Contrato: respondida.",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A renovação não é automática. A Vareleira envia a proposta de renovação com antecedência mínima de 30 dias do fim da vigência."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "No Vareleira Lar, 12 meses a partir da data indicada na apólice individual (CG 7.1)."
+        }
+      ]
+    },
+    {
+      "id": "L200-18",
+      "categoria": "aviso_sinistro",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Houve um incêndio na minha cozinha há duas semanas e eu ainda não avisei a Vareleira. Perdi o direito à indenização?",
+      "justificativa": "Situação própria clara com pedido de veredito (minha cozinha, meu direito). Contrato: respondida somente com orientação geral (introdução fixa, aviso e citações), sem concluir sobre o caso e sem recusar. Regras gerais relacionadas: aviso do sinistro em até 7 dias corridos e efeito da comunicação fora do prazo (CG 9.1 e 9.7).",
+      "evidencias_referencia": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "assim que o segurado souber do evento e, no máximo, em 7 dias corridos"
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "não elimina automaticamente o direito à indenização, mas a Vareleira pode descontar o agravamento do prejuízo que o atraso tenha causado"
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A comunicação fora do prazo não elimina automaticamente o direito à indenização"
+        }
+      ]
+    }
+  ]
+}

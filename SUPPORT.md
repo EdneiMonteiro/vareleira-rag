@@ -28,6 +28,11 @@ Os limites e as verificações ainda pendentes constam nos registros de cada des
 [estado do laboratório](README.md#estado-do-laboratório) para distinguir entregas disponíveis de
 níveis planejados.
 
+O L200 acrescenta ingestão gerenciada e chat com autenticação obrigatória. Para erros da interface,
+informe o código de suporte, revisão, tipo de erro e uma descrição sintética, sem enviar a conversa.
+HTTP 503 por resposta não verificada é um descarte da política; HTTP 401 indica acesso ainda não
+autenticado. Login interativo humano e autorização por documento não integram a validação automatizada.
+
 Trate permissões, políticas, cotas e cobrança com o administrador do seu ambiente ou com o suporte
 do Azure. Registrar aplicações no tenant (diretório do Microsoft Entra ID), como no Desafio 07,
 também exige autorização. Serviços de terceiros devem ser tratados em seus próprios canais de
