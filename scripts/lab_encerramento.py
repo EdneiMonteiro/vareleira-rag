@@ -50,7 +50,15 @@ Instantâneos (listas JSON no formato do Azure CLI; use os comandos impressos po
     grupos        az group list                           campos usados: id, name
     recursos      az resource list                        campos usados: id, type
     papeis        az role assignment list --all           campos usados: id, principalId, roleDefinitionId, scope
-    Listas paginadas (com nextLink) são recusadas: complete a listagem. Todo item precisa ser da assinatura do inventário.
+    Listas paginadas (com nextLink) são recusadas: complete a listagem. Todo item precisa ser da assinatura do inventário,
+    exceto, nos papéis, as atribuições herdadas descritas a seguir.
+    Atribuições herdadas: se a assinatura fica sob um grupo de gerenciamento, `az role assignment list --all` devolve também as
+    atribuições herdadas de escopos ACIMA dela: a raiz do tenant (scope "/") e grupos de gerenciamento (scope
+    /providers/Microsoft.Management/managementGroups/<nome>). Elas são aceitas, IGNORADAS e só contadas: o laboratório não as
+    altera e a ferramenta não as compara (nem na linha de base nem na conferência); o sha256 continua sendo o do arquivo inteiro.
+    Um item só é tratado assim se o `id` for o de uma atribuição exatamente do `scope` informado (<scope>/providers/
+    Microsoft.Authorization/roleAssignments/<nome>; na raiz, /providers/Microsoft.Authorization/roleAssignments/<nome>). Item
+    de OUTRA assinatura, com `id` e `scope` incoerentes entre si ou de formato desconhecido continua recusado.
     Linha de base ("antes"): capture ANTES de criar o grupo exclusivo. Ela é o que existia antes do laboratório; por isso
     nenhum item do inventário (nem do grupo exclusivo ou do gerenciado) pode constar nela, e o plano recusa o contrário.
     Uma linha de base totalmente vazia não prova nada (pode ser a assinatura errada): o plano a trata como prévia e a
@@ -98,7 +106,7 @@ import json
 import os
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -225,6 +233,8 @@ _RESTO_DO_LINK = re.compile(r"providers/Microsoft\.Search/searchServices/(?P<ser
                             + r")/sharedPrivateLinkResources/(?P<nome>" + _SEGMENTO_DE_NOME + r")", re.IGNORECASE)
 _PASTA = re.compile(r"[\w .\-\\/:()~]{1,240}")
 _NOME_DE_RELATORIO = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,95}\.json")
+_ESCOPO_DE_GRUPO_DE_GERENCIAMENTO = re.compile(r"/providers/Microsoft\.Management/managementGroups/[^/]+", re.IGNORECASE)
+_ATRIBUICAO_NO_ESCOPO = "/providers/microsoft.authorization/roleassignments/"
 _SEGURO_NO_POWERSHELL = re.compile(r"[A-Za-z0-9._/:-]+")
 _CHAVE_DE_CAMPO = re.compile(r"[a-z_]{1,40}")
 
@@ -323,13 +333,16 @@ class Inventario:
 class Instantaneo:
     """Estado exportado de uma assinatura: nomes de grupos, recursos (id -> tipo) e atribuições (id -> principal, papel, escopo).
 
-    Tudo em minúsculas: o Azure não diferencia caixa em nomes e IDs.
+    Tudo em minúsculas: o Azure não diferencia caixa em nomes e IDs. As atribuições herdadas de escopos ACIMA da assinatura (raiz do
+    tenant e grupos de gerenciamento) são ignoradas: não entram em `atribuicoes`, portanto não são comparadas nem tratadas como do
+    laboratório. Só a quantidade (de IDs distintos) fica em `atribuicoes_herdadas_ignoradas`.
     """
 
     grupos: frozenset[str]
     recursos: Mapping[str, str]
     atribuicoes: Mapping[str, tuple[str, str, str]]
     sha256: Mapping[str, str]
+    atribuicoes_herdadas_ignoradas: int = 0
 
     @property
     def vazio(self) -> bool:
@@ -364,6 +377,7 @@ class Plano:
     fases_omitidas: tuple[int, ...]
     linha_de_base_conferida: bool
     inventario_sha256: str
+    atribuicoes_herdadas_ignoradas: int = 0  # da linha de base: só a quantidade, para o aviso e o relatório
 
 
 @dataclass(frozen=True)
@@ -392,6 +406,8 @@ class Conferencia:
     linha_de_base: Mapping[str, int]
     inventario: Mapping[str, int]
     sha256: Mapping[str, str]
+    # atribuições herdadas ignoradas em cada arquivo (só quantidades): chaves "antes" (linha de base) e "depois" (estado final)
+    atribuicoes_herdadas_ignoradas: Mapping[str, int] = field(default_factory=lambda: {"antes": 0, "depois": 0})
 
 
 # --------------------------------------------------------------------------------------
@@ -838,12 +854,38 @@ def _da_assinatura(valor: str, assinatura: str) -> bool:
     return minusculo == base or minusculo.startswith(base + "/")
 
 
+def _herdada_acima_da_assinatura(identificador: str, escopo: str) -> bool:
+    """A atribuição é herdada de um escopo ACIMA da assinatura: a raiz do tenant (`/`) ou um grupo de gerenciamento?
+
+    O `az role assignment list --all` inclui esses itens quando a assinatura fica sob um grupo de gerenciamento. Só vale se o `id` for o
+    de uma atribuição exatamente desse escopo: <escopo>/providers/Microsoft.Authorization/roleAssignments/<nome> (na raiz, o `id` começa
+    por /providers). Sem diferenciar caixa. Item de outra assinatura, com `id` e `scope` incoerentes ou de outro formato não é herdado.
+    """
+    if escopo != "/" and not _ESCOPO_DE_GRUPO_DE_GERENCIAMENTO.fullmatch(escopo):
+        return False
+    prefixo = ("" if escopo == "/" else escopo.lower()) + _ATRIBUICAO_NO_ESCOPO
+    nome = identificador.lower()
+    return nome.startswith(prefixo) and len(nome) > len(prefixo) and "/" not in nome[len(prefixo):]
+
+
+def _aviso_de_herdadas(quantidade: int) -> str:
+    """O aviso, só com um número, das atribuições herdadas ignoradas (plano e conferência)."""
+    return (f"{quantidade} atribuição(ões) herdada(s) de grupo de gerenciamento ou da raiz do tenant foram ignoradas: o laboratório "
+            "não as altera e esta ferramenta não as compara.")
+
+
 def carregar_instantaneo(grupos: Path, recursos: Path, papeis: Path, assinatura: str, momento: str) -> Instantaneo:
-    """Lê e valida os três arquivos de um momento. Qualquer arquivo inválido interrompe com a orientação para exportar de novo."""
+    """Lê e valida os três arquivos de um momento. Qualquer arquivo inválido interrompe com a orientação para exportar de novo.
+
+    Nos papéis, as atribuições herdadas da raiz do tenant ou de grupo de gerenciamento (veja `_herdada_acima_da_assinatura`) são aceitas,
+    IGNORADAS e contadas; todo outro item que não seja da assinatura (outra assinatura, `id` e `scope` incoerentes, formato desconhecido)
+    é recusado. O sha256 de cada arquivo é sempre o do arquivo inteiro.
+    """
     sufixo = f"-{momento}"
     nomes: set[str] = set()
     mapa_recursos: dict[str, str] = {}
     mapa_papeis: dict[str, tuple[str, str, str]] = {}
+    ignoradas: dict[str, tuple[str, str, str]] = {}  # herdadas de escopos acima da assinatura: só para contar e conferir a coerência
     hashes: dict[str, str] = {}
     p = _Problemas()
 
@@ -880,19 +922,30 @@ def carregar_instantaneo(grupos: Path, recursos: Path, papeis: Path, assinatura:
         if not (isinstance(item, dict) and all(_texto_livre(item.get(c)) for c in campos)):
             p.add(rotulo, "cada item precisa ter id, principalId, roleDefinitionId e scope (use o comando de '--etapa capturar').")
             continue
-        if not (_da_assinatura(item["id"], assinatura) and _da_assinatura(item["scope"], assinatura)):
-            p.add(rotulo, "o item não é da assinatura do inventário (um escopo fora dela, como grupo de gerenciamento, não é aceito).")
+        da_assinatura = _da_assinatura(item["id"], assinatura) and _da_assinatura(item["scope"], assinatura)
+        herdada = not da_assinatura and _herdada_acima_da_assinatura(item["id"], item["scope"])
+        if not (da_assinatura or herdada):
+            p.add(rotulo, "o item não é da assinatura do inventário (outra assinatura ou formato desconhecido: só são aceitos os itens "
+                          "da assinatura e, ignorados, os herdados da raiz do tenant ou de grupo de gerenciamento com 'id' e 'scope' "
+                          "coerentes entre si).")
             continue
         valor = (item["principalId"].lower(), item["roleDefinitionId"].lower(), item["scope"].lower())
-        if mapa_papeis.setdefault(item["id"].lower(), valor) != valor:
+        destino = ignoradas if herdada else mapa_papeis
+        if destino.setdefault(item["id"].lower(), valor) != valor:
             p.add(rotulo, "o mesmo ID aparece com valores diferentes.")
     p.levantar("Instantâneo inválido:", "Refaça a exportação com os comandos de '--etapa capturar' (um arquivo por listagem, sem "
                                         "editar à mão) e repita.")
-    return Instantaneo(grupos=frozenset(nomes), recursos=mapa_recursos, atribuicoes=mapa_papeis, sha256=hashes)
+    return Instantaneo(grupos=frozenset(nomes), recursos=mapa_recursos, atribuicoes=mapa_papeis, sha256=hashes,
+                       atribuicoes_herdadas_ignoradas=len(ignoradas))
 
 
 def validar_linha_de_base(inv: Inventario, base: Instantaneo) -> None:
-    """Recusa o plano se o inventário tocar algo que já existia antes do laboratório. Mensagens só com contagens."""
+    """Recusa o plano se o inventário tocar algo que já existia antes do laboratório. Mensagens só com contagens.
+
+    Só olha `base.atribuicoes`: as herdadas ignoradas por `carregar_instantaneo` ficam de fora de propósito. Um principal próprio com papel
+    herdado de um grupo de gerenciamento não reprova a linha de base nem passa por atribuição do laboratório (o laboratório só cria
+    atribuições dentro do grupo exclusivo, e o inventário recusa o resto).
+    """
     p = _Problemas()
     if inv.grupo.lower() in base.grupos:
         p.add("grupo", "o grupo exclusivo já existia na linha de base: ele não é exclusivo do laboratório (ou a linha de base foi "
@@ -1098,7 +1151,9 @@ def _precondicoes(linha_de_base: bool) -> tuple[str, ...]:
     )
 
 
-def montar_plano(inv: Inventario, linha_de_base_conferida: bool) -> Plano:  # noqa: C901 - um construtor por tipo de passo
+def montar_plano(inv: Inventario, linha_de_base_conferida: bool,
+                 atribuicoes_herdadas_ignoradas: int = 0) -> Plano:  # noqa: C901 - um construtor por tipo de passo
+    """Monta o plano. `atribuicoes_herdadas_ignoradas` é a quantidade que `carregar_instantaneo` ignorou na linha de base (só informativa)."""
     passos: list[Passo] = []
     assinatura, grupo = _aspas(inv.assinatura), _aspas(inv.grupo)
 
@@ -1257,7 +1312,7 @@ def montar_plano(inv: Inventario, linha_de_base_conferida: bool) -> Plano:  # no
     return Plano(precondicoes=_precondicoes(linha_de_base_conferida), preparacao=preparacao, passos=tuple(passos),
                  fechamento=_fechamento(inv), removidos_com_o_grupo=dict(sorted(outros.items())),
                  fases_omitidas=tuple(f for f in FASES if f not in fases_presentes), linha_de_base_conferida=linha_de_base_conferida,
-                 inventario_sha256=inv.sha256)
+                 inventario_sha256=inv.sha256, atribuicoes_herdadas_ignoradas=atribuicoes_herdadas_ignoradas)
 
 
 def _revogacao(atribuicao: Atribuicao, assinatura: str) -> str:
@@ -1327,6 +1382,8 @@ def plano_em_texto(plano: Plano) -> str:
         f"{sum(1 for p in plano.passos if p.efeito == REVERSIVEL)} reversíveis)",
         "Linha de base: " + ("conferida" if plano.linha_de_base_conferida else "NÃO CONFERIDA: PRÉVIA, NÃO EXECUTE"),
     ]
+    if plano.atribuicoes_herdadas_ignoradas:
+        linhas.append("[AVISO] Linha de base: " + _aviso_de_herdadas(plano.atribuicoes_herdadas_ignoradas))
     if plano.fases_omitidas:
         linhas.append("Fases sem itens no inventário (omitidas): " + ", ".join(str(f) for f in plano.fases_omitidas))
     linhas += ["", "ANTES DE COMEÇAR (confirme cada item)"]
@@ -1359,6 +1416,7 @@ def plano_em_dict(plano: Plano) -> dict[str, Any]:
         "versao_plano": 1,
         "somente_texto": True,
         "linha_de_base": "conferida" if plano.linha_de_base_conferida else "nao_conferida",
+        "atribuicoes_herdadas_ignoradas": plano.atribuicoes_herdadas_ignoradas,
         "precondicoes": list(plano.precondicoes),
         "preparacao": plano.preparacao,
         "fases_omitidas": list(plano.fases_omitidas),
@@ -1377,6 +1435,7 @@ def relatorio_do_plano(plano: Plano) -> dict[str, Any]:
         "versao_relatorio": VERSAO_DO_RELATORIO,
         "tipo": "plano-de-encerramento",
         "linha_de_base": "conferida" if plano.linha_de_base_conferida else "nao_conferida",
+        "atribuicoes_herdadas_ignoradas": plano.atribuicoes_herdadas_ignoradas,
         "total_de_passos": len(plano.passos),
         "passos_por_tipo": {tipo: por_tipo[tipo] for tipo in TIPOS_DE_PASSO if por_tipo[tipo]},
         "passos_por_efeito": {efeito: por_efeito[efeito] for efeito in (REVERSIVEL, IRREVERSIVEL)},
@@ -1652,7 +1711,8 @@ def conferir_encerramento(inv: Inventario, antes: Instantaneo, depois: Instantan
                     "atribuicoes_proprias": len(inv.atribuicoes), "identidades_entra": len(inv.identidades),
                     "principais_proprios": len(inv.principais_proprios), "expurgos": len(inv.expurgos)},
         sha256={"inventario": inv.sha256, **{f"{papel}_antes": h for papel, h in antes.sha256.items()},
-                **{f"{papel}_depois": h for papel, h in depois.sha256.items()}})
+                **{f"{papel}_depois": h for papel, h in depois.sha256.items()}},
+        atribuicoes_herdadas_ignoradas={"antes": antes.atribuicoes_herdadas_ignoradas, "depois": depois.atribuicoes_herdadas_ignoradas})
 
 
 LIMITE_DA_CONFERENCIA = ("Esta conferência compara os arquivos que você exportou; ela não consulta o Azure e não prova custo, a ausência "
@@ -1673,6 +1733,10 @@ def conferencia_em_texto(conferencia: Conferencia) -> str:
                   f"pendente(s), {contagem['nao_aplicavel']} não aplicável(is).")
     for aviso in conferencia.avisos:
         linhas.append(f"[AVISO] {_AVISOS[aviso]}")
+    for momento, arquivo in (("antes", "Linha de base"), ("depois", "Estado final")):
+        quantidade = conferencia.atribuicoes_herdadas_ignoradas.get(momento, 0)
+        if quantidade:
+            linhas.append(f"[AVISO] {arquivo}: {_aviso_de_herdadas(quantidade)}")
     linhas.append(LIMITE_DA_CONFERENCIA)
     return "\n".join(linhas)
 
@@ -1688,7 +1752,11 @@ _AVISOS = {
 
 
 def relatorio_da_conferencia(conferencia: Conferencia) -> dict[str, Any]:
-    """Relatório sanitizado: só contagens, hashes dos arquivos e vocabulário fechado. Sem IDs, nomes nem textos livres."""
+    """Relatório sanitizado: só contagens, hashes dos arquivos e vocabulário fechado. Sem IDs, nomes nem textos livres.
+
+    `atribuicoes_herdadas_ignoradas` é a quantidade de atribuições herdadas (grupo de gerenciamento ou raiz do tenant) ignoradas na linha
+    de base, como no relatório do plano; `atribuicoes_herdadas_ignoradas_depois`, a do estado final. Valem 0 quando não há nenhuma.
+    """
     contagem = Counter(c.estado for c in conferencia.criterios)
     return {
         "versao_relatorio": VERSAO_DO_RELATORIO,
@@ -1698,6 +1766,8 @@ def relatorio_da_conferencia(conferencia: Conferencia) -> dict[str, Any]:
         "verificacoes": [{"id": c.id, "estado": c.estado, "conferidos": c.conferidos, "divergentes": c.divergentes,
                           "pendentes": c.pendentes} for c in conferencia.criterios],
         "linha_de_base": dict(conferencia.linha_de_base),
+        "atribuicoes_herdadas_ignoradas": conferencia.atribuicoes_herdadas_ignoradas.get("antes", 0),
+        "atribuicoes_herdadas_ignoradas_depois": conferencia.atribuicoes_herdadas_ignoradas.get("depois", 0),
         "inventario": dict(conferencia.inventario),
         "avisos": list(conferencia.avisos),
         "entradas_sha256": dict(conferencia.sha256),

@@ -43,6 +43,10 @@ Garantias
     - os comandos impressos são blocos PowerShell COMPLETOS, cada um um único comando composto: ele se recusa a rodar, sem executar
       nada, fora do PowerShell 7 e enquanto a PREPARAÇÃO do plano não tiver sido colada e concluída na mesma janela;
     - o grupo gerenciado do Container Apps só é conferido como ausente: nunca é manipulado;
+    - atribuições de papel HERDADAS de escopos acima da assinatura (a raiz do tenant e grupos de gerenciamento, que o
+      `az role assignment list --all` inclui quando a assinatura fica sob um grupo de gerenciamento) são aceitas nos instantâneos,
+      ignoradas e só contadas: o laboratório não as altera e a ferramenta não as compara. Item de OUTRA assinatura, com `id` e
+      `scope` incoerentes ou de formato desconhecido continua recusado;
     - nenhum bloqueio administrativo é removido e nada é recriado para contornar uma falha;
     - mensagens de erro, de conferência e relatórios nunca repetem IDs, nomes ou segredos. O PLANO em si traz os IDs (ele é a
       lista do que apagar): trate-o como privado, igual ao inventário e aos instantâneos.
@@ -179,10 +183,12 @@ def etapa_plano(args: argparse.Namespace) -> int:
     inventario = enc.carregar_inventario(args.inventario)
     arquivos = _arquivos_da_linha_de_base(args)
     conferida = False
+    herdadas = 0
     if arquivos is not None:
         base = enc.carregar_instantaneo(*arquivos, inventario.assinatura, "antes")
         enc.validar_linha_de_base(inventario, base)
         conferida = not base.vazio
+        herdadas = base.atribuicoes_herdadas_ignoradas
         if not conferida:
             print("[AVISO] A linha de base está totalmente vazia: não dá para distinguir uma assinatura sem nada de uma exportação da "
                   "assinatura errada, então ela não conferiu nada. Este plano é só uma PRÉVIA.", file=sys.stderr)
@@ -190,7 +196,7 @@ def etapa_plano(args: argparse.Namespace) -> int:
         print("[AVISO] Sem a linha de base (--grupos-antes, --recursos-antes e --papeis-antes), não foi possível conferir que nenhum "
               "alvo já existia antes do laboratório: este plano é só uma PRÉVIA. Não execute nada antes de repetir o comando com os "
               "três arquivos.", file=sys.stderr)
-    plano = enc.montar_plano(inventario, conferida)
+    plano = enc.montar_plano(inventario, conferida, herdadas)
     print(json.dumps(enc.plano_em_dict(plano), ensure_ascii=False, indent=2) if args.formato == "json" else enc.plano_em_texto(plano))
     if relatorio is not None:
         enc.gravar_relatorio(relatorio, enc.relatorio_do_plano(plano))
