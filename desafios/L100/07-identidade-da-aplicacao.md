@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Exercício executável. Etapa 1 conferida localmente; Etapas 2 a 8 executadas no Azure em 9 de outubro de 2026, em Windows e PowerShell, após autorização para criar a identidade no tenant, o diretório do Microsoft Entra ID. Identidade, credencial, papéis e recursos temporários removidos. Veja [Situação da validação](#situação-da-validação). |
+| Situação | Exercício executável. Etapa 1 conferida localmente; Etapas 2 a 8 executadas no Azure em 9 de outubro de 2026, em Windows e PowerShell, após autorização para criar a identidade no tenant, o diretório do Microsoft Entra ID. Identidade, credencial, papéis e recursos temporários removidos. A correção do verificador de 11 de outubro de 2026 foi conferida apenas com dublês, sem nova execução Azure. Veja [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e conferir os resultados; escrever código é opcional. |
 | Pré-requisito | [Desafio 03](03-responder-com-fontes.md) concluído: o serviço de busca com o índice, o deployment de geração e o `perguntar.py`. Os Desafios 04 a 06 melhoram o assistente, mas não são necessários aqui. |
 | Resultado previsto | Um Azure Key Vault, um service principal (identidade da aplicação) com papéis para consultar o índice e usar os modelos, cinco operações conferidas por `verificar_identidade.py` e perguntas com `perguntar.py --identidade aplicacao`. |
@@ -53,7 +53,7 @@ Ao concluir este desafio, você terá:
 - criado um Key Vault com autorização por papéis e guardado nele um segredo sem mostrá-lo na tela, em arquivo ou no histórico;
 - visto, com a sua conta, o que "privilégio demais" parece;
 - criado um service principal e concedido a ele os dois papéis para consultar o índice e usar os modelos;
-- executado o assistente como aplicação, com o segredo lido do cofre, e conferido que as operações proibidas são negadas;
+- executado o assistente como aplicação, com o segredo lido do cofre, e conferido que as três operações proibidas testadas são negadas;
 - removido a identidade, o segredo e o cofre.
 
 **Próximos desafios:** este é o último desafio do nível L100. O
@@ -73,7 +73,7 @@ a hospedagem posterior usa identidade gerenciada, não a credencial temporária 
 | Parâmetros do Desafio 07 | [infra\levels\l100-desafio07.bicepparam](../../infra/levels/l100-desafio07.bicepparam) | Disponível; validado com a aplicação |
 | Guardar o segredo sem expô-lo | [scripts\guardar_segredo.py](../../scripts/guardar_segredo.py) | Disponível; validado |
 | Segredo, credencial e erros da identidade | [scripts\lab_identidade.py](../../scripts/lab_identidade.py) | Disponível; credencial válida, segredo inválido e expiração no cofre conferidos; demais erros descritos na validação |
-| Conferência do privilégio mínimo | [scripts\verificar_identidade.py](../../scripts/verificar_identidade.py) | Disponível; validado com operador e aplicação |
+| Conferência de cinco operações | [scripts\verificar_identidade.py](../../scripts/verificar_identidade.py) | Disponível; versão anterior executada com operador e aplicação no Azure; correção conferida apenas com dublês |
 | Pergunta e resposta com a opção `--identidade` | [scripts\perguntar.py](../../scripts/perguntar.py) | Disponível; executado como aplicação |
 | Dependências, com a biblioteca do Key Vault | [requirements\l100.txt](../../requirements/l100.txt) | Disponível |
 | Testes automáticos da identidade (sem Azure) | [tests\test_identidade.py](../../tests/test_identidade.py) | Disponíveis |
@@ -90,7 +90,7 @@ a hospedagem posterior usa identidade gerenciada, não a credencial temporária 
 | Azure Key Vault | Cofre de segredos, chaves e certificados; usa controle de acesso por papéis (RBAC, *Role-Based Access Control*) [4][5] | A leitura exige um papel de dados. O nome do cofre excluído fica reservado durante a retenção, salvo expurgo permitido [6] |
 | Papéis usados | `Key Vault Secrets Officer` (guardar e ler segredos, para o operador), `Search Index Data Reader` (só consultar documentos) e `Cognitive Services OpenAI User` (usar os deployments, sem administrá-los) [7][8] | Cada papel vale em um escopo: o cofre, o serviço de busca ou o recurso de modelos |
 | `ClientSecretCredential` | Classe do SDK (*Software Development Kit*, conjunto de bibliotecas de programação) do Azure que autentica o service principal com o ID do tenant, o ID da aplicação e o segredo [9] | O segredo fica na memória do programa: nunca o imprima |
-| `verificar_identidade.py` | Tenta 2 operações que a identidade precisa fazer e 3 que ela não deve poder fazer | Uma tentativa envia exclusão ao índice fixo `vlr-verificacao-inexistente`; só não altera conteúdo se esse índice realmente não existir |
+| `verificar_identidade.py` | Tenta 2 operações que a identidade precisa fazer e 3 que ela não deve poder fazer | A exclusão usa um índice de nome aleatório que não existe, diferente do índice informado em `--indice`; o resultado vale só para as cinco tentativas |
 
 **Conceitos necessários:** três identidades, segredo e cofre, privilégio mínimo e conferência de operações.
 
@@ -136,21 +136,31 @@ O processo recebe o valor em memória; a cópia guardada permanece no cofre. Sem
 usam a sessão do operador, como nos desafios anteriores. A opção aplica-se a `perguntar.py` e
 `verificar_identidade.py`; o agente e a avaliação dos Desafios 05 e 06 mantêm a identidade do operador.
 
-**5. Como conferir as operações proibidas.** O verificador tenta excluir o índice
-`vlr-verificacao-inexistente`, ler um segredo descartando o valor e listar um item do Blob Storage.
-O código não verifica se esse índice existe antes da exclusão. Se ele existir e a identidade tiver
-permissão, será apagado: a mensagem do script "somente leitura" não garante ausência de efeitos.
-A recusa de acesso é esperada com
-HTTP 403 (*Hypertext Transfer Protocol*, protocolo da web; *Forbidden*, proibido).
-Uma operação proibida aceita indica privilégio demais; uma operação necessária recusada indica
-privilégio de menos. O resultado cobre as cinco operações testadas, não todas as ações possíveis da
-identidade.
+**5. Como conferir as operações proibidas.** O verificador tenta excluir um índice de nome aleatório
+que não existe, ler um segredo descartando o valor e listar um item do Blob Storage.
+O nome começa com `vlr-verificacao-` e termina com 16 dígitos hexadecimais (de 0 a 9 e de a a f).
+O programa usa `secrets.token_hex(8)` para gerar 8 bytes, ou 64 bits, de aleatoriedade [11].
+A cada execução, sorteia um nome novo; se coincidir com o índice informado em `--indice`,
+descarta o nome e sorteia de novo. Esse índice não é criado para o teste.
 
-> **Atenção — condição para as Etapas 4 e 7:** o responsável pelo serviço exclusivo do laboratório
-> precisa conferir a ausência de `vlr-verificacao-inexistente` na lista completa de índices e garantir
-> que ninguém o crie durante a conferência. Se não puder garantir isso, omita o verificador e registre
-> a pendência; não o execute em serviço compartilhado. Essas etapas enviam uma tentativa de exclusão
-> e exigem autorização correspondente, mesmo que a intenção seja receber uma recusa.
+A exclusão continua sendo um pedido de escrita autenticado: a resposta confere a permissão,
+sem remover um índice real. A recusa esperada é
+HTTP 403 (*Hypertext Transfer Protocol*, protocolo da web; *Forbidden*, proibido).
+Se o serviço aceitar o pedido ou responder HTTP 404 (*Not Found*, alvo não encontrado) depois da
+autorização, o verificador marca "permitido": privilégio demais para a aplicação, mesmo sem excluir
+conteúdo. Uma operação necessária recusada indica privilégio de menos.
+O resultado cobre as cinco tentativas, não todas as ações possíveis da identidade.
+Revise também os papéis, seus escopos e eventuais atribuições herdadas.
+
+> **Para guardar na memória: a portaria e a sala que não existe.** É como pedir à portaria a remoção
+> de uma sala com um número recém-sorteado, que não foi usado no prédio: testa-se a autorização sem
+> mirar uma sala em uso. Cinco pedidos não mostram todos os acessos do crachá. Analogia criada para este curso.
+
+> **Atenção — execução das Etapas 4 e 7:** a conferência manual de ausência de um nome fixo deixa de
+> ser condição, pois o código sorteia um nome novo, diferente do índice consultado, para o alvo inexistente.
+> Use o serviço do laboratório, de preferência exclusivo, e papéis no menor escopo possível.
+> O pedido de escrita autenticado exige autorização correspondente, embora não altere recursos existentes.
+> Sem essa autorização, omita o verificador e registre a pendência.
 
 ## Reaproveitamento e acréscimos
 
@@ -223,7 +233,7 @@ python -m pip show azure-keyvault-secrets
 python -m unittest discover -s tests -p "test_identidade.py"
 ```
 
-**Resultado esperado:** uma linha de pontos, `Ran 36 tests` e `OK`.
+**Resultado esperado:** uma linha de pontos, `Ran 41 tests` e `OK`.
 
 **Atividade 1:** abra `scripts\lab_identidade.py` e procure por `print(`: o módulo que lê e guarda o segredo não imprime nada. Depois abra `scripts\guardar_segredo.py`, localize as duas linhas com `print(` e confirme que nenhuma usa a variável `valor`, que guarda o segredo.
 
@@ -362,31 +372,32 @@ evidência. A comparação de leitura e gravação feita no ambiente testado est
 ## Etapa 4: ver o contraste com a sua conta
 
 **Objetivo:** comparar as permissões do operador com as operações necessárias à aplicação.
-**[altera o Azure]** se o índice de teste existir: cumpra a condição de ausência e exclusividade
-descrita em Tecnologias e conceitos antes de executar. A geração de embeddings consome tokens.
+Esta etapa não cria, troca nem remove recursos existentes: a tentativa de exclusão envia um pedido
+de escrita autenticado ao índice de nome aleatório que não existe, e a resposta serve para conferir
+a permissão. A geração de embeddings consome tokens.
 
 ```powershell
 python scripts\verificar_identidade.py --busca $busca --modelos $modelos --conta $conta --cofre $cofre --nome-do-segredo segredo-de-teste --identidade operador
 ```
 
 O programa tenta cinco operações com a identidade escolhida. Duas são necessárias ao assistente
-(consultar o índice e gerar embeddings), e três não devem ser permitidas a ele: apagar o índice
-de teste, ler o segredo e descartar o valor, e pedir o primeiro item da lista de documentos.
-A ausência de alteração depende da condição anterior, não apenas do nome escolhido pelo script.
+(consultar o índice e gerar embeddings), e três não devem ser permitidas a ele: apagar um índice
+de nome aleatório que não existe, ler o segredo e descartar o valor, e pedir o primeiro item da lista
+de documentos. O resultado descreve somente essas cinco tentativas, não todo o acesso da identidade.
 
-**Exemplo de saída com os papéis dos Desafios 01 a 03 e da Etapa 2.** As permissões da sua conta
+**Exemplo de saída esperada da versão corrigida, com os papéis dos Desafios 01 a 03 e da Etapa 2.** As permissões da sua conta
 determinam o resultado; nesta configuração, o código 3 indica operações excedentes para a aplicação:
 
 ```text
-Verificação somente leitura do privilégio mínimo · identidade: operador (sessão do Azure CLI)
+Verificação do privilégio mínimo, sem alterar recursos existentes · identidade: operador (sessão do Azure CLI)
 Alvos: busca 'srch-vlr-...', modelos 'ais-vlr-...', conta 'stvlrag...', cofre 'kv-vlr-...'.
 [OK   ] Consultar o índice 'vareleira-lar-l100' (leitura): permitido, como esperado (operação aceita)
 [OK   ] Gerar embeddings no recurso 'ais-vlr-...': permitido, como esperado (operação aceita)
-[FALHA] Alterar o serviço de busca (apagar um índice que não existe): esperado negado, obtido permitido (operação aceita). PRIVILÉGIO DEMAIS: a identidade não deveria poder fazer isto. Revise os papéis dela
+[FALHA] Alterar o serviço de busca (apagar um índice de nome aleatório que não existe): esperado negado, obtido permitido (operação aceita). PRIVILÉGIO DEMAIS: a identidade não deveria poder fazer isto. Revise os papéis dela
 [FALHA] Ler o segredo 'segredo-de-teste' do cofre 'kv-vlr-...': esperado negado, obtido permitido (operação aceita). PRIVILÉGIO DEMAIS: a identidade não deveria poder fazer isto. Revise os papéis dela
 [FALHA] Listar os documentos da conta 'stvlrag...': esperado negado, obtido permitido (operação aceita). PRIVILÉGIO DEMAIS: a identidade não deveria poder fazer isto. Revise os papéis dela
 Esta conferência usou a sua conta, que costuma ter papéis amplos: as falhas por privilégio demais são o contraste esperado. Use --identidade aplicacao para conferir a aplicação.
-Privilégio divergente do esperado. Corrija os papéis e repita. Nada foi alterado por este script.
+Privilégio divergente do esperado. Corrija os papéis e repita. Este resultado vale só para as cinco tentativas acima. Nenhum recurso existente foi alterado por este script: a exclusão testada usa o nome aleatório de um índice que não existe.
 ```
 
 **Atividade 3:** para cada `[FALHA]`, diga qual papel da sua conta concede a permissão e que dano a aplicação poderia causar se tivesse a mesma permissão.
@@ -475,28 +486,32 @@ Um papel novo pode levar alguns minutos para valer.
 > Registre os resultados da sua execução, inclusive as três recusas esperadas.
 
 **Objetivo:** executar as cinco tentativas como aplicação e fazer uma pergunta com essa identidade.
-**[altera o Azure]** se o índice de teste existir e houver permissão excedente: cumpra a mesma
-condição das Etapas 4 e Tecnologias e conceitos. Embeddings e geração consomem tokens.
+Esta etapa não cria, troca nem remove recursos existentes: o verificador envia um pedido de escrita
+autenticado ao índice de nome aleatório que não existe, para conferir a permissão. Embeddings e
+geração consomem tokens.
 
 ```powershell
 python scripts\verificar_identidade.py --busca $busca --modelos $modelos --conta $conta --cofre $cofre --id-da-aplicacao $aplicacao --tenant-id $tenant
 ```
 
-**Exemplo de saída conferida no Azure** (nomes substituídos por marcadores):
+**Exemplo de saída esperada da versão corrigida** (nomes substituídos por marcadores).
+A execução histórica no Azure usou o nome fixo; o alvo aleatório e as mensagens atuais foram
+conferidos apenas por testes locais com dublês:
 
 ```text
-Verificação somente leitura do privilégio mínimo · identidade: aplicação (service principal), com o segredo lido do cofre 'kv-vlr-...'
+Verificação do privilégio mínimo, sem alterar recursos existentes · identidade: aplicação (service principal), com o segredo lido do cofre 'kv-vlr-...'
 Alvos: busca 'srch-vlr-...', modelos 'ais-vlr-...', conta 'stvlrag...', cofre 'kv-vlr-...'.
 [OK   ] Consultar o índice 'vareleira-lar-l100' (leitura): permitido, como esperado (operação aceita)
 [OK   ] Gerar embeddings no recurso 'ais-vlr-...': permitido, como esperado (operação aceita)
-[OK   ] Alterar o serviço de busca (apagar um índice que não existe): negado, como esperado (HTTP 403)
+[OK   ] Alterar o serviço de busca (apagar um índice de nome aleatório que não existe): negado, como esperado (HTTP 403)
 [OK   ] Ler o segredo 'segredo-da-aplicacao' do cofre 'kv-vlr-...': negado, como esperado (HTTP 403)
 [OK   ] Listar os documentos da conta 'stvlrag...': negado, como esperado (HTTP 403)
-Privilégio mínimo confirmado: a identidade faz o que precisa e nada além. Nada foi alterado por este script.
+As duas operações necessárias funcionaram e as três proibidas foram recusadas. Este resultado vale só para as cinco tentativas acima. Nenhum recurso existente foi alterado por este script: a exclusão testada usa o nome aleatório de um índice que não existe. Isso não prova que a identidade não tenha outros acessos: revise também as atribuições de papel dela no Azure.
 ```
 
-A frase final é a mensagem histórica do programa; interprete-a somente no alcance das cinco
-operações e da condição de ausência do índice de teste, não como auditoria de todas as permissões.
+Cinco linhas `[OK]` e código de saída 0 indicam que as duas operações necessárias funcionaram
+e as três proibidas foram recusadas. Isso não confirma privilégio mínimo em todos os acessos:
+revise também as atribuições de papel da aplicação no Azure.
 
 Se uma das duas primeiras linhas informar "PRIVILÉGIO DE MENOS", confira os papéis e os escopos.
 Logo após a Etapa 6, aguarde a propagação das atribuições antes de repetir.
@@ -606,7 +621,7 @@ Não instale pacotes, não acesse o Azure, não crie identidades nem credenciais
 Leia o L100, Desafio 07, o README e as instruções do projeto.
 Proponha, sem editar, como dar a um assistente que lê documentos uma identidade própria no Azure:
 que tipo de identidade usar em cada ambiente, que papéis conceder e em que escopo, onde guardar a credencial,
-como provar que ela não faz mais que o necessário e como removê-la.
+como conferir as cinco operações do verificador sem tratá-las como auditoria de todos os acessos, revisar os papéis e remover a identidade.
 Não crie identidades nem credenciais, não atribua papéis, não envie dados e não exclua recursos.
 ```
 
@@ -616,13 +631,13 @@ Qualquer ação que crie identidades, credenciais ou papéis continua dependendo
 
 | Verificação | Como conferir | Evidência esperada |
 | --- | --- | --- |
-| Biblioteca e testes | Etapa 1 | `Version: 4.11.3`; `Ran 36 tests` e `OK` |
+| Biblioteca e testes | Etapa 1 | `Version: 4.11.3`; `Ran 41 tests` e `OK` |
 | Cofre | Etapa 2 | `kv-vlr-...`; what-if com dois recursos para criar |
 | Segredo guardado sem exposição | Etapa 3 e a Atividade 2 | Mensagem "gravado no cofre"; valor ausente da saída e do histórico |
 | Contraste com a sua conta | Etapa 4 e a Atividade 3 | Comparação de cada operação com seus papéis; com os papéis do exercício, 2 linhas `[OK]` e 3 `[FALHA]` |
 | Identidade da aplicação | Etapa 5 e a Atividade 4 | Credencial no cofre; datas de validade do Entra ID e do cofre conferidas separadamente |
 | Papéis da aplicação | Etapa 6 | Duas atribuições para o service principal, nos escopos da busca e dos modelos |
-| Privilégio mínimo | Etapa 7 e as Atividades 5 e 6 | 5 linhas `[OK]`, com 3 operações negadas (HTTP 403) |
+| Cinco operações da aplicação | Etapa 7 e as Atividades 5 e 6 | 5 linhas `[OK]`, código 0: 2 operações necessárias permitidas e 3 proibidas negadas (HTTP 403); resultado limitado às cinco tentativas, acompanhado da revisão dos papéis |
 | Limpeza | Etapa 8 | Papéis, registro e service principal ausentes; cofre excluído e expurgado; recursos preexistentes preservados |
 
 Antes de encerrar, registre em local privado o grupo de recursos, os nomes da busca, dos modelos e do cofre, o ID da aplicação e a decisão de manter, pausar ou remover os recursos. Ao compartilhar evidências, remova das saídas do terminal os identificadores do ambiente (assinatura, tenant, aplicação e nomes de recursos) e as contas de usuário.
@@ -668,13 +683,20 @@ Consulte `az keyvault list-deleted` e trate apenas o cofre deste exercício, pre
 
 Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de testes, o que foi e o que não foi executado e as observações de operação, está em [docs\validacao\l100-07-identidade-da-aplicacao.md](../../docs/validacao/l100-07-identidade-da-aplicacao.md).
 
+As execuções Azure registradas usaram a versão anterior, com nome fixo. A
+[correção posterior do verificador](../../docs/validacao/l100-07-identidade-da-aplicacao.md#correção-posterior-do-verificador-11-de-outubro-de-2026),
+de 11 de outubro de 2026, foi conferida apenas por testes locais com dublês; o mantenedor não
+autorizou novas operações Azure nesta rodada.
+
 **Versões testadas:** Windows, Python 3.12.10, Azure CLI 2.89.0, `azure-keyvault-secrets` 4.11.3, `azure-identity` 1.26.0 e as bibliotecas dos desafios anteriores.
 
 | Item | Situação | Detalhe |
 | --- | --- | --- |
 | Etapas 2 a 4 e 8.2 (cofre, segredo, conferência com a sua conta e limpeza) | Concluído | Executadas em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03 |
 | Etapas 5 a 7 e 8.1 (service principal, papéis e execução como aplicação) | Concluído | Identidade temporária e dois papéis conferidos; 5 operações aprovadas, com 3 recusas HTTP 403; pergunta respondida com 2 citações literais; credencial, papéis e identidade removidos |
-| Scripts e testes automáticos (sem Azure) | Concluído | Testes aprovados, com 36 casos novos em `test_identidade.py` |
+| Scripts e testes automáticos da versão inicial (sem Azure) | Concluído | Testes aprovados, com 36 casos novos em `test_identidade.py`, em 9 de outubro de 2026 |
+| Correção do verificador (nome aleatório e alcance das mensagens) | Conferida localmente | 41 testes do módulo `test_identidade` aprovados com dublês, em 11 de outubro de 2026 |
+| Verificador corrigido no Azure | Não executado | O alvo aleatório não foi reconferido no serviço; uma nova execução exige autorização específica |
 | Links, âncoras, URLs e referências dos guias | Concluído | Nenhum link ou âncora inválido |
 | Aprovação do conteúdo dos documentos sintéticos | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; registro no inventário |
 | Aprovação do texto, do código e dos resultados | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; execução e limpeza descritas no registro |
@@ -690,8 +712,11 @@ e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini
 Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
 conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
 autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
-A tentativa de exclusão com nome fixo continua no código; as condições de execução estão explicitadas
-acima, e a correção do verificador exige uma atividade de código separada.
+A correção posterior do verificador substituiu o alvo fixo por um nome aleatório e delimitou as
+mensagens às cinco tentativas, sem repetir a execução histórica no Azure.
+
+Correção do verificador: Claude Sonnet 5.5, em 11 de outubro de 2026; texto desta atualização:
+GPT-6.1 Sol, com Astra indisponível.
 
 ## Glossário
 
@@ -717,12 +742,13 @@ acima, e a correção do verificador exige uma atividade de código separada.
 | Expurgo | Exclusão definitiva de um cofre ou segredo que estava em exclusão reversível |
 | Pipe (`|`) | Encadeamento da saída de um comando na entrada de outro, sem passar por arquivo ou argumento |
 | HTTP 403 | Resposta do serviço quando a identidade existe, mas não tem permissão para a operação |
+| HTTP 404 | Resposta de alvo não encontrado; na tentativa de exclusão, quando vem depois da autorização, conta como operação permitida |
 | `ClientSecretCredential` | Classe do SDK do Azure que autentica um service principal com tenant, ID da aplicação e segredo |
-| Tentativa de exclusão | Pedido de escrita ao índice de teste; só não remove conteúdo quando esse índice realmente está ausente ou a autorização é negada |
+| Tentativa de exclusão | Pedido de escrita autenticado a um índice de nome aleatório que não existe, diferente do índice informado em `--indice`; confere a permissão sem remover um índice real e é apenas uma das cinco tentativas |
 
 ## Referências
 
-Fontes oficiais consultadas em 9 de outubro de 2026. Nomes de interface, limites, preços e disponibilidade mudam: confira a versão atual antes de aplicar.
+Fontes oficiais 1 a 10 consultadas em 9 de outubro de 2026; fonte 11 consultada para a atualização de 11 de outubro de 2026. Nomes de interface, limites, preços e disponibilidade mudam: confira a versão atual antes de aplicar.
 
 1. [Aplicativos e service principals no Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity-platform/app-objects-and-service-principals).
 2. [Registrar um aplicativo do Microsoft Entra e criar um service principal](https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-service-principal-portal).
@@ -734,5 +760,10 @@ Fontes oficiais consultadas em 9 de outubro de 2026. Nomes de interface, limites
 8. [Conectar-se ao Azure AI Search com funções do Azure](https://learn.microsoft.com/en-us/azure/search/search-security-rbac).
 9. [Autenticar aplicativos Python no Azure durante o desenvolvimento local com service principals](https://learn.microsoft.com/en-us/azure/developer/python/sdk/authentication/local-development-service-principal).
 10. [Preços do Azure Key Vault](https://azure.microsoft.com/en-us/pricing/details/key-vault/).
+11. [Geração de texto hexadecimal aleatório com `secrets.token_hex`, no Python](https://docs.python.org/3/library/secrets.html#secrets.token_hex).
+
+O comportamento corrigido está no [verificador](../../scripts/verificar_identidade.py) e nos
+[testes da identidade](../../tests/test_identidade.py). O alcance da conferência local e o histórico
+Azure estão na [correção posterior registrada](../../docs/validacao/l100-07-identidade-da-aplicacao.md#correção-posterior-do-verificador-11-de-outubro-de-2026).
 
 As atribuições do contexto fictício estão em [NOTICE.md](../../NOTICE.md). O texto deste guia está sob a licença Creative Commons Atribuição 4.0 (CC BY 4.0; veja [LICENSE](../../LICENSE)).

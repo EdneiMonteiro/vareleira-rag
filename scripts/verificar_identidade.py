@@ -2,10 +2,12 @@
 
 Com a identidade da aplicação (service principal), o script tenta duas operações que ela precisa fazer (consultar o índice e
 gerar embeddings) e três que ela não deve poder fazer: alterar o serviço de busca, ler o segredo do cofre e listar os documentos do
-armazenamento. As tentativas proibidas usam alvos que não existem ou resultados descartados, para não alterar nada se a
-permissão estiver errada. O resultado "permitido" nelas significa privilégio demais; "negado" nas duas primeiras, privilégio de
-menos. O segredo da aplicação é lido do cofre com a sua conta (az login). Com --identidade operador, as mesmas tentativas usam a
-sua conta, que costuma ter papéis amplos, para mostrar o contraste. Não altera nada no Azure.
+armazenamento. As tentativas proibidas usam alvos que não existem ou resultados descartados. A de busca tenta apagar um índice
+de nome aleatório, novo a cada execução: como esse índice não existe, ela não atinge nenhum índice real, mesmo que a permissão
+esteja errada. O resultado "permitido" nelas significa privilégio demais; "negado" nas duas primeiras, privilégio de menos.
+O resultado vale só para essas cinco tentativas: não prova que a identidade não tenha outros acessos. O segredo da aplicação é
+lido do cofre com a sua conta (az login). Com --identidade operador, as mesmas tentativas usam a sua conta, que costuma ter
+papéis amplos, para mostrar o contraste. Não cria, altera nem apaga recursos existentes.
 
 Exemplos:
     python scripts\\verificar_identidade.py --busca <busca> --modelos <modelos> --conta <conta> --cofre <cofre> --id-da-aplicacao <appId> --tenant-id <tenant>
@@ -15,6 +17,7 @@ Exemplos:
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -25,8 +28,13 @@ import lab_indexacao
 from lab_comum import Verificacao
 
 PERMITIDO, NEGADO, INCONCLUSIVO = "permitido", "negado", "inconclusivo"
-INDICE_INEXISTENTE = "vlr-verificacao-inexistente"
+PREFIXO_INDICE_DESCARTAVEL = "vlr-verificacao-"
 TEXTO_DE_TESTE = "teste da identidade da aplicação"
+
+
+def nome_de_indice_descartavel() -> str:
+    """Nome novo e aleatório (64 bits) a cada chamada. Um nome fixo poderia coincidir com um índice real do serviço."""
+    return PREFIXO_INDICE_DESCARTAVEL + secrets.token_hex(8)
 
 
 @dataclass(frozen=True)
@@ -70,14 +78,18 @@ def conferir(tentativa: Tentativa) -> Verificacao:
 
 def montar_tentativas(args: argparse.Namespace, credencial: Any) -> list[Tentativa]:
     indice = lab_indexacao.abrir_indice(args.busca, args.indice, args.tenant_id, credencial)
-    inexistente = lab_indexacao.abrir_indice(args.busca, INDICE_INEXISTENTE, args.tenant_id, credencial)
+    descartavel = nome_de_indice_descartavel()
+    while descartavel == args.indice:
+        descartavel = nome_de_indice_descartavel()
+    inexistente = lab_indexacao.abrir_indice(args.busca, descartavel, args.tenant_id, credencial)
     embeddings = lab_indexacao.criar_cliente_embeddings(args.modelos, args.deployment, args.dimensoes, args.tenant_id, credencial)
     cofre = lab_identidade.criar_cliente_de_segredos(args.cofre, args.tenant_id, credencial)
     container = lab_comum.criar_container(args.conta, args.container, args.tenant_id, credencial)
     return [
         Tentativa(f"Consultar o índice '{args.indice}' (leitura)", PERMITIDO, indice.contar),
         Tentativa(f"Gerar embeddings no recurso '{args.modelos}'", PERMITIDO, lambda: embeddings.gerar([TEXTO_DE_TESTE])),
-        Tentativa("Alterar o serviço de busca (apagar um índice que não existe)", NEGADO, inexistente.apagar, True),
+        Tentativa("Alterar o serviço de busca (apagar um índice de nome aleatório que não existe)", NEGADO,
+                  inexistente.apagar, True),
         Tentativa(f"Ler o segredo '{args.nome_do_segredo}' do cofre '{args.cofre}'", NEGADO,
                   lambda: cofre.get_secret(args.nome_do_segredo), True),
         Tentativa(f"Listar os documentos da conta '{args.conta}'", NEGADO,
@@ -89,7 +101,7 @@ def executar(args: argparse.Namespace) -> int:
     if args.identidade == "operador" and not args.cofre:
         raise lab_comum.ErroLab("Informe --cofre: uma das tentativas lê um segredo do cofre.")
     credencial = lab_identidade.resolver_credencial(args)
-    print(f"Verificação somente leitura do privilégio mínimo · identidade: {lab_identidade.descrever_identidade(args)}")
+    print(f"Verificação do privilégio mínimo, sem alterar recursos existentes · identidade: {lab_identidade.descrever_identidade(args)}")
     print(f"Alvos: busca '{args.busca}', modelos '{args.modelos}', conta '{args.conta}', cofre '{args.cofre}'.")
     resultados: list[Verificacao] = []
     for tentativa in montar_tentativas(args, credencial):
@@ -100,10 +112,13 @@ def executar(args: argparse.Namespace) -> int:
     if args.identidade == "operador":
         print("Esta conferência usou a sua conta, que costuma ter papéis amplos: as falhas por privilégio demais são o contraste "
               "esperado. Use --identidade aplicacao para conferir a aplicação.")
+    alcance = ("Este resultado vale só para as cinco tentativas acima. Nenhum recurso existente foi alterado por este script: "
+               "a exclusão testada usa o nome aleatório de um índice que não existe.")
     if all(resultado.ok for resultado in resultados):
-        print("Privilégio mínimo confirmado: a identidade faz o que precisa e nada além. Nada foi alterado por este script.")
+        print("As duas operações necessárias funcionaram e as três proibidas foram recusadas. " + alcance + " Isso não prova que "
+              "a identidade não tenha outros acessos: revise também as atribuições de papel dela no Azure.")
         return lab_comum.CODIGO_OK
-    print("Privilégio divergente do esperado. Corrija os papéis e repita. Nada foi alterado por este script.")
+    print("Privilégio divergente do esperado. Corrija os papéis e repita. " + alcance)
     return lab_comum.CODIGO_DIVERGENCIA
 
 
