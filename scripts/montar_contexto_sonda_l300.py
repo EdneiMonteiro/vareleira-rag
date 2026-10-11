@@ -3,7 +3,13 @@
 Por que uma pasta própria. O Dockerfile e o .dockerignore da RAIZ do repositório são do chat: o teste do chat exige que a lista de
 permissão deles seja exatamente o que o Dockerfile do chat copia, e a sonda não pode entrar lá. Na rodada Azure, um `az acr build`
 com o contexto errado selecionou o Dockerfile da raiz, e a imagem "da sonda" saiu como a do chat. Aqui o contexto é uma pasta NOVA, montada
-em separado, com só a lista fechada de arquivos da sonda e o Dockerfile dela; o comando de build aponta para essa pasta.
+em separado, com só a lista fechada de arquivos da sonda e o Dockerfile dela; o comando de build roda de DENTRO dessa pasta.
+
+Por que de dentro da pasta. O az resolve --file a partir do diretório ATUAL, e não do contexto. Com a raiz do repositório como diretório
+atual, o ACR recebe o contexto da sonda mas executa o Dockerfile do chat e falha de forma confusa (COPY ... file does not exist); com um
+diretório sem Dockerfile, o az para em "Unable to find 'Dockerfile'". Por isso o comando de referência (só impresso) entra na pasta do
+contexto com Set-Location e usa `.` como origem, sem --file. O --no-logs evita uma falha de Unicode (cp1252) do Windows ao transmitir o
+log; o log se lê depois com `az acr task logs --run-id`, e o run-id está no JSON final do build.
 
 O que a pasta recebe (e nada além disto):
     scripts/sonda_l300.py; o gerador de carga do L400 (scripts/gerar_carga_l400.py), que a sonda não chama e que roda dentro da rede por
@@ -23,10 +29,10 @@ repositório). Depois: cada arquivo copiado tem o mesmo SHA-256 da origem, e a p
 o que foi criado é retirado. A pasta de destino precisa ser nova ou estar vazia: o montador RECUSA uma pasta com conteúdo.
 
 Não usa rede, Azure, Docker nem az: só lê o repositório (os arquivos da lista fechada e os dois modelos) e grava na pasta indicada, que
-precisa ser nova ou vazia. O build em si é um passo separado, que ALTERA o Azure
-(envia o contexto e cria uma imagem no registro, com custo de execução do build e de armazenamento da imagem): o comando de referência
-é só impresso, em PowerShell, e exige destinos e autorização seus. Limpeza: apague a pasta do contexto quando o build terminar (ela só
-tem cópias); a imagem no registro é retirada pelo roteiro de limpeza do desafio, não por este script.
+precisa ser nova ou vazia. O build em si é um passo separado, que ALTERA o Azure (envia o contexto e cria uma imagem no registro, com
+custo de execução do build e de armazenamento da imagem): o comando de referência é só impresso, em PowerShell, e exige assinatura,
+destinos e autorização seus. Limpeza: apague a pasta do contexto quando o build terminar (ela só tem cópias); a imagem no registro é
+retirada pelo roteiro de limpeza do desafio, não por este script.
 
 Código de saída: 0 montado; 1 uso, pasta de destino inválida ou erro ao gravar; 3 o repositório não confere (origem ausente, modelo
 diferente da lista fechada, hash diferente depois da cópia); 4 defeito.
@@ -275,13 +281,23 @@ def retirar(criados: list[Path]) -> None:
 
 
 def comando_de_build(destino: Path, registro: str | None, imagem_do_chat: str | None, imagem_da_sonda: str | None) -> str:
-    """O comando de referência em PowerShell: a pasta do contexto é o ÚLTIMO argumento e o Dockerfile é o dela (--file)."""
+    """O comando de referência em PowerShell: entra na pasta do contexto e usa `.` como origem, sem --file.
+
+    O az resolve --file a partir do diretório atual, e não do contexto: por isso o diretório atual precisa ser a própria pasta do contexto.
+    """
     registro = registro or "<registro>"
     imagem_do_chat = imagem_do_chat or f"{registro}.azurecr.io/<repositorio-do-chat>:<tag-do-chat>"
     imagem_da_sonda = imagem_da_sonda or "<repositorio-da-sonda>:<tag-nova>"
     pasta = "'" + str(destino).replace("'", "''") + "'"
-    return "\n".join(["az acr build `", f"    --registry {registro} `", f"    --image {imagem_da_sonda} `",
-                      f"    --build-arg IMAGEM_CHAT={imagem_do_chat} `", f"    --file {DOCKERFILE} `", f"    {pasta}"])
+    return "\n".join([f"Set-Location -LiteralPath {pasta}", "az acr build `", "    --subscription <assinatura> `",
+                      f"    --registry {registro} `", f"    --image {imagem_da_sonda} `", f"    --build-arg IMAGEM_CHAT={imagem_do_chat} `",
+                      "    --no-logs ."])
+
+
+def comando_dos_logs(registro: str | None) -> str:
+    """Como ler o log depois do build: UTF-8 na sessão (o --no-logs existe por causa do cp1252) e o run-id do JSON final do build."""
+    return "\n".join(["$env:PYTHONIOENCODING = 'utf-8'",
+                      f"az acr task logs --subscription <assinatura> --registry {registro or '<registro>'} --run-id <run-id>"])
 
 
 def dentro_do_repositorio(destino: Path) -> bool:
@@ -304,13 +320,17 @@ def executar(args: argparse.Namespace) -> int:
     print("Conferido: os COPY do Dockerfile e a lista de permissão são exatamente a lista fechada, e a pasta não tem nenhum outro arquivo.")
     print()
     print("Comando de build de referência (PowerShell). Ele ALTERA o Azure: envia este contexto ao registro e cria uma imagem nele. "
-          "Só execute com autorização e com registro, imagem do chat e tag SEUS, trocando os valores entre < >:")
+          "Só execute com autorização e com assinatura, registro, imagem do chat e tag SEUS, trocando os valores entre < >:")
     print(comando_de_build(destino, args.registro, args.imagem_chat, args.imagem_sonda))
     print()
-    print("Confira ao rodar: a pasta do contexto é o ÚLTIMO argumento e --file aponta o Dockerfile dela (o da raiz do repositório é o do chat). "
-          "O log do build precisa mostrar ARG IMAGEM_CHAT e COPY scripts/sonda_l300.py, e terminar com a etapa validar aprovada. Use uma tag "
-          "nova e identificável, nunca latest. O valor de --build-arg é visível ao suporte do registro: só a referência da imagem, "
-          "nunca segredos.")
+    print("O az resolve --file a partir do diretório atual, e não do contexto, por isso o comando roda de dentro da pasta do contexto, com . "
+          "como origem; o --no-logs evita a falha de Unicode do Windows ao transmitir o log, que se lê depois com az acr task logs --run-id "
+          "(o run-id está no JSON final do build):")
+    print(comando_dos_logs(args.registro))
+    print()
+    print("O log, lido com o comando acima, precisa mostrar ARG IMAGEM_CHAT e COPY scripts/sonda_l300.py, e terminar com a etapa validar "
+          "aprovada. Use uma tag nova e identificável, nunca latest. O valor de --build-arg é visível ao suporte do registro: só a "
+          "referência da imagem, nunca segredos.")
     print("A imagem também traz o gerador de carga do L400 (scripts/gerar_carga_l400.py), que o build não executa. O ENTRYPOINT continua "
           "sendo a sonda: o gerador roda por substituição de comando no início do Job (--command e --args).")
     return CODIGO_OK
