@@ -57,8 +57,12 @@ histórico. A [rodada de operação pública](docs/validacao/operacao-publica-l3
 corrige o verificador L100 D07, que agora usa um nome de índice descartável aleatório, diferente
 do índice informado. Ela acrescenta ferramentas e receitas públicas de sonda, encerramento e carga.
 O verificador corrigido e as ferramentas públicas novas só foram testados localmente:
-**não foram validados no Azure**. As correções ficam em pull request (PR, proposta de alteração)
-separado, sem merge até ordem expressa do mantenedor.
+**não foram validados no Azure**. As correções foram mescladas pelo pull request
+(PR, proposta de alteração) [#4](https://github.com/EdneiMonteiro/vareleira-rag/pull/4) e publicadas na
+[pré-release `v0.4.1-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.1-l400),
+em 11 de outubro de 2026, por ordem expressa do mantenedor.
+Uma rodada Azure de validação foi autorizada. Seus resultados e a limpeza serão documentados
+em um registro próprio em `docs/validacao`, criado quando a rodada terminar.
 A [análise de respostas](docs/validacao/avaliacao-semantica-2026-10-11.md) preserva as duas
 divergências L200 e encerra a lacuna histórica como texto irrecuperável no alcance da busca.
 Não localizar as respostas não comprova sua inexistência; o conteúdo continua sem avaliação
@@ -319,7 +323,7 @@ sintéticos do repositório.
 | L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
 | L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. CI Windows/Linux aprovada também na principal; implantação Actions/OIDC e login humano não executados |
 | L400: coordenação, comparação, contingência e recuperação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos. Comparação 16/16 em ambas, sem ganho; CI aprovada também na principal; limites e histórico preservados |
-| [Operação pública L300/L400, 11 de outubro de 2026](docs/validacao/operacao-publica-l300-l400-2026-10-11.md): encerramento, sonda, carga e correção do D07 | Implementados e testados localmente: 1.308 casos, suíte OK com três ignorados; não validados no Azure. PR próprio sem merge até ordem expressa do mantenedor |
+| [Operação pública L300/L400, 11 de outubro de 2026](docs/validacao/operacao-publica-l300-l400-2026-10-11.md): encerramento, sonda, carga e correção do D07 | Implementados e testados localmente: 1.308 casos, suíte OK com três ignorados; não validados no Azure. Mesclados pelo PR #4; pré-release `v0.4.1-l400`; rodada Azure autorizada, pendente de execução |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
 no commit `d4a93cc`; a [pré-release `v0.1.1-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.1-l100)
@@ -342,8 +346,13 @@ na sequência #1 → #2 → #3; a CI passou também nos pushes da principal.
 O [registro de publicação](docs/validacao/publicacao-l300-l400.md) preserva a publicação anterior.
 O [registro desta rodada](docs/validacao/operacao-publica-l300-l400-2026-10-11.md) separa os merges,
 os testes locais novos e o encerramento da lacuna semântica das execuções Azure históricas.
-As novas correções pertencem ao PR desta rodada (aberto a partir da branch
-`fix/operacao-publica-l300-l400`, com base `main`). Ele fica sem merge até ordem expressa do mantenedor.
+As correções foram mescladas pelo [PR #4](https://github.com/EdneiMonteiro/vareleira-rag/pull/4)
+em 11 de outubro de 2026, por ordem expressa do mantenedor, com commit de merge e branch preservada.
+Foi publicada a [pré-release `v0.4.1-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.1-l400),
+com tag anotada nesse commit de merge. Ela contém L100 a L400 com as correções e os registros.
+Não foram publicadas `v0.3.1-l300` nem `v0.1.2-l100`. Os guias L300 corrigidos e a imagem da sonda
+dependem da árvore L400: o montador inclui `scripts\gerar_carga_l400.py`, e o L300 D04 aponta
+para o L400 D06. Uma entrega separada exige reconstrução da árvore e novas verificações.
 
 A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
 Azure quando você executa os comandos deles; permissões, custos e limpeza estão

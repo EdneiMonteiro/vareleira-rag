@@ -189,10 +189,26 @@
   e carga só foram testados localmente, nada validado no Azure.
   Os textos finais são tratados como irrecuperáveis,
   sem reexecução. Código/testes e coordenação: Claude Sonnet 5.5; documentação: GPT-6.1 Sol,
-  com Astra indisponível. O PR desta rodada (aberto a partir da branch
-  `fix/operacao-publica-l300-l400`, com base `main`) fica sem merge até ordem expressa.
-  A autorização não inclui execução Azure, login humano, implantação Actions/OIDC/federação
-  ou novas pré-releases. Registro: `docs/validacao/operacao-publica-l300-l400-2026-10-11.md`.
+  com Astra indisponível. O PR #4, aberto a partir da branch `fix/operacao-publica-l300-l400`,
+  com base `main`, foi mesclado por ordem expressa do mantenedor, com a branch preservada.
+  Foi publicada a pré-release `v0.4.1-l400`, com tag anotada no commit de merge e as correções.
+  As tags `v0.3.0-l300` e `v0.4.0-l400` permanecem intactas, sem essas correções.
+  O escopo inicial não incluía execução Azure ou novas pré-releases; a autorização posterior
+  está delimitada abaixo. Registro: `docs/validacao/operacao-publica-l300-l400-2026-10-11.md`.
+- Em 11 de outubro de 2026, o mantenedor autorizou uma única rodada Azure das ferramentas
+  públicas, completa em etapas: encerramento → sonda L300 em rede privada → carga e receitas
+  L400 D03/D04. Use somente a assinatura de testes privada já confirmada e `brazilsouth`,
+  em grupo exclusivo novo, com teto estimado de US$ 30 para toda a rodada.
+  Colete a linha de base ANTES de criar o grupo. Identidades, credenciais e papéis temporários
+  foram autorizados, com remoção ao final; ao primeiro bloqueio, pare e limpe os próprios.
+  Use o planejador público `scripts\planejar_encerramento.py` para orientar a limpeza final;
+  ele não executa a exclusão. Confira escopo e principal contra o inventário antes de revogar.
+  Preserve grupos, recursos, identidades e papéis preexistentes; não imprima nem registre IDs
+  em arquivos públicos ou logs. Isso não autoriza outros destinos, novas execuções,
+  login humano, implantação Actions/OIDC/federação ou publicação além de `v0.4.1-l400`.
+  Custo efetivo indisponível não é custo zero. A execução está pendente; registre cada resultado
+  real, falha, retomada e limpeza em um registro próprio em `docs/validacao`,
+  criado quando a rodada terminar.
 
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.

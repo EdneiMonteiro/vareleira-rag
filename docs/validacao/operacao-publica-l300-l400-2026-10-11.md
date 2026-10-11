@@ -6,8 +6,11 @@ Preserva a autoria anterior e distingue implementação, testes locais,
 integração GitHub e execuções Azure históricas.
 
 **Situação:** os pull requests (PRs, propostas de alteração) anteriores foram
-mesclados. As correções desta rodada ficam em entrega separada, sem merge até
-ordem expressa do mantenedor.
+mesclados. O [PR #4](https://github.com/EdneiMonteiro/vareleira-rag/pull/4)
+também foi mesclado, por ordem expressa do mantenedor. Foi publicada a
+[pré-release `v0.4.1-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.1-l400),
+com tag anotada no commit de merge, contendo L100 a L400 com as correções.
+Uma rodada Azure foi autorizada e está pendente de execução.
 **Nenhuma ferramenta pública nova foi validada no Azure.**
 
 ## Escopo e autorização
@@ -25,14 +28,38 @@ A tarefa herdada compreende:
 3. Encerrar a busca pelos textos necessários à avaliação semântica histórica.
 4. Analisar e integrar os PRs #1 → #2 → #3.
 
-As correções pertencem ao PR desta rodada (aberto a partir da branch
-`fix/operacao-publica-l300-l400`, com base `main`). Ele fica sem merge até
-ordem expressa do mantenedor. Não se atribui número a essa entrega neste registro.
+As correções foram mescladas pelo PR #4, aberto a partir da branch
+`fix/operacao-publica-l300-l400`, com base `main`, em 11 de outubro de 2026,
+por ordem expressa do mantenedor. A integração usou commit de merge e
+preservou a branch. A pré-release `v0.4.1-l400` foi publicada com tag anotada
+nesse commit de merge.
 
-A autorização não inclui novas execuções Azure, login humano, ativação de
+A autorização inicial não incluía novas execuções Azure, login humano, ativação de
 automação de implantação por GitHub Actions, confiança federada ou publicação
 de novas pré-releases. Os merges acionaram automaticamente a integração
 contínua (CI) já publicada; isso não autoriza executar o workflow de implantação.
+
+Posteriormente, o mantenedor autorizou uma única rodada Azure de validação das
+ferramentas públicas: planejador de encerramento, sonda L300, gerador de carga
+L400 e receitas L400 D03/D04. O escopo é completo e em etapas, na ordem
+encerramento → sonda L300 em rede privada → carga e receitas L400, com parada
+e limpeza ao primeiro bloqueio. O teto de US$ 30 é uma estimativa para a
+rodada inteira, não um custo efetivo medido.
+
+O destino é somente a assinatura de testes privada já confirmada e a região
+`brazilsouth`, em grupo exclusivo novo. A criação de identidades, credenciais
+e papéis temporários foi autorizada, com remoção ao final. A linha de base
+deve ser capturada antes de criar o grupo; o planejador público orienta
+a limpeza final, sem executá-la. Escopo e principal devem ser conferidos
+contra o inventário antes de revogar, preservando todos os objetos anteriores.
+
+Essa autorização não inclui outros destinos, execuções além desta rodada,
+login humano do chat, implantação por GitHub Actions e OpenID Connect
+(OIDC, protocolo de identidade), confiança federada ou publicações além de
+`v0.4.1-l400`. A execução está pendente; resultados,
+falhas, retomadas e limpeza serão documentados em um registro próprio em
+`docs/validacao`, criado quando a rodada terminar. Custo indisponível não
+significa custo zero. Identificadores e evidências brutas permanecem privados.
 
 Os fatos de integração e CI abaixo foram conferidos pelo coordenador.
 Esta redação usou somente arquivos locais e esses fatos, sem consultas de rede
@@ -237,7 +264,7 @@ nos guias e no código; esses comandos não são publicados como consulta de aju
 ### Reexecução final e integração contínua do PR
 
 Depois do fechamento documental, o coordenador reexecutou a suíte e conferiu a CI
-do PR desta rodada, no commit `97b931e`. Todos os números abaixo são de testes com
+do PR #4, nos commits `97b931e` e `64f878b`. Todos os números abaixo são de testes com
 dublês e de verificações estáticas; nenhum envolve o Azure.
 
 | O que | Comando ou método | Resultado |
@@ -245,7 +272,8 @@ dublês e de verificações estáticas; nenhum envolve o Azure.
 | Suíte completa, ambiente virtual do projeto | `.\.venv\Scripts\python.exe -m unittest discover -s tests` | 1.308 casos, resultado OK, três ignorados; Windows, Python 3.12.10, cerca de 184 segundos |
 | Dependências instaladas | `.\.venv\Scripts\python.exe -m pip check` | Nenhum requisito quebrado |
 | Comandos offline das ferramentas novas | `python scripts\planejar_encerramento.py --help`, `--etapa modelo`, `python scripts\sonda_l300.py --etapa validar`, `python scripts\montar_contexto_sonda_l300.py --help` e `python scripts\gerar_carga_l400.py --help` | Código de saída 0 nos cinco, sem rede |
-| CI do PR, [execução 38163879531](https://github.com/EdneiMonteiro/vareleira-rag/actions/runs/38163879531), evento `pull_request` | Quatro tarefas do workflow `Validar` | Todas com sucesso: Windows com 1.308 casos, OK, três ignorados; Linux com 1.304 casos, OK, três ignorados; Bicep e JavaScript aprovados |
+| CI do PR #4, commit `97b931e`, [execução 38163879531](https://github.com/EdneiMonteiro/vareleira-rag/actions/runs/38163879531), evento `pull_request` | Quatro tarefas do workflow `Validar` | Todas com sucesso: Windows com 1.308 casos, OK, três ignorados; Linux com 1.304 casos, OK, três ignorados; Bicep e JavaScript aprovados |
+| CI do PR #4, commit `64f878b`, [execução 38164343920](https://github.com/EdneiMonteiro/vareleira-rag/actions/runs/38164343920), evento `pull_request` | Quatro tarefas do workflow `Validar` | Todas com sucesso: Windows com 1.308 casos, OK, três ignorados; Linux com 1.304 casos, OK, três ignorados; Bicep e JavaScript aprovados |
 
 O Linux conta quatro casos a menos que o Windows porque a classe de testes do Windows
 PowerShell 5.1 se ignora por inteiro quando o `powershell.exe` não existe: esses quatro
@@ -253,8 +281,8 @@ casos só rodam no Windows. Com o Python do sistema, sem os pacotes do projeto, 
 comando falha por dependências ausentes (`azure`); use o ambiente virtual preparado com
 os requisitos do projeto.
 
-Esta seção cobre o commit `97b931e`, anterior ao commit que a acrescentou. A CI da
-principal depois de um eventual merge deste PR não está registrada aqui.
+Esta seção registra as execuções dos commits `97b931e` e `64f878b`.
+Não inclui uma execução de CI da principal no commit de merge do PR #4.
 
 ## O que não foi validado e limitações
 
@@ -283,7 +311,8 @@ principal depois de um eventual merge deste PR não está registrada aqui.
    atendimento ao orçamento.
 7. Login humano, implantação por Actions/OIDC e homologação continuam não
    executados. A CI na principal não testa esses caminhos. As pré-releases
-   publicadas não contêm as correções atuais.
+   `v0.3.0-l300` e `v0.4.0-l400` não contêm as correções atuais;
+   `v0.4.1-l400` contém essas correções, ainda sem validação Azure.
 8. Os textos finais são tratados como irrecuperáveis no alcance da busca;
    os resultados de contrato não demonstram fidelidade semântica.
 9. O cancelamento L400 continua com registro de execuções ativas em memória,
@@ -299,10 +328,17 @@ principal depois de um eventual merge deste PR não está registrada aqui.
 
 | Decisão | Limite atual |
 | --- | --- |
-| Mesclar ou não o PR desta rodada | Sem merge até ordem expressa do mantenedor |
-| Publicar ou não pré-releases corrigidas | As tags atuais permanecem intactas e não incluem esta rodada |
-| Autorizar uma rodada Azure das ferramentas públicas | Exige destino, orçamento, permissões e limpeza; não autorizada por este registro |
-| Expor `tipoPrincipalCarga` por variável | Melhoria sugerida; Bicep e parâmetros não foram alterados nesta correção |
+| Mesclar o PR #4 | Decidido e concluído em 11 de outubro de 2026, por ordem expressa; commit de merge, branch preservada |
+| Pré-releases corrigidas | Publicada somente `v0.4.1-l400`, com tag anotada no merge do PR #4. `v0.3.1-l300` e `v0.1.2-l100` não foram publicadas; separar a árvore corrigida exige reconstrução e novas verificações, pelas dependências L400 descritas abaixo |
+| Rodada Azure das ferramentas públicas | Autorizada, pendente de execução: uma única rodada completa em etapas, na assinatura de testes privada e em `brazilsouth`, com grupo exclusivo novo e teto estimado de US$ 30 para toda a rodada; identidades, credenciais e papéis temporários autorizados, com remoção ao final e parada e limpeza ao primeiro bloqueio; demais limites na seção de escopo |
+| Expor `tipoPrincipalCarga` por variável | Aguardando decisão, sem implementação. Define o tipo da identidade que recebe o papel de carga no Blob, o armazenamento de objetos: `User` para pessoa ou `ServicePrincipal` para identidade de aplicativo/gerenciada. A manutenção do L300 D04 exige `ServicePrincipal`; hoje o guia requer cópia privada de parâmetros |
+
+O [montador do contexto da sonda](../../scripts/montar_contexto_sonda_l300.py)
+inclui `scripts\gerar_carga_l400.py` na lista fechada de 12 arquivos.
+O [guia L300 D04](../../desafios/L300/04-dependencias-privadas.md) também aponta
+para o L400 D06. Por isso os guias corrigidos e a imagem da sonda dependem da
+árvore L400. Uma entrega separada, como `v0.3.1-l300` ou `v0.1.2-l100`,
+exigiria reconstrução e novas verificações; o mantenedor pode pedi-la depois.
 
 ## Autoria
 
@@ -312,6 +348,7 @@ principal depois de um eventual merge deste PR não está registrada aqui.
 | Documentação | GPT-6.1 Sol, via subagentes, com Astra indisponível no catálogo; escolha explícita do mantenedor |
 | Revisão independente de código | Agentes de revisão de código, um por componente; achados e correções informados pelo coordenador |
 | Coordenação e revisão dos diffs de documentação | Claude Sonnet 5.5; fechamento da revisão a cargo do coordenador |
+| Atualização de estado, publicação e autorização Azure | Redigida por GPT-6.1 Sol e revisada pelo coordenador Claude Sonnet 5.5; autoria anterior preservada |
 
 As autorias e revisões anteriores permanecem nos guias e nos registros
 históricos. Modelos de autoria e revisão não configuram o modelo do aluno
