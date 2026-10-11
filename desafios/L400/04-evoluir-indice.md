@@ -4,9 +4,9 @@
 
 | Campo | Definição |
 | --- | --- |
-| Situação | Candidato de 768 dimensões criado e conferido; promoção e retorno observados no Azure |
+| Situação | Promoção e retorno históricos observados; receita pública revisada, sem nova execução Azure |
 | Público | Operações, arquitetura e desenvolvimento |
-| Resultado | Reindexar em paralelo, conferir compatibilidade e testar promoção e retorno |
+| Resultado | Reindexar em paralelo, registrar observações e promover/retornar pela fase aplicacao revisada |
 | Custo | Reindexação recalcula embeddings; índices e serviços mantidos têm custos próprios |
 
 ## Conteúdo
@@ -25,6 +25,7 @@
 - [Custos, pausa e limpeza](#custos-pausa-e-limpeza)
 - [Situação da validação](#situação-da-validação)
 - [Glossário e referências](#glossário-e-referências)
+- [Autoria](#autoria)
 
 ## Cenário
 
@@ -41,16 +42,20 @@ precisa de um retorno que não dependa de reconstruir a referência durante uma 
 
 ## Artefatos e disponibilidade
 
-| Artefato | Uso |
+| Artefato | Uso e disponibilidade |
 | --- | --- |
-| [Gerenciador L300](../../scripts/gerenciar_ingestao_l300.py) | Criação, execução e conferência do pipeline |
-| [Manifesto](../../dados/l300/permissoes-documentais.json) | Mesmos arquivos, hashes e classes |
-| [Definições da ingestão](../../scripts/lab_ingestao.py) | Índice, habilidade de embeddings e projeção |
-| [Acesso documental](../../scripts/lab_acesso.py) | Filtro e validação dos trechos |
+| [Gerenciador L300](../../scripts/gerenciar_ingestao_l300.py) | Disponível: criação, execução, conferência por leitura e remoção dos quatro objetos candidatos |
+| [Manifesto](../../dados/l300/permissoes-documentais.json) | Disponível: quatro arquivos aprovados, hashes e classes, sem alterações nesta receita |
+| [Definições da ingestão](../../scripts/lab_ingestao.py) e [ingestão L300](../../scripts/lab_ingestao_l300.py) | Disponíveis: índice, habilidade de embeddings, projeção e comparação de metadados |
+| [Acesso documental](../../scripts/lab_acesso.py) | Disponível: filtro e validação dos trechos |
+| [Operação L400](../../scripts/operar_l400.py) e [exemplos de testes](../../tests/test_operacao_l400.py) | Disponíveis: nomes exatos dos campos do descritor e dez conferências locais, sem coleta de observações |
+| [Bicep L400](../../infra/l400.bicep) e [parâmetros](../../infra/levels/l400.bicepparam) | Disponíveis: perfil `referencia`/`candidato` na fase `aplicacao`, com as dimensões correspondentes |
+| [Receita do Desafio 03](03-operar-deployments.md#receita-pública-implantar-por-fases) | Disponível: sessão, what-if, revisão, aplicação incremental e conferências |
+| Receita desta página | Revisada com ajuda offline da interface de linha de comando do Azure (Azure CLI) e testes locais; promoção, retorno e consulta não executados nesta revisão |
 
-O [helper L400](../../scripts/operar_l400.py) confere o descritor de promoção e retorno.
-Nenhuma declaração de compatibilidade substitui as leituras reais da definição, da ingestão
-e das consultas.
+Um **descritor** é um arquivo de dados preenchido na prática pelo operador com suas observações;
+não é um relatório já entregue nem um coletor. Os exemplos dos testes são dublês, não medições.
+Nenhuma declaração substitui leituras reais da definição, da ingestão e das consultas.
 
 ## Tecnologias e conceitos
 
@@ -65,13 +70,35 @@ Alterar a estrutura do índice pode exigir reconstrução. Um índice separado p
 e retornar; um alias é outra estratégia possível, mas não é requisito deste exercício [2].
 O caminho privado da aplicação não substitui as conexões de saída do indexador [3].
 
+Um **pipeline** é a sequência que lê fontes, divide textos e gera trechos e vetores. A promoção
+troca a configuração da aplicação, não os documentos. **Azure CLI** é a interface de linha de
+comando que envia o Bicep ao **Azure Resource Manager (ARM)**, serviço de administração do Azure.
+Seu **what-if**, simulação dos efeitos no destino, antecede a aplicação; o plano local não consulta
+esse destino [4]. **Sanitização** reduz a saída privada sem comprovar seus alvos.
+Uma **revisão** é a versão executável criada quando muda o template da aplicação [8].
+**HTTP** (*Hypertext Transfer Protocol*) é o protocolo web; **HTTPS** protege sua conexão.
+**JSON** (*JavaScript Object Notation*) é o formato de dados estruturados usado no descritor.
+
 ## Pré-requisitos
 
-Use a base L300 e um caminho autorizado de manutenção dentro da rede.
-Confirme assinatura ativa, identidade de carga e papéis no contêiner e na busca.
+1. Use base e aplicação L300 preservadas, aplicação L400 já criada pelo
+   [Desafio 03](03-operar-deployments.md), assinatura ativa, grupo exclusivo, região e orçamento
+   autorizados. A execução histórica encerrada não permite repetir a rodada.
+2. Tenha caminho de manutenção autorizado na rede privada e identidade com leitura das
+   definições e trechos. Carga, reindexação, implantação ARM e exclusão exigem permissões e
+   autorizações correspondentes, diferentes das da pessoa que entra no chat.
+3. Conserve os destinos, a tag imutável, identidade, login e configurações aprovadas no
+   Desafio 03. A imagem L400 precisa enviar a dimensão das consultas; uma imagem anterior
+   sem essa implementação não serve para o candidato.
+4. Use Visual Studio Code (VS Code) com a pasta completa, `.venv` e PowerShell 7. Prepare a pasta
+   privada e os nomes novos dos arquivos de observação, descritor e relatório, fora do repositório.
+5. Para reaplicar `aplicacao`, tenha a credencial vigente do login: informe-a novamente na
+   sessão. O serviço não devolve seu valor por leitura; não o coloque em arquivo ou argumento.
 
 Criação de objetos e reindexação **[altera o Azure]**. Simule os alvos e preserve a referência.
 Não reabra serviços públicos para permitir que um terminal externo alcance os dados.
+O roteiro pressupõe um executor de manutenção já autorizado; não cria uma sonda, identidade,
+papel ou conexão privada. Sem esse caminho, a coleta real fica pendente e a promoção bloqueada.
 
 ## Etapa 1: identificar as duas configurações
 
@@ -84,6 +111,16 @@ Não reabra serviços públicos para permitir que um terminal externo alcance os
 
 O prefixo L300 do candidato mantém o contrato documental existente. O índice é separado
 e não representa novas regras ou uma nova versão dos documentos.
+
+```powershell
+$indiceReferencia = "vareleira-lar-l300"
+$indiceCandidato = "vareleira-lar-l300-l400-768"
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa validar
+if ($LASTEXITCODE -ne 0) { throw "Manifesto e fontes locais não conferidos." }
+```
+
+**Resultado esperado:** quatro fontes aprovadas, arquivos e hashes locais conferidos, sem rede.
+Isso não demonstra que o conteúdo já foi indexado no Azure.
 
 ## Etapa 2: reindexar em paralelo
 
@@ -100,80 +137,471 @@ Primeiro confira o plano local:
 .\.venv\Scripts\python.exe scripts\operar_l400.py --etapa planejar --passo indice-candidato
 ```
 
-Os comandos abaixo foram exercitados pelo gerenciador na rede privada.
-Variáveis identificam o destino autorizado do aluno, não recursos do instrutor.
+Na rodada histórica o gerenciador foi usado por uma sonda privada. A receita abaixo usa sua
+interface existente, mas não foi executada no Azure nesta revisão. Variáveis identificam o
+destino autorizado do aluno, não recursos do instrutor.
 Recupere na sessão privada os nomes de `$busca`, `$grupo`, `$conta` e `$modelos`,
 a assinatura em `$assinatura` e o identificador da identidade de manutenção em
-`$clientIdManutencao`. Eles vêm do inventário próprio da base L300.
+`$clientIdManutencao`. Eles vêm do inventário próprio da base L300; o
+[Desafio 03](03-operar-deployments.md#1-preparar-o-destino-e-a-sessão) define os demais destinos.
 Um terminal comum do VS Code não passa a estar na rede privada por receber essas variáveis.
-Simule a criação antes de enviar:
+Defina os destinos adicionais e arquivos novos de observação na pasta privada. Eles serão
+produzidos pelas leituras abaixo, não são artefatos do repositório:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa criar --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos --indice vareleira-lar-l300-l400-768 --dimensoes 768 --identidade-gerenciada --client-id $clientIdManutencao
+$conta = Read-Host "Nome da conta de armazenamento L300 inventariada"
+$clientIdManutencao = Read-Host "ID de cliente da identidade gerenciada de manutenção autorizada"
+$referenciaAntes = Join-Path $pastaPrivada "referencia-antes.txt"
+$referenciaDepois = Join-Path $pastaPrivada "referencia-depois.txt"
+$candidatoDepois = Join-Path $pastaPrivada "candidato-depois.txt"
+foreach ($arquivo in @($referenciaAntes, $referenciaDepois, $candidatoDepois)) {
+    if (Test-Path -LiteralPath $arquivo) { throw "Escolha nomes novos; preserve as observações anteriores." }
+}
+```
+
+### Coletar a referência antes da reindexação
+
+Esta conferência **só lê o Azure**. Inclua os quatro destinos para comparar também as definições
+dos objetos, não apenas a dimensão do campo:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa conferir `
+    --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos `
+    --indice $indiceReferencia --dimensoes 1536 --privado `
+    --identidade-gerenciada --client-id $clientIdManutencao `
+    *>&1 | Out-File -LiteralPath $referenciaAntes -Encoding utf8 -NoClobber -ErrorAction Stop
+if ($LASTEXITCODE -ne 0) { throw "Referência inicial reprovada; preserve a saída privada e não reindexe." }
+```
+
+Confira antes que o caminho não existe, para não sobrescrever uma observação anterior.
+Leia o arquivo apenas na sessão privada. Registre as contagens **por documento**, definições
+conferidas e classes. As contagens históricas ou dos testes não substituem essa leitura.
+
+### Criar e preencher o candidato
+
+Simule a criação antes de enviar. O gerenciador consulta objetos existentes, mas não os grava
+sem `--executar`; essa simulação não é o plano local sem rede:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa criar `
+    --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos `
+    --indice $indiceCandidato --dimensoes 768 --identidade-gerenciada --client-id $clientIdManutencao
+if ($LASTEXITCODE -ne 0) { throw "Plano do candidato reprovado." }
 ```
 
 Depois de autorizar os alvos, **[altera o Azure]**:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa criar --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos --indice vareleira-lar-l300-l400-768 --dimensoes 768 --identidade-gerenciada --client-id $clientIdManutencao --executar
-.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa executar --busca $busca --indice vareleira-lar-l300-l400-768 --identidade-gerenciada --client-id $clientIdManutencao --executar --aguardar
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa criar `
+    --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos `
+    --indice $indiceCandidato --dimensoes 768 --identidade-gerenciada --client-id $clientIdManutencao --executar
+if ($LASTEXITCODE -ne 0) { throw "Criação do candidato falhou." }
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa executar `
+    --busca $busca --indice $indiceCandidato --identidade-gerenciada --client-id $clientIdManutencao `
+    --executar --aguardar
+if ($LASTEXITCODE -ne 0) { throw "Ingestão não concluída no prazo; não promova." }
 ```
 
-A conferência só lê:
+A reindexação recalcula embeddings e ocupa o serviço de busca. Não corte vetores antigos nem
+use `--substituir` para sobrescrever uma divergência sem revisar sua origem e os alvos.
+
+### Coletar os dois índices depois da reindexação
+
+As conferências **só leem**. Grave saídas novas e privadas, com os mesmos destinos e parâmetros
+da criação:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa conferir --busca $busca --indice vareleira-lar-l300-l400-768 --dimensoes 768 --identidade-gerenciada --client-id $clientIdManutencao
+foreach ($arquivo in @($referenciaDepois, $candidatoDepois)) {
+    if (Test-Path -LiteralPath $arquivo) { throw "Escolha arquivos novos de observação." }
+}
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa conferir `
+    --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos `
+    --indice $indiceReferencia --dimensoes 1536 --privado `
+    --identidade-gerenciada --client-id $clientIdManutencao `
+    *>&1 | Out-File -LiteralPath $referenciaDepois -Encoding utf8 -NoClobber -ErrorAction Stop
+if ($LASTEXITCODE -ne 0) { throw "Referência depois da reindexação reprovada." }
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa conferir `
+    --busca $busca --assinatura $assinatura --grupo $grupo --conta $conta --modelos $modelos `
+    --indice $indiceCandidato --dimensoes 768 --privado `
+    --identidade-gerenciada --client-id $clientIdManutencao `
+    *>&1 | Out-File -LiteralPath $candidatoDepois -Encoding utf8 -NoClobber -ErrorAction Stop
+if ($LASTEXITCODE -ne 0) { throw "Candidato reprovado; promoção bloqueada." }
 ```
 
-Esses comandos devem partir do caminho privado autorizado. Na sessão do Azure CLI do operador,
-substitua as opções de identidade gerenciada por `--tenant-id $tenant`; não combine os dois mecanismos.
-Não corte um vetor antigo para fabricar uma reindexação concluída.
+Na sessão Azure CLI do operador, pelo caminho privado autorizado, substitua as opções de
+identidade gerenciada por `--tenant-id $tenant`, recebendo `$tenant` do inventário; não combine
+os mecanismos. A localização da sessão e os papéis de dados continuam necessários.
+
+**Resultado esperado:** `Conferência aprovada.` nos três registros, quatro objetos presentes e
+definidos, indexador `private`, última execução sem falhas/erros e avisos investigados.
+O campo vetorial e a habilidade têm a dimensão escolhida; as quatro fontes têm metadados completos,
+hashes e classes do manifesto. Referência antes/depois e candidato depois têm a mesma contagem
+**por documento**. `secao` e `clausulas` continuam vazios nesta ingestão.
 
 ## Etapa 3: promover e retornar
 
-1. Registre configuração de origem, candidata e condição de aprovação.
-2. Confira que a aplicação usa índice e dimensão da mesma configuração.
-3. Aplique a troca autorizada e execute uma consulta autenticada.
-4. Retorne à referência e repita a conferência.
-5. Remova o candidato somente depois de retirar seus consumidores.
+Esta é uma **receita revisada**, com comandos verificados por ajuda offline da Azure CLI 2.89.0
+e pelos testes locais das ferramentas existentes; **não executada nesta rodada de revisão**.
+As execuções históricas no [registro L400](../../docs/validacao/l400-validacao.md) usaram helpers
+privados diferentes. A aplicação convencional L300 continua sempre na referência.
 
-**Resultado esperado:** referência preservada, aplicação compatível e retorno observado.
-Uma variável de configuração alterada sozinha não comprova que os vetores estão corretos.
+**Para guardar na memória:** índice e cliente são como tomada e plugue com a mesma disposição
+de contatos. Trocar a etiqueta da tomada não adapta o plugue. Mudar só uma variável não comprova
+compatibilidade: documentos reindexados e consultas também precisam produzir 768 posições.
 
-Preencha um descritor privado com `origem=operador`, ação, manifesto dos deployments,
-configurações atual/alvo e observações dos dois índices. Os índices precisam ter as mesmas
-quatro fontes, hashes e classes, contagens da referência preservadas e candidato completo.
-Marque `simulado` quando usar dublês.
+### 1. Preencher o descritor com as leituras
+
+Leia novamente os deployments pelo
+[comando do Desafio 03](03-operar-deployments.md#4-conferir-a-contingência-por-leitura) para
+registrar nome, modelo e versão atuais. Compare o deployment de embeddings com o empregado nas
+definições conferidas. A habilidade declara modelo/deployment e dimensão, **não uma versão
+independente do modelo**: a versão vem do deployment, conservado fixo durante a ingestão.
+Se ele mudou no intervalo, a leitura atual não reconstrói a origem dos vetores; preserve a
+divergência e não declare compatibilidade.
+
+Crie `$descritorPrivado` como arquivo JSON na pasta privada. Os campos abaixo são os nomes
+exatos aceitos por `operar_l400.py` [9]; não acrescente endereços, perguntas, tokens ou campos de comentário:
+
+| Campo da raiz | Preenchimento |
+| --- | --- |
+| `versao` | Inteiro `1` |
+| `origem` | `operador` somente com observações reais; `simulado` para dublês |
+| `acao` | `promover` ou `retornar` |
+| `manifesto_deployment` | Objetos `embeddings`, `geracao_principal` e `geracao_contingencia`; cada um contém apenas `deployment`, `modelo`, `versao`, como textos lidos nos deployments |
+| `configuracao_atual` e `configuracao_alvo` | Cada objeto contém `indice`, `dimensoes` (inteiro) e `deployment_embeddings`; a atual é lida na aplicação, a alvo corresponde ao índice conferido |
+| `indices` | Objetos `referencia` e `candidato`, com todos os campos da tabela seguinte |
+
+| Campo de cada índice | Observação que o sustenta |
+| --- | --- |
+| `indice` | Nome passado à conferência e confirmado nos objetos |
+| `dimensoes` | Inteiro: 1536 ou 768, conforme definição vetorial e habilidade comparadas com todos os destinos informados |
+| `modelo_embeddings`, `versao_modelo_embeddings` | Modelo e versão do deployment usado na ingestão, iguais ao manifesto de deployment |
+| `origem_observada` | `operador` para leitura real; `simulado` para dublê, coerente com a raiz |
+| `fontes` | Lista de quatro objetos, cada um apenas com `documento_id`, `classe` e `sha256` |
+| `contagem_antes` | Na referência, objeto `{"por_documento": {...}}` com as contagens de `$referenciaAntes`; no candidato, o campo é obrigatório, mas pode ser `null` |
+| `contagem_depois` | Objeto `{"por_documento": {...}}` com as contagens de `$referenciaDepois` ou `$candidatoDepois` |
+
+Faça o mapeamento das saídas do gerenciador:
+
+1. **Definições dos objetos** e **Compatibilidade com o recuperador do L100** aprovadas sustentam
+   nome, campo vetorial, perfil, dimensão e habilidade definidos. Informe todos os destinos:
+   a mensagem “Definições não comparadas” é evidência incompleta, mesmo que outras linhas passem.
+2. **Trechos do índice** traz o total e pares documento/quantidade. Em `por_documento`, use os
+   identificadores `VLAR-CG-1.0`, `VLAR-GL-1.0`, `VLAR-FAQ-1.0` e `VLAR-OP-ATD-1.0` como chaves
+   e as quantidades **observadas** como inteiros, não a contagem total repetida para cada fonte.
+3. **Classe de acesso dos trechos** e completude aprovadas conferem classes, versões e hashes
+   de metadados contra o manifesto. Só depois dessa igualdade, transcreva do manifesto
+   `documentos[].id` → `documento_id`, `acesso` → `classe` e `sha256` → `sha256`.
+   O resumo não imprime cada hash: não invente valores nem copie hashes de exemplo.
+4. **Indexador: última execução** e **Ambiente de execução do indexador** registram a ingestão.
+   Guarde essas provas fora do descritor: ele não tem campos para estado, erro, aviso ou conteúdo.
+
+Os hashes são metadados da fonte comparados com arquivos locais aprovados, não uma medição
+semântica dos vetores. A conferência não gera vetores de consulta nem avalia a resposta do chat.
+
+| Ação | Configuração atual → alvo |
+| --- | --- |
+| `promover` | Referência, 1536 → candidato, 768 |
+| `retornar` | Candidato, 768 → referência, 1536 |
+
+Nas duas configurações, `deployment_embeddings` continua o mesmo. Os exemplos de
+[`test_operacao_l400.py`](../../tests/test_operacao_l400.py) explicam a forma; suas contagens e
+modelo de geração fictício **não são valores de uma observação Azure**.
+
+### 2. Conferir a migração localmente
+
+Escolha o descritor de entrada e `$relatorioMigracao` como caminho novo na pasta privada.
+Confira o descritor antes da troca:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\operar_l400.py --etapa conferir-migracao --descritor $descritorPrivado --relatorio $novoRelatorio
+$descritorPrivado = Read-Host "Caminho privado do descritor preenchido"
+$relatorioMigracao = Read-Host "Caminho novo do relatório de migração, terminado em .json"
+.\.venv\Scripts\python.exe scripts\operar_l400.py --etapa conferir-migracao `
+    --descritor $descritorPrivado --relatorio $relatorioMigracao
+if ($LASTEXITCODE -ne 0) { throw "Descritor reprovado ou inválido; troca bloqueada." }
+$migracao = Get-Content -LiteralPath $relatorioMigracao -Raw | ConvertFrom-Json
+if ($migracao.resultado -ne "aprovado" -or $migracao.origem_do_descritor -ne "operador") {
+    throw "Exemplo simulado não libera uma troca real."
+}
 ```
 
-O helper não aplica a troca nem coleta medições. Para promover, a aplicação usa o perfil
-`candidato`; para retornar, usa `referencia`, depois de revisar o plano correspondente.
-O formato do descritor está nas validações e nos exemplos sintéticos de
-[`test_operacao_l400.py`](../../tests/test_operacao_l400.py). Use-os para compreender os campos,
-nunca como prova observada. O roteiro que altera a aplicação e coleta essas observações
-precisa ser preparado e revisado pelo operador; ele não foi entregue como comando público.
+**Resultado esperado:** dez conferências atendidas e nenhuma reprovada, segundo os campos
+declarados. Código 1 indica forma/entrada inválida; código 3 indica divergência.
+Um descritor `simulado` pode obter código zero, mas continua **sem valor como prova real**.
+O campo `evidencia_azure` fica `false` mesmo para `operador`: o helper não consulta Azure.
+Não altere origem, contagens ou hashes para obter aprovação; investigue a observação ou a ingestão.
+
+### 3. Preparar a promoção sem mudar o ingresso
+
+O restante da receita usa as variáveis de sessão do Desafio 03. Receba o nome L400 do inventário
+daquela implantação, não o da aplicação L300:
+
+```powershell
+$aplicacaoL400 = Read-Host "Nome da aplicação L400 conferida no inventário"
+if (-not $aplicacaoL400 -or $aplicacaoL400 -eq $aplicacaoL300) { throw "Alvo L400 não conferido." }
+$acaoMigracao = "promover"
+if ($migracao.acao -ne $acaoMigracao) { throw "Descritor não corresponde à promoção." }
+$appAntes = az containerapp show --subscription $assinatura --resource-group $grupo `
+    --name $aplicacaoL400 --output json | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0) { throw "Leitura inicial da aplicação falhou." }
+$ingressoAntes = $appAntes.properties.configuration.ingress | ConvertTo-Json -Depth 20 -Compress
+if ($appAntes.properties.configuration.ingress.external -notin @($true, $false)) {
+    throw "Ingresso atual não identificado."
+}
+$env:VARELEIRA_L400_FASE = "aplicacao"
+$env:VARELEIRA_L400_PERFIL_INDICE = "candidato"
+$env:VARELEIRA_L400_INGRESSO_EXTERNO = ([bool]$appAntes.properties.configuration.ingress.external).ToString().ToLowerInvariant()
+.\.venv\Scripts\python.exe scripts\operar_l400.py --etapa planejar --passo promover-indice
+if ($LASTEXITCODE -ne 0) { throw "Plano local da promoção falhou." }
+```
+
+Esse bloco **só lê Azure e altera a sessão local**, não a aplicação. Preserve tag, repositório,
+modelo, versão, identidade, modo de busca, quantidade de trechos, esforço, escala e login.
+Confira que `configuracao_atual` do descritor corresponde a `VARELEIRA_INDICE`,
+`VARELEIRA_DIMENSOES` e `VARELEIRA_DEPLOYMENT_EMBEDDINGS` lidos em `template.containers[0].env`.
+Conserve o tenant e a ação sem login já conferidos por `az containerapp auth show`.
+Se houver divergência em relação ao Bicep, pare para revisão; a fase reaplica a configuração
+declarada, não somente duas variáveis.
+
+### 4. Simular, sanitizar e aplicar a troca autorizada
+
+1. Escolha nome de implantação e arquivos novos em `$pastaPrivada`, seguindo o mesmo padrão do
+   [Desafio 03](03-operar-deployments.md#2-simular-e-revisar-o-what-if). O relatório de what-if
+   não sobrescreve o de migração:
+
+```powershell
+$implantacao = Read-Host "Nome novo da implantação ARM para esta troca"
+$arquivoWhatIf = Join-Path $pastaPrivada "$implantacao-whatif.json"
+$novoRelatorio = Join-Path $pastaPrivada "$implantacao-resumo.json"
+$erroWhatIf = Join-Path $pastaPrivada "$implantacao-whatif-erros.txt"
+$erroImplantacao = Join-Path $pastaPrivada "$implantacao-implantacao-erros.txt"
+$erroEspera = Join-Path $pastaPrivada "$implantacao-espera-erros.txt"
+foreach ($arquivo in @($arquivoWhatIf, $novoRelatorio, $erroWhatIf, $erroImplantacao, $erroEspera)) {
+    if (Test-Path -LiteralPath $arquivo) { throw "Escolha caminhos novos; preserve os anteriores." }
+}
+Remove-Item Env:\VARELEIRA_QUALIFICAR_NAO_SUPORTADO, Env:\VARELEIRA_QUALIFICAR_PROPRIEDADES_REMOVIDAS, Env:\VARELEIRA_PLANO_SHA256 -ErrorAction SilentlyContinue
+```
+
+2. Receba a credencial vigente novamente, pois o serviço não devolve o segredo de login:
+
+```powershell
+try {
+    $env:VARELEIRA_SEGREDO_LOGIN = Read-Host "Credencial vigente do mesmo login aprovado" -MaskInput
+    az deployment group what-if --subscription $assinatura --resource-group $grupo `
+        --name $implantacao --parameters infra\levels\l400.bicepparam --mode Incremental `
+        --result-format FullResourcePayloads --no-pretty-print --no-prompt true --output json `
+        2> $erroWhatIf | Out-File -LiteralPath $arquivoWhatIf -Encoding utf8 -NoClobber -ErrorAction Stop
+    if ($LASTEXITCODE -ne 0) { throw "What-if falhou; não aplique." }
+    .\.venv\Scripts\python.exe scripts\operar_l400.py --etapa sanitizar-whatif `
+        --arquivo $arquivoWhatIf --relatorio $novoRelatorio --rotulo $acaoMigracao
+    if ($LASTEXITCODE -ne 0) { throw "Sanitização bloqueou a troca." }
+}
+finally {
+    Remove-Item Env:\VARELEIRA_SEGREDO_LOGIN -ErrorAction SilentlyContinue
+}
+```
+
+3. Execute as conferências locais de escopo, ações e contagem de `Modify` do
+   [Desafio 03](03-operar-deployments.md#2-simular-e-revisar-o-what-if), com as variáveis desta
+   simulação. Todo `resourceId` fica no grupo exclusivo.
+   Recuse `Delete`, `Deploy`, `Unsupported`, tipo inesperado ou efeito não resolvido. O resumo
+   aprovado não faz essa revisão por você.
+4. No bruto privado, a troca altera **a aplicação L400 existente**, não cria outra. O alvo
+   `Microsoft.App/containerApps` precisa ter o nome inventariado; autenticação e módulos ARM
+   são os da mesma fase. Reveja cada `Modify` e aprove quantidade exata por tipo e propriedade.
+   Índice/dimensão mudam juntos; ingresso, imagem, autenticação, identidade, escala e aplicação
+   L300 continuam iguais. Mudança fora desse escopo impede a promoção.
+5. **[altera o Azure]**: somente após autorização e revisão, aplique a mesma fase/valores do
+   plano, com a mesma credencial vigente. A nova revisão tem efeitos de processamento e pode
+   gerar cobrança; preserve a referência e o candidato durante a prova:
+
+```powershell
+$resumoWhatIf = Get-Content -LiteralPath $novoRelatorio -Raw | ConvertFrom-Json
+$hashWhatIf = (Get-FileHash -LiteralPath $arquivoWhatIf -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($resumoWhatIf.decisao.codigo -ne 0 -or $hashWhatIf -ne $resumoWhatIf.bruto_sha256) {
+    throw "Plano bloqueado ou bruto alterado depois da sanitização."
+}
+try {
+    $env:VARELEIRA_SEGREDO_LOGIN = Read-Host "Mesma credencial vigente do what-if revisado" -MaskInput
+    az deployment group create --subscription $assinatura --resource-group $grupo `
+        --name $implantacao --parameters infra\levels\l400.bicepparam --mode Incremental `
+        --no-prompt true --no-wait --output none 2> $erroImplantacao
+    if ($LASTEXITCODE -ne 0) { throw "Pedido de troca falhou." }
+}
+finally {
+    Remove-Item Env:\VARELEIRA_SEGREDO_LOGIN -ErrorAction SilentlyContinue
+}
+az deployment group wait --subscription $assinatura --resource-group $grupo `
+    --name $implantacao --created --interval 15 --timeout 1200 --output none 2> $erroEspera
+if ($LASTEXITCODE -ne 0) { throw "Troca não confirmada no prazo; leia o estado antes de recuperar." }
+$estadoArm = az deployment group show --subscription $assinatura --resource-group $grupo `
+    --name $implantacao --query properties.provisioningState --output tsv
+if ($LASTEXITCODE -ne 0 -or $estadoArm -ne "Succeeded") { throw "Conclusão ARM não comprovada." }
+```
+
+O aceite de `--no-wait` não é conclusão. Prazo esgotado não cancela uma operação remota [5].
+O modo `Complete` fica fora da receita; poderia remover a base não declarada por essa fase.
+Não imprima `az bicep build-params --stdout` com valores reais. O bruto e os erros podem conter
+segredo ecoado, mesmo com parâmetro seguro: mantenha-os privados e apague-os após a revisão.
+
+### 5. Conferir a revisão e exigir a prova autenticada
+
+As leituras abaixo não exibem segredos. O limite de dez minutos é uma janela operacional de
+conferência, não garantia de prontidão:
+
+```powershell
+$limiteRevisao = (Get-Date).AddMinutes(10)
+do {
+    $appDepois = az containerapp show --subscription $assinatura --resource-group $grupo `
+        --name $aplicacaoL400 --output json | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) { throw "Leitura após a troca falhou." }
+    $p = $appDepois.properties
+    $pronta = $p.provisioningState -eq "Succeeded" -and $p.latestRevisionName -and
+        $p.latestRevisionName -eq $p.latestReadyRevisionName
+    if ($p.provisioningState -in @("Failed", "Canceled")) { throw "Revisão terminou sem sucesso." }
+    if ($pronta) { break }
+    Start-Sleep -Seconds 5
+} while ((Get-Date) -lt $limiteRevisao)
+if (-not $pronta) { throw "Revisão não pronta no prazo." }
+$ingressoDepois = $p.configuration.ingress | ConvertTo-Json -Depth 20 -Compress
+if ($ingressoDepois -ne $ingressoAntes) { throw "Ingresso mudou; troca não aprovada." }
+$variaveisApp = @{}
+foreach ($item in $p.template.containers[0].env) { $variaveisApp[$item.name] = $item.value }
+$alvo = (Get-Content -LiteralPath $descritorPrivado -Raw | ConvertFrom-Json).configuracao_alvo
+if ($variaveisApp["VARELEIRA_INDICE"] -ne $alvo.indice -or
+    $variaveisApp["VARELEIRA_DIMENSOES"] -ne [string]$alvo.dimensoes -or
+    $variaveisApp["VARELEIRA_DEPLOYMENT_EMBEDDINGS"] -ne $alvo.deployment_embeddings -or
+    $variaveisApp["VARELEIRA_EXIGIR_AUTENTICACAO"] -ne "true" -or
+    $variaveisApp["VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL"] -ne "true" -or
+    $variaveisApp["VARELEIRA_EXIGIR_COORDENACAO"] -ne "true") {
+    throw "Configuração da aplicação não corresponde ao alvo conferido."
+}
+az containerapp revision list --subscription $assinatura --resource-group $grupo `
+    --name $aplicacaoL400 --all `
+    --query "[].{revisao:name,ativa:properties.active,saude:properties.healthState,estado:properties.provisioningState}" `
+    --output table
+if ($LASTEXITCODE -ne 0) { throw "Listagem das revisões falhou." }
+$authDepois = az containerapp auth show --subscription $assinatura --resource-group $grupo `
+    --name $aplicacaoL400 --output json | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0) { throw "Autenticação não conferida após a troca." }
+```
+
+Confira no resultado de autenticação plataforma habilitada, conexão protegida, ação sem login,
+tenant/emissor, cliente e audiência anteriores. Leia também a aplicação L300 e os dois índices:
+configuração convencional, definição, fontes e contagens da referência continuam intactas [6][7].
+Revisão pronta não comprova consulta vetorial.
+
+Uma **consulta autenticada separada é obrigatória** antes de considerar a promoção ou o retorno
+concluídos. Use uma pergunta de desenvolvimento sustentada pelas fontes sintéticas, nunca os
+conjuntos finais. Receba um token autorizado para o chat, com tenant e papel reconhecidos, por
+procedimento aprovado; não crie credencial ou amplie papéis para executar esta prova.
+**Token** é o comprovante digital de autenticação. Quando o ingresso é interno, execute a
+consulta de dentro do ambiente Container Apps autorizado; o terminal externo não ganha esse acesso.
+O bloco requer PowerShell 7 nesse executor autorizado. Se ele só dispõe de outro cliente HTTP,
+use o cliente previamente aprovado e registre as mesmas provas; o guia não instala ferramentas
+nem cria um executor para alcançar o endereço interno.
+
+```powershell
+$urlChat = "https://" + $appDepois.properties.configuration.ingress.fqdn
+try {
+    $env:VARELEIRA_L400_TOKEN_COORDENACAO = Read-Host "Token autorizado do chat L400" -MaskInput
+    $perguntaDesenvolvimento = Read-Host "Pergunta de desenvolvimento sustentada pelas fontes sintéticas"
+    $corpoConsulta = @{ pergunta = $perguntaDesenvolvimento } | ConvertTo-Json -Compress
+    $respostaConsulta = Invoke-WebRequest -Uri ($urlChat + "/api/perguntar") `
+        -Method Post -ContentType "application/json" -Body $corpoConsulta `
+        -Headers @{ Authorization = "Bearer $env:VARELEIRA_L400_TOKEN_COORDENACAO" } `
+        -SkipHttpErrorCheck -TimeoutSec 120
+    if ($respostaConsulta.StatusCode -ne 200) { throw "Consulta autenticada falhou; preserve o resultado privado." }
+}
+finally {
+    Remove-Item Env:\VARELEIRA_L400_TOKEN_COORDENACAO -ErrorAction SilentlyContinue
+}
+```
+
+Essa chamada usa a aplicação e **consome tokens**, embora não altere sua configuração.
+HTTP 200 sozinho não comprova o conteúdo: examine o contrato de resposta e as referências
+somente em local privado, confira fonte autorizada e resultado documentado para a pergunta.
+Confirme as recusas anônimas e de papel desconhecido sem forjar principal; saúde/prontidão são
+provas diferentes. A execução não equivale a login humano, avaliação semântica integral ou
+homologação. Sem caminho/token/prova, registre “configuração conferida; consulta pendente”,
+conserve os índices e não anuncie migração concluída.
+
+### 6. Retornar é a mesma troca ao contrário
+
+1. Recolha observações novas dos dois índices; a referência permanece disponível e intacta.
+2. Prepare **outro descritor**, com `acao=retornar`, atual candidato/768 e alvo referência/1536.
+   Confira-o pelo passo 2 e mantenha relatório novo.
+3. No bloco de [preparação da promoção](#3-preparar-a-promoção-sem-mudar-o-ingresso), conserve
+   as leituras e a preservação do ingresso. Substitua as escolhas de ação, perfil e plano pelas
+   do retorno:
+
+```powershell
+$acaoMigracao = "retornar"
+if ($migracao.acao -ne $acaoMigracao) { throw "Descritor não corresponde ao retorno." }
+$env:VARELEIRA_L400_FASE = "aplicacao"
+$env:VARELEIRA_L400_PERFIL_INDICE = "referencia"
+.\.venv\Scripts\python.exe scripts\operar_l400.py --etapa planejar --passo retornar-indice
+if ($LASTEXITCODE -ne 0) { throw "Plano local do retorno falhou." }
+```
+
+4. Capture novamente o ingresso e a configuração **atuais**, preserve o mesmo ingresso e
+   repita os passos 4 e 5: what-if novo, sanitização, revisão, autorização,
+   aplicação **[altera o Azure]**, espera finita, leituras e consulta autenticada separada.
+   O segredo vigente precisa entrar novamente pela sessão.
+5. Confira `VARELEIRA_INDICE=vareleira-lar-l300` e `VARELEIRA_DIMENSOES=1536`. Preserve o
+   candidato até retirar seus consumidores; retornar não o apaga.
+
+**Resultado esperado:** nova revisão pronta, par índice/dimensão coerente, ingresso e
+autenticação inalterados e consulta autenticada registrada em cada direção. A referência
+permanece disponível durante toda a prática; uma falha exige decisão de retorno autorizada,
+não uma troca silenciosa.
+
+### Condições que impedem a promoção
+
+- Base, destino, orçamento, cota ou autorização ausentes; manutenção fora da rede autorizada.
+- Definições não comparadas, ingestão com falha/aviso não explicado, fonte/hash/classe divergente,
+  documento sem trechos ou contagem da referência alterada.
+- Modelo/versão/deployment de embeddings não demonstrados durante a ingestão ou dimensões
+  diferentes entre índice, habilidade, configuração e cliente de consultas.
+- Descritor inválido, reprovado, simulado ou diferente da configuração atual.
+- What-if bloqueado, escopo/tipo inesperado, alteração fora da aplicação L400 ou `Modify`
+  não revisado; imagem, autenticação, ingresso ou identidade que seriam alterados sem decisão.
+- Revisão não pronta ou prova autenticada falha/pendente; retorno indisponível ou consumidor
+  não inventariado.
+
+Alterar variáveis **diretamente na aplicação** é uma alternativa consciente, mas **não recomendada**:
+cria divergência em relação ao Bicep e sua próxima reaplicação pode desfazer a troca.
+Esta receita não publica comandos dessa alternativa; a promoção e o retorno usam `aplicacao`.
 
 ## Como pedir uma mudança ao Copilot no VS Code
 
+Abra a pasta completa e a prévia Markdown. Anexe este guia, `infra\l400.bicep`,
+`infra\levels\l400.bicepparam`, `scripts\operar_l400.py`, o gerenciador L300 e
+`tests\test_operacao_l400.py`. Use descritor **simulado**, sem valores do ambiente, para estudar
+o formato; não anexe saídas brutas, tokens ou observações privadas:
+
 ```text
-Anexo manifesto, ingestão e descritor da migração.
-Confira modelo, versão, dimensões, filtros e consumidores dos dois índices.
-Mostre quais condições impedem a promoção e como retornar à referência.
-Não altere fontes, elimine o índice anterior ou execute Azure.
+Revise a receita de promoção e retorno nos arquivos anexos.
+Mapeie a saída de conferir do gerenciador para os campos exatos do descritor.
+Separe o que é observado, o que é declarado e o que ainda exige consulta autenticada.
+Confira o perfil do Bicep, o par índice/dimensão, ingresso, login e consumidores.
+Explique o retorno e as condições que bloqueiam promoção ou remoção.
+Não execute Azure, peça dados privados, altere fontes ou elimine a referência.
 ```
 
-Revise o diff e os testes de configuração incompatível antes de aplicar.
+Revise o **diff**, comparação das alterações, em **Source Control**: a receita preserva fontes,
+modelos, duas dimensões coerentes, segredo efêmero e referência. Execute plano e testes locais,
+não Azure, ao conferir uma edição. A revisão do Copilot não autoriza a operação.
 
 ## Conferência do resultado
 
 | Prova | Resultado necessário |
 | --- | --- |
-| Definições | Dimensão e perfil vetorial coerentes |
-| Ingestão | Conclusão sem falhas e classes do manifesto |
-| Consulta | Vetor compatível e filtro enviado |
+| Definições | Comparação completa dos quatro objetos com destinos, modelo/deployment e dimensão explícitos |
+| Ingestão | Conclusão sem falhas, avisos tratados, classes e hashes do manifesto |
+| Descritor | Dez condições atendidas, origem operador e registros privados que sustentam os campos |
+| Revisão | Estado ARM concluído, revisão atual pronta, índice/dimensão coerentes e ingresso inalterado |
+| Consulta | Chamada autenticada separada, vetor compatível e autorização preservada |
 | Referência | Definição e fontes anteriores intactas |
 | Retorno | Aplicação consulta novamente o índice anterior |
 
@@ -185,22 +613,70 @@ Revise o diff e os testes de configuração incompatível antes de aplicar.
 | Contagem coincide, mas conteúdo diverge | Confira hashes, metadados e classes |
 | Candidato substitui a referência | Interrompa e corrija nomes e condições de gravação |
 | Consulta externa recebe 403 | Use o caminho privado autorizado, sem reabrir acesso |
+| “Definições não comparadas” | Informe também assinatura, grupo, conta e modelos; leitura parcial não libera promoção |
+| Descritor simulado passa | Serve para estudar a forma; confira `origem_do_descritor=operador` antes de uma troca real |
+| Perfil muda, cliente ainda gera 1536 | Preserve a falha, confira imagem e dimensão enviada; configuração não adapta vetores antigos |
+| What-if altera ingresso, imagem ou L300 | Interrompa e revise a divergência; não aceite todo `Modify` do recurso por conveniência |
+| Reaplicação pede segredo novamente | Use a mesma credencial vigente aprovada pela sessão; o serviço não devolve seu valor |
+| Espera termina ou HTTP falha | Leia estado/revisão e mantenha índices; aceite do pedido não comprova migração |
+| Remoção termina, mas objetos não foram lidos | Rode o plano de remoção somente por leitura; 403 não é ausência |
 
 ## Custos, pausa e limpeza
 
 Reindexação consome embeddings novamente. Defina prazo para coexistência e mantenha a referência
 até conferir o retorno. A remoção do candidato não elimina a cobrança do serviço de busca.
 
-Remova somente os objetos candidatos com propriedade conferida e consumidores retirados.
-Conexões compartilhadas e recursos anteriores exigem autorização própria de encerramento.
+1. Confirme retorno da aplicação L400 à referência, nova revisão pronta e consulta autenticada.
+   Inventarie também outras aplicações, revisões ativas com tráfego, jobs e agendas. Sem
+   consumidor identificado e retirado, preserve o candidato. Uma revisão inativa retida que
+   depende dele não poderá ser reativada sem reconstrução após a remoção.
+2. Pelo mesmo caminho/identidade de manutenção, simule a remoção. Ela **só lê Azure** e confere
+   o marcador de propriedade dos objetos; não verifica consumidores automaticamente:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa remover `
+    --busca $busca --indice $indiceCandidato --identidade-gerenciada --client-id $clientIdManutencao
+if ($LASTEXITCODE -ne 0) { throw "Plano de remoção reprovado; preserve os objetos." }
+```
+
+3. **[altera o Azure]**: após autorização, remova somente indexador, conjunto de habilidades
+   (*skillset*), fonte e índice candidatos, nessa ordem. Recriá-los depois exige nova ingestão
+   e consumo de embeddings:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa remover `
+    --busca $busca --indice $indiceCandidato --identidade-gerenciada --client-id $clientIdManutencao --executar
+if ($LASTEXITCODE -ne 0) { throw "Remoção não concluída; leia os alvos antes de retomar." }
+```
+
+4. Repita o comando **sem `--executar`**, somente por leitura. Exija os quatro objetos
+   `[ausente]` e a mensagem de que nenhum existe. O retorno da exclusão sozinho não comprova
+   ausência; erro de autorização/listagem não conta como ausência. Confira novamente a
+   referência com o comando completo de `conferir`, em um arquivo novo, e compare suas
+   definições, fontes, classes e contagens com a linha de base.
+5. Conserve relatório sanitizado e provas necessárias na política privada aprovada; retire
+   bruto que possa conter segredo, token e variáveis sensíveis da sessão. Conexões compartilhadas,
+   identidade, dados e serviços anteriores ficam; encerramento completo exige decisão própria
+   no [Desafio 07](07-recuperar-limpar.md).
+
+**Resultado esperado:** quatro objetos candidatos ausentes por leitura, referência intacta e
+consumidores na configuração anterior. Isso não elimina a cobrança do serviço de busca,
+registro, aplicação, rede ou modelos mantidos.
 
 ## Situação da validação
 
-Referência e candidato tiveram quatro fontes e 24 trechos, com 1.536 e 768 dimensões,
+Na rodada histórica, referência e candidato tiveram quatro fontes e 24 trechos, com 1.536 e 768 dimensões,
 mesmos hashes e classes. A promoção e o retorno tiveram consulta autenticada documentada
 e borda preservada. O cliente L400 recebeu uma correção para enviar `dimensions=768`;
 a primeira falha foi preservada no [registro](../../docs/validacao/l400-validacao.md).
 A aplicação convencional permaneceu na referência de 1.536; não foi testada no candidato.
+
+Em **11 de outubro de 2026**, a receita pública foi revisada por leitura dos artefatos e dos
+mecanismos históricos, ajuda offline da Azure CLI 2.89.0 e testes locais de operação,
+sanitização e repositório. Links e sintaxe PowerShell foram conferidos sem executar os blocos.
+**Nenhuma nova coleta Azure, reindexação, promoção, retorno, consulta HTTP ou remoção foi
+executada nesta revisão.** Validar esta sequência no destino do aluno é pendência do operador,
+com autorização e provas próprias; os resultados e falhas históricos permanecem inalterados.
 
 ## Glossário e referências
 
@@ -211,11 +687,36 @@ A aplicação convencional permaneceu na referência de 1.536; não foi testada 
 | Projeção | Mapeamento dos campos das fontes para os trechos |
 | Alias | Nome indireto associado a um índice |
 | Promoção | Troca autorizada da configuração usada pela aplicação |
+| Descritor e JSON | Arquivo de campos declarados pelo operador e formato de dados estruturados |
+| Pipeline e skillset | Sequência de ingestão e conjunto de habilidades que processa as fontes |
+| Hash e metadado | Resumo criptográfico do conteúdo e informação descritiva propagada ao índice |
+| Azure CLI e ARM | Interface de linha de comando e serviço de administração dos recursos Azure |
+| What-if e sanitização | Simulação no destino e redução de dados privados da saída |
+| Revisão e ingresso | Versão executável da aplicação e configuração de entrada dos pedidos |
+| HTTP e HTTPS | Protocolo web e sua conexão protegida |
+| Token, tenant e audiência | Comprovante de autenticação, diretório de identidades e destinatário do token |
+| Retorno e consumidor | Troca de volta à referência e cliente/revisão/job que depende do índice |
+| Diff | Comparação das alterações antes de aceitá-las |
 
 1. [Índices vetoriais e dimensões](https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-create-index).
 2. [Atualização e reconstrução de índices](https://learn.microsoft.com/en-us/azure/search/search-howto-reindex).
 3. [Saída privada do indexador](https://learn.microsoft.com/en-us/azure/search/search-indexer-howto-access-private).
+4. [What-if e limites de previsão](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/deploy-what-if).
+5. [Azure CLI: implantação, estado e espera](https://learn.microsoft.com/en-us/cli/azure/deployment/group?view=azure-cli-latest).
+6. [Azure CLI: leitura da aplicação e revisões](https://learn.microsoft.com/en-us/cli/azure/containerapp/revision?view=azure-cli-latest).
+7. [Azure CLI: autenticação da aplicação](https://learn.microsoft.com/en-us/cli/azure/containerapp/auth?view=azure-cli-latest).
+8. [Atualizações e revisões de Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/revisions).
+9. [Receita pública de implantação](03-operar-deployments.md#receita-pública-implantar-por-fases) e
+   [contrato do descritor](../../tests/test_operacao_l400.py).
+
+Os comandos Azure publicados foram conferidos com sua ajuda local `--help`, incluindo
+parâmetros, sem consulta ao destino. Essa verificação e o parsing não validam a receita no Azure.
+
+## Autoria
 
 Texto por GPT-6.1 Sol; código por Claude Sonnet 5.5. Embeddings e modelo do Copilot são distintos.
 
 Revisão documental por gpt-6-astra (Astra), em 11 de outubro de 2026, sem nova execução Azure.
+
+Receita de implantação e promoção: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026;
+comandos verificados por ajuda offline; sem nova execução Azure.
