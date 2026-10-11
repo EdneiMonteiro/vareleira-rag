@@ -423,6 +423,16 @@ if ($LASTEXITCODE -ne 0) { throw 'A geracao da captura falhou. Nada foi consulta
 | `recursos-antes.json` | `id`, `type` |
 | `papeis-antes.json` | `id`, `principalId`, `roleDefinitionId`, `scope` |
 
+As atribuições herdadas lembram regras municipais que valem para todo o bairro, mas que um
+morador não pode alterar. Assinaturas sob um grupo de gerenciamento podem trazer na listagem
+atribuições da raiz do tenant e de grupos de gerenciamento. Com `id` e `scope` coerentes,
+a ferramenta aceita esses itens, ignora-os e avisa apenas a contagem; não os altera nem compara,
+portanto a conferência **não detecta mudanças neles**. Itens de outra assinatura, com `id` e
+`scope` incoerentes ou de formato desconhecido continuam recusados com código 1. Na rodada
+Azure de 11 de outubro de 2026, três das 20 atribuições eram herdadas; o validador anterior
+as recusou, e a correção foi testada com os arquivos reais dessa rodada. A validação Azure
+continua em andamento; o registro final virá depois.
+
 Uma resposta com `nextLink`, endereço da próxima página, é recusada: a listagem precisa ser
 completada por um método suportado. Não elimine páginas nem edite os instantâneos à mão para
 passar na guarda. Se uma leitura falhar, a captura não comprova a linha de base.
@@ -593,7 +603,7 @@ o resultado anterior.
 | Grupos anteriores | Todos os nomes da linha de base continuam presentes |
 | Recursos anteriores | Mesmos IDs e tipos; isto não compara todas as configurações dos serviços |
 | Recursos próprios | Nenhum remanescente no grupo exclusivo ou gerenciado |
-| Atribuições anteriores | Mesmos IDs, principais, definições de papel e escopos, inclusive as anteriores fora do grupo |
+| Atribuições anteriores da assinatura | Mesmos IDs, principais, definições de papel e escopos, inclusive as anteriores fora do grupo; herdadas de escopos acima da assinatura não são comparadas |
 | Atribuições próprias | Nenhum ID inventariado ou atribuição no escopo próprio permanece |
 | Aplicativos, principais e objetos excluídos Entra | Ausentes no Graph, em verificações separadas do estado ativo e recuperável |
 | Conta de modelos e cofre de chaves | Ausentes das listas de excluídos, quando inventariados |
@@ -883,3 +893,6 @@ ferramenta pública por Claude Sonnet 5.5; revisado por leitura; sem execução 
 Sincronização final do roteiro: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026;
 adequação às guardas de IDs e sessão da ferramenta de Claude Sonnet 5.5, por leitura e
 conferência local; sem execução Azure.
+
+Nota sobre atribuições herdadas: redigida por GPT-6.1 Sol em 11 de outubro de 2026
+e revisada pelo coordenador.
