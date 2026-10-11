@@ -9,6 +9,7 @@
 !scripts/lab_geracao.py
 !scripts/lab_politica.py
 !scripts/lab_chat.py
+!scripts/lab_orquestracao.py
 !scripts/chat_web.py
 !web/index.html
 !web/app.js

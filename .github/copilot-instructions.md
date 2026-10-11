@@ -24,8 +24,9 @@
 - A direção técnica é Python, Microsoft Agent Framework e Azure, com Bicep
   em `infra`. No L100, os deployments são o `gpt-5.4-mini` (geração) e o
   `text-embedding-3-small` (embeddings). O L200 reutiliza esses deployments e suas versões;
-  o L300 conserva esses deployments, dimensões e política. Modelos do L400
-  ainda precisam de definição e avaliação próprias.
+  o L300 conserva esses deployments, dimensões e política. O L400 reutiliza os modelos e
+  versões, com contingência de geração separada e índice candidato de 768 dimensões;
+  sua comparação e limitações ficam no registro próprio.
 - Diferencie o modelo que auxilia a autoria, o modelo usado pelo aluno no
   Copilot e os deployments de geração e embeddings da aplicação Azure.
 
@@ -58,7 +59,7 @@
   Como o Astra não estava disponível, o Sonnet 5.5 escreveu também a documentação deles, e cada guia
   declara isso na seção "Autoria". O L200 recebeu autorização posterior, descrita abaixo;
   o L300 recebeu o pedido de implementação posterior, descrito abaixo.
-  L400 permanece planejado.
+  L400 recebeu pedido posterior de implementação, descrito abaixo.
 - Em 9 de outubro de 2026, o mantenedor pediu uma nova revisão documental do L100 com GPT-6.1 Sol,
   contra seu guia de estilo. Preserve a autoria inicial e identifique o modelo da revisão separadamente.
 - Criar identidades, credenciais ou papéis (Desafio 07) exige autorização explícita de quem administra o
@@ -107,6 +108,32 @@
   ausentes, objetos Entra e modelos próprios expurgados, papéis temporários retirados e linha
   de base preservada. Isso não autoriza repetir a execução. Actions/OIDC, login humano e matriz
   Linux permanecem não executados. Preserve as falhas, retomadas e limitações do registro.
+- Em 11 de outubro de 2026, o mantenedor pediu executar o L400 até o final com autonomia,
+  sem perguntas intermediárias. Preserve a base L300, use somente as quatro fontes sintéticas
+  aprovadas e os destinos privados/região anteriores, com grupo exclusivo novo e limpeza própria.
+  O teto anterior de US$90 não vira um novo orçamento; custo efetivo L300 continua indisponível.
+  Sol escreve documentação com Astra ausente, Sonnet 5.5 implementa código e testes.
+  Essa rodada não ativa publicação, Actions ou confiança federada GitHub.
+- L400 conserva modelos e versões anteriores, acrescenta geração de contingência do mesmo modelo
+  e índice candidato separado de 768 dimensões. Alterar dimensão exige reindexar documentos e
+  consultas compatíveis. Coordenação é opt-in; o modelo não escolhe filtro, papel ou destino.
+  Compare estratégias em conjunto novo após congelar o código, contando falhas e uso desconhecido,
+  sem ajustar ou repetir avaliações históricas para escolher a melhor resposta.
+- O teste final L400 v1 foi executado uma vez na versão com correção de dimensão 768:
+  referência e coordenação tiveram 16/16 conformes, sem ganho, com maior mediana e mais tokens
+  de geração na coordenação. Preserve relatório, código e perguntas; não apresente esse resultado
+  como fidelidade semântica ou homologação. A correção posterior de cancelamento HTTP não repetiu
+  o conjunto final e possui provas próprias.
+- Cancelamento L400: a desconexão pode não atravessar a borda Azure a tempo. O fluxo SSE usa
+  cancelamento explícito autenticado pelo mesmo ator, registro de execuções ativas em memória,
+  limite de admissão e remoção ao terminar. O registro é por processo com uma réplica; não aumentar
+  réplicas sem redesenhar e testar o encaminhamento. Pedido remoto já enviado pode consumir tokens.
+- A rodada Azure L400 foi encerrada em 11 de outubro de 2026: grupo exclusivo e gerenciado
+  ausentes, zero recursos e papéis próprios, aplicativos e modelos expurgados; oito grupos,
+  46 recursos e atribuições anteriores preservados. A primeira limpeza foi interrompida pela
+  guarda de papéis herdados e retomada com escopo exato; preserve esse histórico.
+  A consulta final de custo ficou sem linhas, não significa custo zero nem atendimento ao teto.
+  Essa autorização histórica não permite novas execuções, publicação, Actions/OIDC ou produção.
 - O L300 é opt-in: `VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true` exige autenticação, tenant e índice L300.
   Os papéis de aplicação vêm do principal entregue pela borda EasyAuth obrigatória. A aplicação
   deriva classes estáticas por requisição, filtra todos os modos de busca antes da geração e usa
@@ -125,6 +152,8 @@
   de busca e de seus destinos. O destino já ausente pode bloquear a exclusão da busca.
   Confira ausência real por listagem, não somente retorno de espera; não remova bloqueios nem
   recrie dependências automaticamente e não manipule o grupo gerenciado Container Apps.
+  Listagens de atribuições podem incluir papéis fora do alvo: confira escopo e principal contra
+  o inventário próprio antes de revogar e compare os papéis anteriores depois da limpeza.
 - Workflows L300 são arquivos não ativados nesta rodada: CI em runners hospedados sem identidade
   Azure; implantação manual em runner confiável, com ambiente protegido e OIDC. Identidade
   federada de implantação e registro de login do chat são diferentes; somente o login do chat
@@ -137,10 +166,18 @@
 
 ## Estrutura e verificações
 
+- Em 11 de outubro de 2026, o mantenedor selecionou gpt-6-astra (Astra) para revisar os
+  28 guias, consolidar Git, publicar PRs/CI/pré-releases L300/L400 e avaliar as respostas
+  existentes. Essa autorização não inclui merge, implantação Azure, login humano ou
+  federação. Preserve a autoria anterior e registre esta revisão separadamente.
+- A análise dos relatórios finais encontrou classificações e contagens, sem textos
+  completos das respostas. Não reexecute conjuntos finais para reconstruí-las nem
+  confunda reexame dos dois gabaritos L200 com avaliação semântica integral.
+
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.
-- Ambiente: Python 3.12 ou superior; requisitos L100, L200 e L300 ficam em `requirements/`.
-  `l300.txt` reutiliza `l200.txt`; não exige biblioteca extra de autorização.
+- Ambiente: Python 3.12 ou superior; requisitos L100, L200, L300 e L400 ficam em `requirements/`.
+  `l300.txt` reutiliza `l200.txt`, e `l400.txt` reutiliza `l300.txt`, sem novos pacotes diretos.
 - Testes sem Azure: `python -m unittest discover -s tests`.
 - Bicep: `az bicep lint --file infra/main.bicep` e `az bicep build --file infra/main.bicep --stdout`.
 - Bicep L200: os mesmos comandos com `infra/l200.bicep`; parâmetros sem segredos antes de
@@ -149,4 +186,6 @@
   Validação do manifesto, sem rede: `python scripts/gerenciar_ingestao_l300.py --etapa validar`.
   Plano local e compilação: `python scripts/operar_l300.py --etapa plano --fase rede --validar-bicep`.
   Não imprima a compilação do arquivo de parâmetros quando houver segredo real na sessão.
+- Plano L400 sem rede: `python scripts/operar_l400.py --etapa planejar --validar-bicep`.
+  Runtime com dublês: `python -m unittest discover -s tests -p test_orquestracao.py`.
 - Instruções por tipo de arquivo ficam em `.github/instructions/`.

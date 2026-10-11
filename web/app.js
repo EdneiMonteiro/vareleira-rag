@@ -18,17 +18,35 @@
     rede: "Não foi possível falar com o servidor. Confira a conexão e tente de novo.",
     indisponivel: "O assistente está indisponível no momento. Tente de novo em instantes.",
     generica: "Não foi possível concluir a consulta. Tente de novo.",
+    cancelada: "Consulta cancelada: o servidor confirmou o cancelamento e nenhuma resposta foi produzida. Ele não começa novas etapas, " +
+      "mas um pedido ao modelo que já foi enviado pode terminar e consumir tokens.",
+    canceladaSemConfirmacao: "Consulta interrompida neste navegador, mas o servidor não confirmou o cancelamento: ela pode continuar até " +
+      "o limite de tempo e consumir tokens. Nenhuma resposta será mostrada.",
   };
+  // Com a coordenação (L400), a página acompanha as etapas por eventos que só trazem contagens: o texto da resposta
+  // só chega no evento final, depois da política.
+  const ROTULOS_DAS_ETAPAS = {
+    planejamento: "Planejando as consultas",
+    recuperacao: "Buscando só nos documentos permitidos",
+    verificacao: "Conferindo versões e trechos",
+    redacao: "Redigindo com referências curtas",
+    politica: "Aplicando a política de resposta",
+  };
+  const MARCAS_DOS_ESTADOS = { iniciada: "em andamento…", concluida: "concluída", falhou: "falhou", ignorada: "não foi necessária" };
   const TEMPO_MAXIMO_MS = 100000;
+  const TEMPO_MAXIMO_COORDENADO_MS = 250000;
+  const TEMPO_DO_CANCELAMENTO_MS = 5000;
 
   const corpo = document.body;
   const modo = corpo.dataset.modo || "";
+  const coordenado = corpo.dataset.coordenacao === "sim";
   const limite = Number.parseInt(corpo.dataset.limitePergunta, 10) || 1000;
   const conversa = document.getElementById("conversa");
   const formulario = document.getElementById("formulario");
   const campo = document.getElementById("pergunta");
   const contador = document.getElementById("contador");
   const enviar = document.getElementById("enviar");
+  const cancelar = document.getElementById("cancelar");
   const novaConversa = document.getElementById("nova-conversa");
   const avisoDoModo = document.getElementById("aviso-do-modo");
 
@@ -37,6 +55,12 @@
   let mensagens = [];
   let aguardando = false;
   let geracao = 0;
+  let controleAtual = null;
+  let canceladaPelaPessoa = false;
+  // Cancelamento explícito (coordenação): o X-Request-Id da resposta do fluxo é como o servidor reconhece a consulta.
+  let identificadorAtual = "";
+  let cancelando = false;
+  let cancelamentoConfirmado = false;
 
   // Todo texto vindo do servidor entra na página somente por textContent: nunca é interpretado como marcação.
   function elemento(tag, classe, texto) {
@@ -123,6 +147,8 @@
     const uso = descreverUso(resposta.uso);
     if (uso) {
       no.append(elemento("p", "uso", uso));
+    } else if (coordenado && !resposta.simulada) {
+      no.append(elemento("p", "uso", "Uso de tokens incerto: ao menos uma tentativa ao modelo não informou o consumo."));
     }
     return no;
   }
@@ -165,16 +191,70 @@
     return status >= 500 ? MENSAGENS.indisponivel : MENSAGENS.generica;
   }
 
+  // Interpreta um bloco do fluxo de progresso ("event: nome" e "data: {json}") e entrega o nome e os dados. Dados que não
+  // são JSON são ignorados.
+  function interpretarBloco(bloco, aoEvento) {
+    let nome = "";
+    const dados = [];
+    bloco.split("\n").forEach(function (linha) {
+      if (linha.startsWith("event:")) {
+        nome = linha.slice(6).trim();
+      } else if (linha.startsWith("data:")) {
+        dados.push(linha.slice(5).trim());
+      }
+    });
+    if (!nome || dados.length === 0) {
+      return;
+    }
+    try {
+      aoEvento(nome, JSON.parse(dados.join("\n")));
+    } catch (erro) {
+      // evento ilegível: o fluxo segue com os próximos
+    }
+  }
+
+  // O progresso usa POST (o EventSource só aceita GET), então o corpo da resposta é lido aos pedaços.
+  async function lerFluxo(resposta, aoEvento) {
+    const leitor = resposta.body.getReader();
+    const decodificador = new TextDecoder("utf-8");
+    let pendente = "";
+    for (;;) {
+      const parte = await leitor.read();
+      if (parte.done) {
+        break;
+      }
+      pendente += decodificador.decode(parte.value, { stream: true });
+      let fim = pendente.indexOf("\n\n");
+      while (fim >= 0) {
+        interpretarBloco(pendente.slice(0, fim), aoEvento);
+        pendente = pendente.slice(fim + 2);
+        fim = pendente.indexOf("\n\n");
+      }
+    }
+  }
+
+  // O servidor identifica cada consulta pelo X-Request-Id da resposta: com ele, e só na mesma conta, o pedido de cancelamento a alcança.
+  function identificadorDaResposta(resposta) {
+    const valor = resposta.headers.get("X-Request-Id") || "";
+    return /^[0-9a-f]{32}$/.test(valor) ? valor : "";
+  }
+
   // Cada chamada leva uma pergunta e um identificador novo, gerado aqui: o servidor não guarda nem reaproveita nada.
-  async function consultar(pergunta) {
+  // Com a coordenação, o mesmo envio vai para a rota de progresso e a resposta chega como eventos.
+  async function consultar(pergunta, aoEvento) {
     const controle = new AbortController();
+    controleAtual = controle;
+    canceladaPelaPessoa = false;
+    cancelando = false;
+    cancelamentoConfirmado = false;
+    identificadorAtual = "";
     const prazo = window.setTimeout(function () {
       controle.abort();
-    }, TEMPO_MAXIMO_MS);
+    }, coordenado ? TEMPO_MAXIMO_COORDENADO_MS : TEMPO_MAXIMO_MS);
     try {
-      const resposta = await fetch("/api/perguntar", {
+      const resposta = await fetch(coordenado ? "/api/perguntar/progresso" : "/api/perguntar", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        headers: { "Content-Type": "application/json", "Accept": coordenado ? "text/event-stream" : "application/json" },
         body: JSON.stringify({ pergunta: pergunta, id: novoId() }),
         credentials: "same-origin",
         cache: "no-store",
@@ -183,6 +263,23 @@
       });
       if (resposta.type === "opaqueredirect") {
         return falha(pergunta, MENSAGENS.sessao);
+      }
+      if (coordenado) {
+        identificadorAtual = identificadorDaResposta(resposta);
+      }
+      const tipoDoCorpo = resposta.headers.get("Content-Type") || "";
+      if (coordenado && resposta.ok && resposta.body && tipoDoCorpo.startsWith("text/event-stream")) {
+        let final = null;
+        await lerFluxo(resposta, function (nome, dados) {
+          if (nome === "resposta" && dados && typeof dados.texto === "string") {
+            final = { papel: "assistente", resposta: dados };
+          } else if (nome === "erro" && dados) {
+            final = falha(pergunta, textoDaFalha(0, dados), dados.id_requisicao);
+          } else if (aoEvento) {
+            aoEvento(nome, dados);
+          }
+        });
+        return final || falha(pergunta, MENSAGENS.generica);
       }
       let dados = null;
       try {
@@ -195,14 +292,90 @@
       }
       return falha(pergunta, textoDaFalha(resposta.status, dados), dados && dados.id_requisicao);
     } catch (erro) {
-      return falha(pergunta, erro && erro.name === "AbortError" ? MENSAGENS.demora : MENSAGENS.rede);
+      if (erro && erro.name === "AbortError") {
+        if (!canceladaPelaPessoa) {
+          return falha(pergunta, MENSAGENS.demora);
+        }
+        return falha(pergunta, cancelamentoConfirmado ? MENSAGENS.cancelada : MENSAGENS.canceladaSemConfirmacao);
+      }
+      return falha(pergunta, MENSAGENS.rede);
     } finally {
       window.clearTimeout(prazo);
+      controleAtual = null;
+      identificadorAtual = "";
+      cancelando = false;
     }
+  }
+
+  // Com a coordenação, a desconexão pode não chegar ao servidor a tempo pela borda da plataforma. Por isso, quando a página já tem o
+  // identificador da consulta, o pedido de cancelamento vai PRIMEIRO ao servidor (autenticado como qualquer outra requisição), e só
+  // depois a conexão é abortada. Antes de o servidor responder não há identificador: só dá para abortar aqui, sem avisá-lo.
+  async function cancelarConsulta() {
+    const controle = controleAtual;
+    if (!controle || cancelando) {
+      return;
+    }
+    cancelando = true;
+    canceladaPelaPessoa = true;
+    atualizarControles();
+    const alvo = identificadorAtual;
+    if (coordenado && alvo) {
+      const limiteDoPedido = new AbortController();
+      const espera = window.setTimeout(function () {
+        limiteDoPedido.abort();
+      }, TEMPO_DO_CANCELAMENTO_MS);
+      try {
+        const resposta = await fetch("/api/perguntar/cancelar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ id_requisicao: alvo }),
+          credentials: "same-origin",
+          cache: "no-store",
+          redirect: "manual",
+          signal: limiteDoPedido.signal,
+        });
+        cancelamentoConfirmado = controleAtual === controle && resposta.status === 202;
+      } catch (erro) {
+        cancelamentoConfirmado = false;
+      } finally {
+        window.clearTimeout(espera);
+      }
+    }
+    controle.abort();
+  }
+
+  function criarPainelDeProgresso() {
+    const no = elemento("article", "mensagem assistente pendente");
+    no.append(elemento("p", "papel", "Assistente"), elemento("p", "texto", "Consultando os documentos…"));
+    const lista = elemento("ul", "progresso");
+    const itens = {};
+    Object.keys(ROTULOS_DAS_ETAPAS).forEach(function (etapa) {
+      const item = elemento("li", "etapa", ROTULOS_DAS_ETAPAS[etapa]);
+      itens[etapa] = item;
+      lista.append(item);
+    });
+    const nota = elemento("p", "uso");
+    no.append(lista, nota);
+    return {
+      no: no,
+      atualizar: function (nome, dados) {
+        if (!dados || typeof dados !== "object") {
+          return;
+        }
+        if (nome === "etapa" && itens[dados.etapa]) {
+          itens[dados.etapa].className = "etapa " + String(dados.estado);
+          itens[dados.etapa].textContent = ROTULOS_DAS_ETAPAS[dados.etapa] + ": " + (MARCAS_DOS_ESTADOS[dados.estado] || "");
+        } else if (nome === "tentativa" && dados.estado === "falha_transitoria") {
+          nota.textContent = "Uma tentativa ao modelo teve uma falha transitória; o serviço pode usar a contingência, dentro dos limites.";
+        }
+      },
+    };
   }
 
   function atualizarControles() {
     enviar.disabled = aguardando;
+    cancelar.hidden = !(coordenado && aguardando);
+    cancelar.disabled = cancelando;
     formulario.setAttribute("aria-busy", aguardando ? "true" : "false");
   }
 
@@ -232,10 +405,11 @@
     atualizarControles();
     mensagens.push(pessoa);
     conversa.append(desenharPessoa(pessoa));
-    const pendente = elemento("article", "mensagem assistente pendente", "Consultando os documentos…");
+    const painel = coordenado ? criarPainelDeProgresso() : null;
+    const pendente = painel ? painel.no : elemento("article", "mensagem assistente pendente", "Consultando os documentos…");
     conversa.append(pendente);
     rolarParaOFim();
-    const resultado = await consultar(pergunta);
+    const resultado = await consultar(pergunta, painel ? painel.atualizar : null);
     if (minhaGeracao !== geracao) {
       return;
     }
@@ -259,6 +433,7 @@
   }
 
   function reiniciar() {
+    cancelarConsulta();
     geracao += 1;
     mensagens = [];
     aguardando = false;
@@ -279,6 +454,7 @@
   });
   campo.addEventListener("input", atualizarContador);
   novaConversa.addEventListener("click", reiniciar);
+  cancelar.addEventListener("click", cancelarConsulta);
 
   if (AVISOS_DO_MODO[modo]) {
     avisoDoModo.textContent = AVISOS_DO_MODO[modo];

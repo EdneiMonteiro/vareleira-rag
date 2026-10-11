@@ -14,6 +14,20 @@ Acesso documental (L300): com VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true, os papéi
 papel reconhecido recebe 403 antes de qualquer busca, embedding ou chamada ao modelo, e o JSON e a query da pergunta não aceitam
 papéis, filtro, índice, tenant nem usuário. A opção não combina com --demo nem com --local-sem-autenticacao.
 
+Coordenação (L400): com VARELEIRA_EXIGIR_COORDENACAO=true, POST /api/perguntar usa o serviço coordenado (mesmo JSON de resposta) e existe
+POST /api/perguntar/progresso, com a mesma validação e autenticação, que devolve eventos de etapa (text/event-stream) e, só depois da
+política, a resposta. Cada requisição tem o próprio sinal de cancelamento: o navegador que aborta ou desconecta impede as próximas etapas
+daquela consulta, e só dela. Um pedido ao modelo já enviado pode terminar e consumir tokens. Sem a opção, as rotas não existem (404).
+
+A desconexão pode não chegar ao servidor a tempo pela borda da plataforma (o ingresso do Azure Container Apps pode manter aberta a conexão
+com o servidor). Por isso existe também POST /api/perguntar/cancelar, com {"id_requisicao": "<X-Request-Id da resposta do fluxo>"}: a
+mesma identidade autenticada, com papel reconhecido, cancela a própria consulta em andamento (a resposta é 202; o fluxo termina com o
+evento `erro` `cancelado`). Outra identidade, uma consulta que já terminou e um identificador desconhecido recebem o mesmo 404, e
+identificador ausente ou malformado recebe 422. O registro dessas consultas fica na memória do processo, só enquanto rodam, e guarda
+apenas o sinal de cancelamento, uma chave (HMAC) de quem as iniciou e a validade: nunca pergunta, resposta, tenant nem OID. Com mais de
+uma réplica, o cancelamento só chega se o pedido cair na réplica da consulta. Antes de o navegador receber o X-Request-Id (a resposta
+do fluxo), só é possível abortar a conexão no próprio navegador, sem avisar o servidor.
+
 Exemplos:
     python scripts\\chat_web.py --host 127.0.0.1 --port 8000 --demo
     python scripts\\chat_web.py --host 0.0.0.0 --port 8000
@@ -23,8 +37,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
+import hmac
+import json
 import logging
 import os
+import secrets
 import sys
 import threading
 import time
@@ -33,7 +51,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, AsyncIterator, Callable, Mapping
 
 import lab_acesso
 import lab_chat
@@ -43,15 +61,20 @@ from lab_comum import ErroLab
 try:
     import uvicorn
     from fastapi import FastAPI, Request
-    from fastapi.responses import JSONResponse, Response
+    from fastapi.responses import JSONResponse, Response, StreamingResponse
     from starlette.exceptions import HTTPException as ErroHttp
 except ImportError:  # requirements/l200.txt ainda não foi instalado: create_app e principal explicam
-    uvicorn = FastAPI = Request = JSONResponse = Response = ErroHttp = None  # type: ignore[assignment,misc]
+    uvicorn = FastAPI = Request = JSONResponse = Response = StreamingResponse = ErroHttp = None  # type: ignore[assignment,misc]
 
 PASTA_WEB = lab_comum.RAIZ / "web"
 ARQUIVOS_DA_INTERFACE = ("index.html", "app.js", "style.css")
 ARQUIVOS_ESTATICOS = {"app.js": "text/javascript; charset=utf-8", "style.css": "text/css; charset=utf-8"}
 ROTAS_ISENTAS = frozenset({"/healthz", "/readyz"})  # as únicas sem autenticação: não leem nem devolvem dados
+ROTA_PERGUNTAR = "/api/perguntar"
+ROTA_PROGRESSO = "/api/perguntar/progresso"  # só com a coordenação (L400)
+ROTA_CANCELAR = "/api/perguntar/cancelar"  # só com a coordenação (L400): cancelamento explícito de uma consulta em andamento
+LIMITE_DO_CORPO_DO_CANCELAMENTO = 1024  # bytes: só o identificador da consulta
+VALIDADE_EXTRA_DO_REGISTRO = 5.0  # segundos além do tempo máximo de uma consulta, só uma rede de proteção
 PORTA_PADRAO = 8000
 LIMITE_DE_CONEXOES = 64
 TEMPO_DE_ESPERA_AO_ENCERRAR = 20  # segundos
@@ -82,6 +105,9 @@ STATUS_HTTP = {
     lab_chat.INDISPONIVEL: 503,
     lab_chat.RESPOSTA_NAO_VERIFICADA: 503,
     lab_chat.NAO_PRONTO: 503,
+    lab_chat.CANCELADO: 499,  # L400: o cliente cancelou; quase nunca há quem leia a resposta
+    lab_chat.EXECUCAO_NAO_ENCONTRADA: 404,  # L400: cancelamento explícito sem consulta em andamento desta conta
+    lab_chat.ID_DA_EXECUCAO_INVALIDO: 422,
 }
 
 # A página só carrega scripts e estilos do próprio servidor, só conversa com ele e não pode ser colocada em um quadro.
@@ -100,6 +126,62 @@ LOG = logging.getLogger("vareleira.chat")
 LOG.addHandler(logging.NullHandler())  # a biblioteca não imprime sozinha: quem inicia o servidor configura o registro
 
 
+class ExecucoesAtivas:
+    """As consultas coordenadas em andamento (L400), só para o cancelamento explícito por quem as iniciou.
+
+    O cancelamento por desconexão pode não chegar ao servidor pela borda da plataforma, então o navegador pede o cancelamento por uma
+    rota autenticada, com o X-Request-Id da consulta. Cada item guarda só o sinal de cancelamento, a chave de quem iniciou a consulta
+    (um HMAC com um segredo que só existe neste processo: nunca o tenant nem o OID) e a validade; nada da pergunta, da resposta nem dos
+    documentos. O item sai quando a consulta termina, é cancelada ou vence a validade, e o registro nunca passa do número de vagas de
+    concorrência: só entra quem já passou pela admissão. Fica na memória deste processo, sem Redis nem banco: com mais de uma réplica,
+    o cancelamento só chega se o pedido cair na réplica da consulta.
+    """
+
+    def __init__(self, limite: int, validade_s: float, relogio: Callable[[], float] = time.monotonic):
+        self._trava = threading.Lock()
+        self._itens: dict[str, tuple[bytes, threading.Event, float]] = {}
+        self._limite, self._validade_s, self._relogio = limite, validade_s, relogio
+
+    def _expurgar(self) -> None:  # quem chama já tem a trava
+        agora = self._relogio()
+        for id_requisicao in [chave for chave, (_, _, vence) in self._itens.items() if vence <= agora]:
+            del self._itens[id_requisicao]
+
+    def abrir(self, id_requisicao: str, ator: bytes, cancelar: threading.Event) -> None:
+        with self._trava:
+            self._expurgar()
+            if id_requisicao in self._itens:
+                raise lab_chat.ErroChat(lab_chat.ERRO_INTERNO, "id_duplicado")
+            if len(self._itens) >= self._limite:
+                raise lab_chat.ErroChat(lab_chat.OCUPADO, "registro_cheio")
+            self._itens[id_requisicao] = (ator, cancelar, self._relogio() + self._validade_s)
+
+    def cancelar(self, id_requisicao: str, ator: bytes) -> bool:
+        """Dá o sinal de cancelamento se a consulta existe e é de quem pede. Quem não é o dono recebe o mesmo `False` de uma consulta
+        que não existe: o identificador não revela de quem é nem se existe."""
+        with self._trava:
+            self._expurgar()
+            item = self._itens.get(id_requisicao)
+            if item is None or not hmac.compare_digest(item[0], ator):
+                return False
+            del self._itens[id_requisicao]
+            item[1].set()
+            return True
+
+    def fechar(self, id_requisicao: str) -> None:
+        with self._trava:
+            self._itens.pop(id_requisicao, None)
+
+    def __len__(self) -> int:
+        with self._trava:
+            return len(self._itens)
+
+
+def chave_do_ator(segredo: bytes, principal: lab_chat.Principal) -> bytes:
+    """Quem fez a requisição, sem guardar o tenant nem o OID: um HMAC (tenant e sujeito já validados pela autenticação integrada)."""
+    return hmac.new(segredo, f"{principal.tenant}\x1f{principal.sujeito}".encode("utf-8"), hashlib.sha256).digest()
+
+
 @dataclass
 class Estado:
     """O que existe depois da partida. Não há dados de usuário aqui: só a configuração, o serviço e o controle de carga."""
@@ -109,6 +191,7 @@ class Estado:
     executor: ThreadPoolExecutor
     capacidade: threading.BoundedSemaphore
     arquivos: dict[str, bytes]
+    execucoes: ExecucoesAtivas | None = None  # só com a coordenação (L400)
 
 
 def exigir_web() -> None:
@@ -124,6 +207,10 @@ def rotular_rota(caminho: str) -> str:
         return "prontidao"
     if caminho == "/api/perguntar":
         return "perguntar"
+    if caminho == ROTA_PROGRESSO:
+        return "progresso"
+    if caminho == ROTA_CANCELAR:
+        return "cancelar"
     if caminho == "/":
         return "interface"
     return "estatico" if caminho.startswith("/static/") else "outra"
@@ -139,6 +226,7 @@ def carregar_arquivos(pasta: Path, configuracao: lab_chat.ConfiguracaoChat) -> d
             raise ErroLab(f"Arquivo da interface não encontrado: web/{nome}. Use uma cópia completa do projeto.") from None
     pagina = arquivos["index.html"].decode("utf-8")
     pagina = pagina.replace("{{MODO}}", configuracao.modo).replace("{{LIMITE_PERGUNTA}}", str(lab_chat.LIMITE_DA_PERGUNTA))
+    pagina = pagina.replace("{{COORDENACAO}}", "sim" if configuracao.exigir_coordenacao else "nao")
     arquivos["index.html"] = pagina.encode("utf-8")
     return arquivos
 
@@ -167,18 +255,26 @@ async def ler_corpo(request: Request, limite: int) -> bytes:
     return bytes(corpo)
 
 
-async def consultar(estado: Estado, pergunta: str, acesso: lab_acesso.ContextoAcesso | None = None) -> lab_chat.RespostaChat:
+async def consultar(estado: Estado, pergunta: str, acesso: lab_acesso.ContextoAcesso | None = None, *,
+                    cancelar: threading.Event | None = None,
+                    progresso: Callable[[Any], None] | None = None) -> lab_chat.RespostaChat:
     """Executa a consulta (síncrona) em uma thread, com concorrência limitada e tempo máximo.
 
     Sem vaga, responde logo com 429 em vez de enfileirar. A vaga só volta quando a thread termina, mesmo que a requisição
     já tenha expirado: assim o número de consultas em andamento nunca passa do limite. O contexto de acesso (L300) pertence a
     esta requisição e só chega ao serviço como argumento da chamada: nada dele fica no estado compartilhado.
+
+    Com a coordenação (L400), `cancelar` (um sinal por requisição) e `progresso` seguem para o serviço coordenado, que não começa
+    uma etapa nova depois do sinal. Quando o tempo acaba ou a requisição é cancelada aqui, o sinal é dado: a thread termina na
+    próxima conferência do serviço, não fica rodando por conta própria.
     """
     if not estado.capacidade.acquire(blocking=False):
         raise lab_chat.ErroChat(lab_chat.OCUPADO)
 
     def trabalho() -> lab_chat.RespostaChat:
         try:
+            if cancelar is not None or progresso is not None:  # só o serviço coordenado aceita os dois
+                return estado.servico.perguntar(pergunta, acesso, cancelar=cancelar, progresso=progresso)
             if acesso is None:
                 return estado.servico.perguntar(pergunta)
             return estado.servico.perguntar(pergunta, acesso)
@@ -193,7 +289,142 @@ async def consultar(estado: Estado, pergunta: str, acesso: lab_acesso.ContextoAc
     try:
         return await asyncio.wait_for(futuro, timeout=estado.configuracao.timeout_segundos)
     except TimeoutError:
+        if cancelar is not None:
+            cancelar.set()
         raise lab_chat.ErroChat(lab_chat.INDISPONIVEL, "tempo_esgotado") from None
+    except asyncio.CancelledError:  # o servidor desistiu desta requisição (cliente desconectado)
+        if cancelar is not None:
+            cancelar.set()
+        raise
+
+
+async def vigiar_conexao(request: Request, cancelar: threading.Event, encerrada: asyncio.Event) -> None:
+    """Dá o sinal de cancelamento desta requisição se o cliente desconectar. Não toca nas consultas de outras pessoas.
+
+    Depois do corpo, a próxima mensagem do servidor para esta requisição é a desconexão: a vigia só espera por ela (sem consultar
+    de tempos em tempos) e termina quando `encerrada` é acionado. `Request.is_disconnected()` não serve aqui: por trás do
+    middleware HTTP do Starlette ele não enxerga a desconexão, e cancelar a tarefa por fora dele pode ser engolido pelo AnyIO.
+    """
+    espera = asyncio.ensure_future(request.receive())
+    fim = asyncio.ensure_future(encerrada.wait())
+    try:
+        await asyncio.wait({espera, fim}, return_when=asyncio.FIRST_COMPLETED)
+        if espera.done() and not espera.cancelled() and espera.exception() is None and not encerrada.is_set():
+            if espera.result().get("type") == "http.disconnect":
+                cancelar.set()
+    except Exception:  # noqa: BLE001 - a vigia é complementar: sem ela, o prazo da consulta continua valendo
+        return
+    finally:
+        for tarefa in (espera, fim):
+            tarefa.cancel()
+        await asyncio.wait({espera, fim}, timeout=1.0)
+
+
+def guardar_resumo(destino: dict[str, Any]) -> Callable[[Any], None]:
+    """Um acompanhante que só guarda o resumo (contagens) que o serviço coordenado informa no fim da execução."""
+    def guardar(evento: Any) -> None:
+        if getattr(evento, "tipo", None) == "resumo":
+            destino.update(evento.a_dict()["dados"])
+
+    return guardar
+
+
+def registrar_coordenacao(id_requisicao: str, resultado: str, resumo: Mapping[str, Any]) -> None:
+    """Uma linha por consulta coordenada, só com vocabulário fechado e contagens (sem pergunta, trecho, resposta ou identidade)."""
+    LOG.info("coordenacao id=%s resultado=%s chamadas=%d buscas=%d contingencia=%s uso_incerto=%s", id_requisicao, resultado,
+             int(resumo.get("chamadas_total", 0)), int(resumo.get("buscas", 0)), "sim" if resumo.get("contingencia") else "nao",
+             "nao" if resumo.get("uso_incerto") is False else "sim")
+
+
+def evento_sse(nome: str, dados: Mapping[str, Any]) -> bytes:
+    """Um evento do fluxo de progresso. O nome vem de um vocabulário fechado e o JSON nunca tem quebra de linha."""
+    return f"event: {nome}\ndata: {json.dumps(dados, ensure_ascii=False, separators=(',', ':'))}\n\n".encode("utf-8")
+
+
+def envelope_de_erro(erro: lab_chat.ErroChat, id_requisicao: str) -> dict[str, str]:
+    return {"erro": erro.codigo, "mensagem": lab_chat.MENSAGENS[erro.codigo], "id_requisicao": id_requisicao}
+
+
+def abrir_fluxo(estado: Estado, pedido: lab_chat.PedidoChat, acesso: lab_acesso.ContextoAcesso, id_requisicao: str,
+                ator: bytes) -> AsyncIterator[bytes]:
+    """O fluxo de eventos de uma consulta coordenada. Sem vaga, levanta OCUPADO antes de a resposta começar (429).
+
+    A consulta roda em uma thread do executor e entrega os eventos por uma fila desta requisição. O texto da resposta só sai no
+    evento `resposta`, depois da política; antes dele só há eventos de etapa e de tentativa com contagens. Se o navegador
+    desconecta ou o tempo acaba, o sinal de cancelamento desta requisição é dado e nenhuma etapa nova começa.
+
+    Enquanto a consulta roda, ela fica em `estado.execucoes` com a chave de quem a iniciou: é isso que deixa a mesma identidade
+    cancelá-la por ROTA_CANCELAR, já que a desconexão pode não chegar até aqui pela borda da plataforma.
+    """
+    execucoes = estado.execucoes
+    if execucoes is None:
+        raise lab_chat.ErroChat(lab_chat.NAO_PRONTO)
+    if not estado.capacidade.acquire(blocking=False):
+        raise lab_chat.ErroChat(lab_chat.OCUPADO)
+    laco = asyncio.get_running_loop()
+    fila: asyncio.Queue[tuple[str, Any]] = asyncio.Queue()
+    cancelar = threading.Event()
+    try:
+        execucoes.abrir(id_requisicao, ator, cancelar)
+    except BaseException:
+        estado.capacidade.release()
+        raise
+
+    def entregar(item: tuple[str, Any]) -> None:
+        try:
+            laco.call_soon_threadsafe(fila.put_nowait, item)
+        except RuntimeError:  # o servidor já encerrou o laço de eventos
+            pass
+
+    def trabalho() -> None:
+        try:
+            resultado: tuple[str, Any] = ("resposta", estado.servico.perguntar(
+                pedido.pergunta, acesso, cancelar=cancelar, progresso=lambda evento: entregar(("evento", evento))))
+        except BaseException as erro:  # noqa: BLE001 - toda falha vira um evento `erro` com código público
+            resultado = ("falha", erro)
+        finally:
+            execucoes.fechar(id_requisicao)  # a consulta terminou: não há mais o que cancelar
+            estado.capacidade.release()
+        entregar(resultado)
+
+    try:
+        laco.run_in_executor(estado.executor, trabalho)
+    except BaseException:
+        execucoes.fechar(id_requisicao)
+        estado.capacidade.release()
+        raise
+
+    async def corpo() -> AsyncIterator[bytes]:
+        resultado, resumo = "cancelado", {}
+        prazo = time.monotonic() + estado.configuracao.timeout_segundos
+        try:
+            while True:
+                try:
+                    tipo, valor = await asyncio.wait_for(fila.get(), timeout=max(prazo - time.monotonic(), 0.0))
+                except TimeoutError:
+                    tipo, valor = "falha", lab_chat.ErroChat(lab_chat.INDISPONIVEL, "tempo_esgotado")
+                if tipo == "evento":
+                    dados = valor.a_dict()
+                    if dados.get("tipo") == "resumo":
+                        resumo = dados["dados"]
+                    yield evento_sse(dados["tipo"], dados)
+                elif tipo == "resposta":
+                    resultado = "concluido"
+                    yield evento_sse("resposta", {"id": pedido.id_cliente, "id_requisicao": id_requisicao, **valor.a_dict()})
+                    yield evento_sse("fim", {"estado": "concluida"})
+                    return
+                else:
+                    erro = lab_chat.classificar_erro(valor)
+                    resultado = "cancelado" if erro.codigo == lab_chat.CANCELADO else "erro"
+                    yield evento_sse("erro", envelope_de_erro(erro, id_requisicao))
+                    yield evento_sse("fim", {"estado": "cancelada" if resultado == "cancelado" else "falhou"})
+                    return
+        finally:
+            cancelar.set()  # desconexão, tempo ou fim: nenhuma etapa nova começa para esta requisição (e só para ela)
+            execucoes.fechar(id_requisicao)
+            registrar_coordenacao(id_requisicao, resultado, resumo)
+
+    return corpo()
 
 
 def create_app(configuracao: lab_chat.ConfiguracaoChat,
@@ -215,8 +446,14 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
         if configuracao.exigir_acesso_documental and getattr(servico, "exige_acesso", False) is not True:
             raise ErroLab("O serviço do chat não aplica o filtro de acesso documental: com a opção ativa, o chat não inicia assim.",
                           lab_comum.CODIGO_USO)
+        if configuracao.exigir_coordenacao and getattr(servico, "coordenado", False) is not True:
+            raise ErroLab("O serviço do chat não é o coordenado (L400): com a opção ativa, o chat não inicia assim.",
+                          lab_comum.CODIGO_USO)
         executor = ThreadPoolExecutor(max_workers=configuracao.max_concorrencia, thread_name_prefix="chat")
-        app.state.chat = Estado(configuracao, servico, executor, threading.BoundedSemaphore(configuracao.max_concorrencia), arquivos)
+        execucoes = (ExecucoesAtivas(configuracao.max_concorrencia, configuracao.timeout_segundos + VALIDADE_EXTRA_DO_REGISTRO)
+                     if configuracao.exigir_coordenacao else None)
+        app.state.chat = Estado(configuracao, servico, executor, threading.BoundedSemaphore(configuracao.max_concorrencia), arquivos,
+                                execucoes)
         LOG.info("assistente pronto %s", lab_chat.resumo_publico(configuracao))
         try:
             yield
@@ -226,6 +463,7 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
 
     app = FastAPI(title="Assistente do Vareleira Lar", lifespan=ciclo_de_vida, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.chat = None
+    segredo_dos_atores = secrets.token_bytes(32)  # só existe neste processo: a chave de quem inicia uma consulta não se repete fora dele
 
     @app.middleware("http")
     async def proteger_e_registrar(request: Request, call_next):
@@ -234,6 +472,7 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
         request.state.id_requisicao = id_requisicao
         request.state.causa = None
         request.state.acesso = None
+        request.state.ator = None
         try:
             erro_de_acesso = None
             if not lab_chat.host_permitido(configuracao.modo, request.headers.get("host")):
@@ -244,6 +483,8 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
                                                            configuracao.tenants_autorizados)
                     if configuracao.exigir_acesso_documental:
                         request.state.acesso = lab_chat.contexto_de_acesso(principal)  # sem papel reconhecido: 403 aqui
+                    if configuracao.exigir_coordenacao:
+                        request.state.ator = chave_do_ator(segredo_dos_atores, principal)
                 except lab_chat.ErroChat as erro:
                     erro_de_acesso = erro
             resposta = responder_erro(request, erro_de_acesso) if erro_de_acesso else await call_next(request)
@@ -292,8 +533,9 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
             return responder_erro(request, lab_chat.ErroChat(lab_chat.NAO_ENCONTRADO))
         return Response(estado.arquivos[nome], media_type=ARQUIVOS_ESTATICOS[nome])
 
-    @app.post("/api/perguntar")
+    @app.post(ROTA_PERGUNTAR)
     async def perguntar(request: Request):
+        coordenado, resumo, resultado = False, {}, "erro"
         try:
             estado = request.app.state.chat
             if estado is None:
@@ -305,10 +547,70 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
                 raise lab_chat.ErroChat(lab_chat.NAO_AUTORIZADO, "sem_papel_conhecido")
             corpo = await ler_corpo(request, lab_chat.LIMITE_DO_CORPO)
             pedido = lab_chat.ler_pedido(corpo, request.headers.get("content-type"))
-            resposta = await consultar(estado, pedido.pergunta, acesso)
+            coordenado = estado.configuracao.exigir_coordenacao
+            if coordenado:  # L400: um sinal de cancelamento por requisição, dado se o cliente desconectar
+                cancelar, encerrada = threading.Event(), asyncio.Event()
+                vigia = asyncio.ensure_future(vigiar_conexao(request, cancelar, encerrada))
+                try:
+                    resposta = await consultar(estado, pedido.pergunta, acesso, cancelar=cancelar, progresso=guardar_resumo(resumo))
+                finally:
+                    encerrada.set()
+                    await asyncio.wait({vigia}, timeout=2.0)
+                    if not vigia.done():  # não deveria acontecer: a vigia sai assim que `encerrada` é acionado
+                        vigia.cancel()
+            else:
+                resposta = await consultar(estado, pedido.pergunta, acesso)
+            resultado = "concluido"
+        except asyncio.CancelledError:  # o servidor desistiu da requisição: o sinal de cancelamento já foi dado em `consultar`
+            resultado = "cancelado"
+            raise
         except Exception as erro:  # noqa: BLE001 - toda falha vira um código público; o texto da exceção não sai daqui
-            return responder_erro(request, lab_chat.classificar_erro(erro))
+            publico = lab_chat.classificar_erro(erro)
+            resultado = "cancelado" if publico.codigo == lab_chat.CANCELADO else "erro"
+            return responder_erro(request, publico)
+        finally:
+            if coordenado:
+                registrar_coordenacao(request.state.id_requisicao, resultado, resumo)
         return JSONResponse({"id": pedido.id_cliente, "id_requisicao": request.state.id_requisicao, **resposta.a_dict()})
+
+    if configuracao.exigir_coordenacao:
+        @app.post(ROTA_PROGRESSO)
+        async def perguntar_com_progresso(request: Request):
+            try:
+                estado = request.app.state.chat
+                if estado is None:
+                    raise lab_chat.ErroChat(lab_chat.NAO_PRONTO)
+                if request.url.query:
+                    raise lab_chat.ErroChat(lab_chat.CAMPOS_NAO_PERMITIDOS)
+                acesso, ator = request.state.acesso, request.state.ator
+                if acesso is None or ator is None:
+                    raise lab_chat.ErroChat(lab_chat.NAO_AUTORIZADO, "sem_papel_conhecido")
+                corpo = await ler_corpo(request, lab_chat.LIMITE_DO_CORPO)
+                pedido = lab_chat.ler_pedido(corpo, request.headers.get("content-type"))
+                fluxo = abrir_fluxo(estado, pedido, acesso, request.state.id_requisicao, ator)
+            except Exception as erro:  # noqa: BLE001 - antes do fluxo, uma falha ainda é uma resposta JSON comum
+                return responder_erro(request, lab_chat.classificar_erro(erro))
+            return StreamingResponse(fluxo, media_type="text/event-stream", headers={"X-Accel-Buffering": "no"})
+
+        @app.post(ROTA_CANCELAR)
+        async def cancelar_execucao(request: Request):
+            """Cancela uma consulta em andamento da própria identidade. A mesma autenticação e o mesmo papel das outras rotas valem
+            (sem papel, 403 antes de qualquer consulta); o JSON só traz o X-Request-Id, e quem pede é sempre a identidade da requisição."""
+            try:
+                estado = request.app.state.chat
+                if estado is None or estado.execucoes is None:
+                    raise lab_chat.ErroChat(lab_chat.NAO_PRONTO)
+                if request.url.query:
+                    raise lab_chat.ErroChat(lab_chat.CAMPOS_NAO_PERMITIDOS)
+                if request.state.acesso is None or request.state.ator is None:
+                    raise lab_chat.ErroChat(lab_chat.NAO_AUTORIZADO, "sem_papel_conhecido")
+                corpo = await ler_corpo(request, LIMITE_DO_CORPO_DO_CANCELAMENTO)
+                alvo = lab_chat.ler_pedido_de_cancelamento(corpo, request.headers.get("content-type"))
+                if not estado.execucoes.cancelar(alvo, request.state.ator):
+                    raise lab_chat.ErroChat(lab_chat.EXECUCAO_NAO_ENCONTRADA)
+            except Exception as erro:  # noqa: BLE001 - só o código público e a causa curta saem daqui
+                return responder_erro(request, lab_chat.classificar_erro(erro))
+            return JSONResponse({"estado": "cancelamento_solicitado", "alvo": alvo}, status_code=202)
 
     return app
 
@@ -344,6 +646,10 @@ def mostrar_inicio(configuracao: lab_chat.ConfiguracaoChat, porta: int) -> None:
     if configuracao.exigir_acesso_documental:
         print("Acesso documental ativo: os papéis de aplicação da identidade definem as classes de documento da busca, "
               "e quem não tem papel reconhecido recebe 403 antes de qualquer consulta.")
+    if configuracao.exigir_coordenacao:
+        print("Coordenação L400 ativa: planejamento, recuperação filtrada, verificação e redação com limites finitos; "
+              f"contingência de geração {'configurada' if configuracao.deployment_contingencia else 'não configurada'}; "
+              f"progresso por eventos em POST {ROTA_PROGRESSO}.")
     print(f"Endereço: http://{configuracao.host}:{porta}  (encerre com Ctrl+C)")
 
 

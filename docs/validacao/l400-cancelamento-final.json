@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "nivel": "L400",
+  "versao_runtime": "cancelamento-explicito-v3",
+  "comparacao_de_qualidade": "Resultado V2 preservado, conjunto final nao repetido",
+  "resultado": "aprovado",
+  "origem": "chamadas HTTP reais em Azure e log do servidor correlacionado",
+  "provas": {
+    "outro_ator_autenticado_http": 404,
+    "dono_da_execucao_http": 202,
+    "execucao_ja_encerrada_http": 404,
+    "erro_cancelado_no_fluxo": true,
+    "nenhuma_resposta_apresentada": true,
+    "chamadas_modelo_antes_da_interrupcao": 1,
+    "buscas_posteriores": 0,
+    "uso_incerto_de_pedido_em_voo": true,
+    "duracao_observada_ms": 3677,
+    "nova_consulta_apos_cancelamento": "HTTP 200, resposta documentada e fonte operacional"
+  },
+  "limites": [
+    "Registro somente de execucoes ativas no processo, sem perguntas nem respostas persistidas",
+    "Uma replica e um processo; nao garante cancelamento entre replicas diferentes",
+    "202 aceita a solicitacao; interrupcao foi confirmada separadamente no fluxo e no log",
+    "Pedido ao modelo ja enviado pode continuar consumindo tokens",
+    "Duracao de um ensaio nao e objetivo de nivel de servico"
+  ]
+}

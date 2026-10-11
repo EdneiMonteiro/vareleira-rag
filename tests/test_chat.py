@@ -1430,10 +1430,20 @@ class InterfaceWebTests(unittest.TestCase):
 
     def test_cada_requisicao_leva_so_a_pergunta_atual_e_um_id_novo(self):
         script = ler_web("app.js")
-        self.assertEqual(script.count("fetch("), 1)
+        self.assertEqual(script.count("fetch("), 2, "a pergunta e, só com a coordenação, o pedido de cancelamento")
         corpos = re.findall(r"JSON\.stringify\(([^;]*?)\)\s*,", script)
-        self.assertEqual([re.sub(r"\s+", " ", corpo) for corpo in corpos], ["{ pergunta: pergunta, id: novoId() }"])
+        self.assertEqual([re.sub(r"\s+", " ", corpo) for corpo in corpos],
+                         ["{ pergunta: pergunta, id: novoId() }", "{ id_requisicao: alvo }"])
         self.assertNotIn("mensagens", corpos[0])
+
+    def test_o_cancelamento_pede_ao_servidor_antes_de_abortar_a_conexao(self):
+        script = ler_web("app.js")
+        funcao = script[script.index("async function cancelarConsulta()"):]
+        funcao = funcao[:funcao.index("\n  }\n") + 4]
+        self.assertEqual(funcao.count('"/api/perguntar/cancelar"'), 1)
+        self.assertIn("if (coordenado && alvo)", funcao, "só com a coordenação e com o identificador da consulta")
+        self.assertLess(funcao.index('fetch("/api/perguntar/cancelar"'), funcao.index("controle.abort()"), "o servidor é avisado primeiro")
+        self.assertIn('headers.get("X-Request-Id")', script)
 
     def test_sem_credenciais_identificadores_nem_texto_dos_documentos_na_interface(self):
         conteudo = "\n".join(ler_web(nome) for nome in ARQUIVOS_WEB)

@@ -26,6 +26,12 @@ O L300 acrescenta sete guias de classificação, acesso por identidade, rede e o
 Clientes temporários, conexões privadas, ingestão, isolamento e recuperação foram conferidos.
 Login humano e implantação Actions não foram executados; a limpeza registra somente efeitos observados.
 
+O [roteiro L400](roteiro-l400.md) acrescenta sete desafios de coordenação, contingência,
+migração, comparação, carga e encerramento. O [registro L400](validacao/l400-validacao.md)
+separa implementação, ensaios com dublês, operações reais, comparação congelada e limpeza verificada.
+Conservar o L300 como referência e registrar falhas faz parte do exercício; mais agentes
+ou uma contagem de casos aprovados não representam homologação para produção.
+
 ## Público e linguagem
 
 Escreva em português do Brasil para pessoas de negócio, arquitetura, operações
