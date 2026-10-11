@@ -78,7 +78,8 @@ VAR_SEGREDO = "VARELEIRA_AVALIACAO_SEGREDO"
 HOSTS_LOCAIS = frozenset({"127.0.0.1", "localhost", "::1"})
 DOMINIO_DO_CONTAINER_APPS = ".azurecontainerapps.io"  # o endereço padrão do L200; domínios personalizados ficam fora desta versão
 MAXIMO_DE_TOKENS = 10**9  # por contagem e por resposta: acima disso o valor não é plausível e a resposta é recusada
-ARQUIVOS_DO_CODIGO = ("lab_comum.py", "lab_indexacao.py", "lab_geracao.py", "lab_politica.py", "lab_chat.py", "chat_web.py")
+ARQUIVOS_DO_CODIGO = ("lab_comum.py", "lab_acesso.py", "lab_indexacao.py", "lab_geracao.py", "lab_politica.py", "lab_chat.py",
+                      "chat_web.py")  # os módulos que o contêiner copia: o chat importa o lab_acesso mesmo sem o acesso documental
 
 SITUACOES = (lab_politica.RESPONDIDA, lab_politica.RECUSADA, lab_politica.ESCLARECIMENTO)
 SITUACAO_POR_TIPO = {

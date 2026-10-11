@@ -73,8 +73,9 @@ resposta com base nos trechos e cite as fontes; o [Desafio 04](04-recusar-sem-ev
 não há evidência; o [Desafio 05](05-agente-com-maf.md) implementa o agente com Microsoft Agent Framework
 (MAF); o [Desafio 06](06-avaliar-respostas.md) mede a qualidade da recuperação e das respostas; e o
 [Desafio 07](07-identidade-da-aplicacao.md) usa service principal (identidade de uma aplicação no Microsoft
-Entra ID) e Azure Key Vault (serviço de guarda de segredos). Comparar estratégias de divisão, usar ranking
-semântico e filtrar por versão ou vigência ficam para depois, ainda sem desafio escrito.
+Entra ID) e Azure Key Vault (serviço de guarda de segredos). A comparação entre divisão por código e
+ingestão gerenciada já está no [L200, Desafio 03](../L200/03-comparar-ingestao.md).
+Ranking semântico e filtros por versão ou vigência não fazem parte deste exercício.
 
 > **Para guardar na memória: D-V-I.** Para preparar documentos para busca, **D**ivida em trechos,
 > **V**etorize cada trecho e **I**ndexe tudo com a fonte. Mnemônico criado para este curso.
@@ -192,6 +193,11 @@ e não o grupo de recursos. [5]
 | Scripts do Desafio 01 | Sem mudança de comportamento | `lab_comum.py` ganhou funções compartilhadas |
 | Reverter | Reaplicar o `l100.bicepparam` mantém os recursos novos | A implantação incremental preserva recursos ausentes do arquivo; a remoção é manual e está em [Custos, pausa e limpeza](#custos-pausa-e-limpeza) |
 
+> **Atenção:** nos Desafios 03 e 07, repita os parâmetros de nomes, regiões, camada e capacidade que
+> você tiver personalizado aqui, tanto no `what-if` quanto na implantação. Os arquivos posteriores
+> não recuperam automaticamente essas escolhas da implantação anterior. Se já houver isolamento
+> L300/L400, não reaplique o L100: ele declara acesso público e não é um procedimento de retorno.
+
 ## Pré-requisitos
 
 Os comandos deste guia são escritos para Windows e PowerShell, no terminal integrado do Visual Studio Code
@@ -213,7 +219,7 @@ grupo criado no Desafio 01:
 
 ```powershell
 $assinatura = "<ID-DA-SUA-ASSINATURA>"
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $conta = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100 --query properties.outputs.nomeConta.value --output tsv
 $conta
 ```
@@ -594,9 +600,12 @@ A verificação **só lê** o índice e consome tokens apenas para calcular o em
 são curtas. Ela confere:
 
 1. a **definição** do índice: campos, tipos, atributos e a configuração vetorial;
-2. os **trechos**: a quantidade e o conteúdo coincidem com o que os documentos produzem;
+2. os **trechos**: a quantidade, os identificadores e as impressões digitais gravadas coincidem com o
+   plano local. Essa verificação não baixa novamente o conteúdo e os vetores do índice; uma alteração
+   direta que preserve a impressão gravada pode não ser detectada;
 3. o **modelo**: o índice e o deployment usam o mesmo modelo, porque vetores de modelos diferentes são
-   incomparáveis;
+   incomparáveis. O script compara o nome retornado pelo serviço, não certifica a versão dos vetores;
+   confira também a versão fixa do deployment na Etapa 2.5;
 4. a **recuperação**: para cada pergunta do arquivo
    [dados\l100\conferencia-recuperacao.json](../../dados/l100/conferencia-recuperacao.json), um dos trechos
    esperados aparece entre os três primeiros. É um **teste de fumaça**, uma conferência inicial com poucos
@@ -656,6 +665,11 @@ remove com `--remover-orfaos`. Se você trocar o modelo ou as dimensões, o índ
 para e oferece outro nome de índice ou `--recriar-indice`, que **apaga** o índice do laboratório e o cria de
 novo. Use `--recriar-indice` somente depois de conferir o nome do índice.
 
+No cliente L100, `--dimensoes` define o comprimento esperado e o esquema do índice; não envia um
+pedido de redução dimensional ao modelo. Mantenha 1.536 neste nível. O índice candidato de 768
+dimensões do L400 usa outro caminho de ingestão e consulta; apontar os comandos L100 para ele não
+constitui uma migração compatível.
+
 ## Etapa 5: consultar o índice
 
 **Objetivo:** observar a recuperação e entender onde ela falha. Esta etapa só lê o índice e usa poucos
@@ -696,7 +710,7 @@ python scripts\buscar_trechos.py --busca $busca --modelos $modelos --pergunta "q
 
 | Modo | O que compara | Bom para | Cuidado |
 | --- | --- | --- | --- |
-| `vetorial` (padrão) | O significado da pergunta com o dos trechos | Perguntas com palavras diferentes do texto | Sempre devolve algo, mesmo quando nada serve |
+| `vetorial` (padrão) | A proximidade dos vetores da pergunta e dos trechos | Perguntas com palavras diferentes do texto | Pode devolver trechos mesmo quando nenhum responde à pergunta |
 | `texto` | As palavras da pergunta com as dos trechos (BM25, algoritmo clássico de pontuação por frequência das palavras), com análise do português | Termos exatos, siglas, números | Compara palavras, sem reconhecer sinônimos |
 | `hibrida` | Os dois, combinados por um ranking de fusão (que usa a posição de cada trecho nas duas listas) | Uso geral | A pontuação tem escala própria; compare só resultados do mesmo modo |
 
@@ -721,9 +735,10 @@ python scripts\buscar_trechos.py --busca $busca --modelos $modelos --pergunta "R
 
 - Os documentos **não informam** o preço do seguro, e a busca devolveu três trechos mesmo assim, com
   pontuações perto de 0,65 (sobre "joias e relógios", "franquia" e "segurado"), contra 0,69 a 0,77 nas
-  perguntas bem atendidas. A busca **sempre devolve os `k` trechos mais próximos** e não sinaliza "não há
+  perguntas bem atendidas. A busca vetorial devolve **até `k` trechos mais próximos** e não sinaliza "não há
   evidência". Uma pontuação mais baixa é um indício; a amostra deste laboratório é pequena demais para
-  definir um limite de corte.
+  definir um limite de corte. Um índice vazio ou um filtro pode reduzir a quantidade devolvida;
+  a busca por texto também pode não encontrar correspondências.
 - Para o notebook roubado, a cláusula que importa é a exclusão de **bens portáteis levados para fora do imóvel**
   (cláusula 5.1, item h), no trecho `VLAR-CG-1_0-007`. Nos modos vetorial e híbrido, ela só apareceu na
   **8ª posição**, atrás de trechos sobre joias, sinistro e roubo de conteúdo; no modo `texto`, ficou fora dos
@@ -767,6 +782,10 @@ afetar a segurança ou o custo.
 
 ### Exemplo: filtrar a busca por documento
 
+Esta opção ainda é uma proposta. A implementação atual reserva o argumento interno `filtro` para
+as classes de acesso do L300. Um filtro por documento precisa de um caminho próprio, sem relaxar
+essa validação nem substituir a autorização. O console L100 não valida o acesso documental do L300.
+
 Cole com os arquivos anexados. Os testes usam **dublês**, objetos que simulam os serviços externos:
 
 ```text
@@ -777,9 +796,13 @@ Antes de editar, proponha o plano: arquivos, funções e testes.
 Cuidados obrigatórios: valide o valor com o mesmo padrão dos identificadores do inventário antes de montar o
 filtro; nunca monte o filtro concatenando texto sem validar; reaproveite lab_comum e lab_indexacao; mensagens
 em pt-BR; mantenha o comportamento atual quando a opção não for usada.
+Não reutilize o argumento interno filtro para texto arbitrário: ele valida classes de acesso do L300.
+Delimite a opção documental ao console L100; preserve a validação de lab_acesso, exigir_filtro e
+preFilter (filtragem antes da seleção vetorial) nos caminhos L300/L400. Não altere o chat nem seus padrões.
 Escreva testes com unittest e dublês, sem acessar o Azure.
 Use o Python do ambiente virtual, .\.venv\Scripts\python.exe, e execute apenas:
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_busca_e_verificacao.py"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_indexacao.py"
 Não instale pacotes, não acesse o Azure e não altere o índice.
 ```
 
@@ -817,10 +840,10 @@ Qualquer ação que altere o Azure continua dependendo da sua decisão.
 | Infraestrutura criada | `az resource list` e os `show` da Etapa 2 | Três recursos; chaves de API desativadas; modelo e versão fixos |
 | Papéis atribuídos | `az role assignment list` | Dois papéis na busca e um nos modelos |
 | Simulação | `indexar_documentos.py` sem `--executar` | 54 trechos a criar, nenhum embedding gerado |
-| Indexação | `indexar_documentos.py --executar` | 54 criados; tokens usados informados |
+| Indexação | Relato da Etapa 4.2 e leitura por `verificar_indice.py` | 54 criados no relato; identificadores e impressões conferidos na leitura |
 | Índice conferido | `verificar_indice.py` | Cinco conferências aprovadas |
-| Reexecução previsível | Simulação e `--executar` de novo | 54 iguais; nenhuma chamada ao modelo |
-| Divergência tratada | Experimento opcional | `[PARADA]`, código 3 e nada alterado |
+| Reexecução previsível | Simulação sem `--executar` | 54 iguais; nenhuma chamada ao modelo; a execução autorizada está na Etapa 4.4 |
+| Divergência tratada | Registro do experimento opcional da Etapa 4 | `[PARADA]`, código 3 e nada alterado na tentativa recusada |
 | Consulta | `buscar_trechos.py` nos três modos | Trechos com pontuação e fonte; nenhuma resposta escrita |
 | Caso de falha explicado | Atividade 3 | Hipótese sobre o trecho da exclusão, conferida no texto |
 
@@ -975,6 +998,10 @@ Astra, modelo preferido do mantenedor para a documentação, não estava dispon�
 GPT-6.1 Sol, em 9 de outubro de 2026. Os modelos de autoria e revisão são
 independentes do modelo que você escolhe no Copilot e do modelo de embeddings da aplicação
 (`text-embedding-3-small`).
+
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
+autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
 
 ## Glossário
 

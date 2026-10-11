@@ -90,13 +90,18 @@ param quantidadeTrechos int
 @description('Esforço de raciocínio do modelo de geração.')
 param esforco string
 
+// Parâmetro opcional acrescentado para o L300, que reaproveita este módulo. O padrão preserva o L200: sem a variável, a
+// aplicação não exige autorização documental.
+@description('Define VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true na aplicação, e o servidor passa a exigir os papéis de aplicação da pessoa autenticada. Falso (padrão): a variável não é definida.')
+param exigirAcessoDocumental bool = false
+
 var portaAplicacao = 8000
 var nomeSegredoLogin = 'login-entraid'
 
 // Só valores que não são segredo, com os nomes que scripts/lab_chat.py lê. O segredo de login fica em `secrets` e só
 // a autenticação integrada o lê. AZURE_CLIENT_ID é o ID do cliente da identidade atribuída ao usuário: sem ele, a
 // aplicação pediria o token da identidade do sistema, que ela não tem.
-var variaveisDeAmbiente = [
+var variaveisBase = [
   { name: 'VARELEIRA_BUSCA', value: nomeBusca }
   { name: 'VARELEIRA_MODELOS', value: nomeModelos }
   { name: 'VARELEIRA_INDICE', value: nomeIndice }
@@ -110,6 +115,18 @@ var variaveisDeAmbiente = [
   { name: 'VARELEIRA_EXIGIR_AUTENTICACAO', value: 'true' }
   { name: 'VARELEIRA_TENANT_AUTORIZADO', value: tenantLogin }
 ]
+
+var variaveisDeAmbiente = concat(
+  variaveisBase,
+  exigirAcessoDocumental
+    ? [
+        {
+          name: 'VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL'
+          value: 'true'
+        }
+      ]
+    : []
+)
 
 // Sem chaves de registro: a identidade atribuída ao usuário baixa a imagem (papel AcrPull, atribuído antes) e
 // também acessa busca e modelos. Escala de 0 a 1 réplica: com zero réplicas, não há computação cobrada.

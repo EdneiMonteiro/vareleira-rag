@@ -7,7 +7,7 @@
 | Situação | Exercício executável, validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026 (Windows e PowerShell). Os documentos de seguro são sintéticos. Veja os limites em [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e conferir os resultados; escrever código é opcional. |
 | Resultado | Uma conta de armazenamento no Azure com os três documentos sintéticos do Vareleira Lar, enviados e conferidos por script. |
-| Custo | O Azure Blob Storage cobra por capacidade armazenada e por operações; este desafio armazena cerca de 21 KB. A remoção dos recursos está em [Custos, pausa e limpeza](#custos-pausa-e-limpeza). |
+| Custo | O Azure Blob Storage cobra por capacidade armazenada e por operações; este desafio armazena cerca de 21 quilobytes (KB). A remoção dos recursos está em [Custos, pausa e limpeza](#custos-pausa-e-limpeza). |
 
 ## Conteúdo
 
@@ -251,8 +251,8 @@ conta, acesso público ou a execução de comandos nesta etapa, peça a correç�
 
 ## Etapa 2: conferir o acesso ao Azure
 
-**Objetivo:** identificar a assinatura de destino e conferir as suas permissões. Todos os comandos desta
-etapa só leem informações.
+**Objetivo:** identificar a assinatura de destino e conferir as suas permissões. As consultas desta
+etapa não alteram recursos; `az login` autentica e atualiza a sessão local.
 
 ### 2.1 Verificar as ferramentas
 
@@ -310,6 +310,11 @@ terceiro lista as políticas da organização: se alguma restringir regiões, ac
 armazenamento, confirme com o responsável como ela afeta o laboratório. Uma lista vazia é um resultado
 válido.
 
+Essas listagens não são uma prova completa de autorização: a consulta na assinatura pode não mostrar
+papéis atribuídos somente ao grupo de recursos ou por grupos de identidade, e políticas podem ser
+herdadas de outros escopos. Confirme com o administrador o acesso efetivo no destino. Criar um grupo
+exige permissão na assinatura; com permissão apenas em um grupo já entregue, omita sua criação.
+
 > **Atenção:** o identificador da assinatura e o seu ID de objeto identificam o seu ambiente. Publicados
 > em arquivos versionados, em exemplos ou em pedidos de ajuda, eles expõem a estrutura da sua conta.
 > Mantenha-os em variáveis do terminal e compartilhe só o trecho necessário, sem identificadores, tokens
@@ -365,7 +370,8 @@ pode ser enviado. Cada entrada registra:
 | `arquivo`, `blob`, `tamanho_bytes` e `sha256` | Caminho local, nome no Azure, tamanho e hash | Conferir se a cópia enviada corresponde ao arquivo revisado |
 
 Um **hash** é um resumo calculado do conteúdo, usado para comparar o arquivo de origem com a cópia
-enviada. Os scripts calculam esse resumo com os mesmos finais de linha nos dois arquivos.
+enviada. O campo `sha256` usa SHA-256 (*Secure Hash Algorithm*, algoritmo de resumo com 256 bits).
+Os scripts calculam esse resumo com os mesmos finais de linha nos dois arquivos.
 A correção das regras de seguro, a autorização de uso e a vigência dependem da revisão do conteúdo e
 da autoridade da fonte.
 
@@ -430,7 +436,7 @@ escolhas do nível, sem fixar identificadores do seu ambiente. [12][13]
 | --- | --- | --- |
 | Sem acesso anônimo (`allowBlobPublicAccess: false`, contêiner `publicAccess: None`) | Ninguém lê um documento sem credencial | Evita expor documentos por engano [14] |
 | Sem chaves de conta (`allowSharedKeyAccess: false`) | O acesso aos dados usa a identidade do Entra ID | Evita distribuir uma credencial compartilhada com acesso amplo à conta [15] |
-| Entra ID como padrão (`defaultToOAuthAuthentication: true`) | Ferramentas passam a usar a sua identidade | Mantém o acesso rastreável por pessoa |
+| Entra ID como padrão no portal (`defaultToOAuthAuthentication: true`) | O portal prefere autorização pelo Entra ID | Scripts e CLI ainda precisam escolher a credencial; aqui usam `AzureCliCredential` ou `--auth-mode login` |
 | TLS (*Transport Layer Security*) 1.2 e somente HTTPS (HTTP, *Hypertext Transfer Protocol*, com criptografia) | Comunicação criptografada em trânsito | Protege tokens e conteúdo durante a transmissão |
 | Exclusão reversível por 7 dias | Blobs e contêineres apagados ou sobrescritos ficam recuperáveis | Reduz o dano de um engano [16] |
 | Papel de dados só no contêiner | `Storage Blob Data Contributor` apenas em `base-documental` | Aplica o menor privilégio: o papel vale só no contêiner |
@@ -449,13 +455,17 @@ Não edite arquivos nem execute comandos.
 
 ### 4.1 Criar o grupo de recursos
 
+Confirme um nome exclusivo com o responsável e consulte se ele já existe antes de criar. Se existir,
+confira sua origem e conteúdo: `az group create` também atualiza grupos existentes, não é uma guarda
+contra reutilizar o destino errado. Não prossiga sobre um grupo compartilhado.
+
 Use o terminal da Etapa 2, onde `$assinatura` já está definida; em um terminal novo, defina-a de novo.
 Substitua `<REGIAO>` por uma região permitida pela sua organização, por exemplo `brazilsouth`. As regiões
 `brazilsouth` e `eastus2` foram validadas. Se a região recusar os recursos, consulte
 `RequestDisallowedByAzure` em [Solução de problemas](#solução-de-problemas).
 
 ```powershell
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $regiao = "<REGIAO>"
 az group create --subscription $assinatura --name $grupo --location $regiao --tags laboratorio=vareleira-rag nivel=L100
 ```
@@ -552,6 +562,11 @@ para valer nos dados. [11]
 > `Modify` para propriedades padrão do serviço que o arquivo não menciona; esse comportamento é uma
 > limitação conhecida da previsão (ruído). [19] Confira se cada diferença corresponde a uma propriedade
 > preenchida pelo serviço ou a uma alteração que você pediu, antes de decidir.
+
+> **Atenção:** essa reimplantação vale para a base L100. Se os recursos já receberam isolamento de
+> rede no L300/L400, reaplicar `main.bicep` pode reabrir o acesso público. Não use o L100 como
+> procedimento de retorno ou limpeza de níveis posteriores; preserve os parâmetros e siga o
+> roteiro do nível que alterou os recursos.
 
 ## Etapa 5: enviar e conferir os documentos
 
@@ -748,9 +763,10 @@ Quero um script novo, local e somente leitura: scripts/listar_documentos.py.
 Ele deve listar os documentos do inventário (identificador, título, versão e situação da
 revisão real) em uma tabela simples e terminar com a contagem de documentos com revisão pendente.
 Antes de editar, proponha o plano: arquivos, funções e como vai testar.
-Siga as instruções do projeto: reaproveite lab_comum, escreva mensagens em pt-BR e use unittest.
+Siga as instruções do projeto: reaproveite lab_comum, escreva mensagens em pt-BR e use unittest
+com testes novos em tests\test_listar_documentos.py (caminho proposto para este exercício).
 Não acesse o Azure, não instale pacotes novos e execute apenas
-python scripts\listar_documentos.py e python -m unittest discover -s tests.
+python scripts\listar_documentos.py e python -m unittest discover -s tests -p "*listar_documentos*.py".
 ```
 
 **Conferência:** o diff deve acrescentar o script e um teste, reaproveitar `lab_comum`, omitir
@@ -759,6 +775,9 @@ função com palavras simples antes de aceitar.
 
 **O que revisar no código proposto pelo Copilot:**
 
+- **Escopo dos testes.** Os prompts dos desafios usam testes relacionados ao pedido. A suíte completa
+  (`python -m unittest discover -s tests`) inclui os níveis posteriores e suas dependências; preparar
+  esse ambiente é uma atividade separada, não uma instalação automática para corrigir um teste L100.
 - **Interpretador.** O terminal do agente pode usar o Python do sistema em vez do ambiente virtual da
   Etapa 5 e falhar com `ModuleNotFoundError: No module named 'azure'`. Inclua no pedido: "Use o Python do
   ambiente virtual, `.\.venv\Scripts\python.exe`".
@@ -804,7 +823,7 @@ Qualquer ação que altere o Azure continua dependendo da sua decisão.
 | Segurança da conta | `az storage account show` com a consulta da Etapa 4 | Acesso público e chaves `false`, TLS 1.2, somente HTTPS |
 | Conteúdo carregado | `verificar_documentos.py` | Identificadores, quantidade, hashes, tipo e metadados conferem |
 | Acesso conferido | `verificar_documentos.py` | Leitura com a sua identidade funciona; leitura anônima negada |
-| Reexecução previsível | `carregar_documentos.py --executar` de novo | Três `[igual]` e nenhum envio; a divergência interrompe o script |
+| Reexecução previsível | `carregar_documentos.py --conta $conta`, sem `--executar` | Três `[igual]` no plano; a prova de reexecução com escrita autorizada está na Etapa 5.5 |
 
 Antes de encerrar, registre em local privado o grupo de recursos, o nome da conta e a decisão de manter
 ou remover os recursos. Ao compartilhar evidências, remova das saídas do terminal os identificadores do
@@ -918,6 +937,10 @@ correções, está em [docs\validacao\l100-01-preparar-ambiente.md](../../docs/v
 modelo preferido do mantenedor para a documentação, não estava disponível. Revisão editorial por
 GPT-6.1 Sol, em 9 de outubro de 2026. Os modelos de autoria e revisão são
 independentes do modelo que você escolhe no Copilot e dos modelos usados pela aplicação no Azure.
+
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
+autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
 
 ## Glossário
 

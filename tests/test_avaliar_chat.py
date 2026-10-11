@@ -3,6 +3,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import socket
 import tempfile
 import threading
@@ -22,6 +23,7 @@ import lab_comum
 import lab_politica as lp
 from lab_comum import ErroLab
 from support import RAIZ
+from test_chat import modulos_do_laboratorio
 
 PRECISA_DO_SERVIDOR = unittest.skipIf(chat_web.FastAPI is None or chat_web.uvicorn is None,
                                       "Instale requirements/l200.txt para testar contra o chat real em modo de demonstração.")
@@ -773,6 +775,40 @@ class RelatorioTests(BaseDoAvaliador):
         self.assertEqual({nome: configuracao[nome] for nome in ("valor", "informada_pelo_autor", "verificada_pelo_avaliador")},
                          {"valor": dados["configuracao_avaliada"], "informada_pelo_autor": True, "verificada_pelo_avaliador": False})
         self.assertEqual((relatorio["entrada"]["nome"], relatorio["entrada"]["origem"]), (dados["nome"], dados["origem"]))
+
+    def test_alterar_o_lab_acesso_muda_o_hash_registrado_no_relatorio(self):
+        """O chat importa o lab_acesso (mesmo com o acesso documental desligado): o relatório precisa ligar o resultado a ele.
+
+        Usa uma cópia dos módulos de produção e os casos sintéticos deste arquivo: o código real e os conjuntos de avaliação
+        não são lidos nem alterados.
+        """
+        self.assertIn("lab_acesso.py", ac.ARQUIVOS_DO_CODIGO)
+        raiz = self.pasta / "projeto"
+        (raiz / "scripts").mkdir(parents=True)
+        for nome in ac.ARQUIVOS_DO_CODIGO:
+            shutil.copy2(RAIZ / "scripts" / nome, raiz / "scripts" / nome)
+        registrados = {}
+        with mock.patch.object(lab_comum, "RAIZ", raiz):
+            for rotulo in ("original", "alterado"):
+                if rotulo == "alterado":
+                    modulo = raiz / "scripts" / "lab_acesso.py"
+                    modulo.write_bytes(modulo.read_bytes() + b"\n# alteracao de teste\n")
+                destino = self.pasta / f"relatorio-{rotulo}.json"
+                codigo, saida, _ = self.rodar(dados_de_entrada(), relatorio=destino)
+                self.assertEqual(codigo, lab_comum.CODIGO_OK, saida)
+                registrados[rotulo] = json.loads(destino.read_text(encoding="utf-8"))["codigo_avaliado"]
+        original, alterado = registrados["original"], registrados["alterado"]
+        self.assertEqual(set(original), set(alterado))
+        self.assertEqual(original["scripts/lab_acesso.py"], os_dois_hashes((RAIZ / "scripts" / "lab_acesso.py").read_bytes()))
+        self.assertEqual([nome for nome in original if original[nome] != alterado[nome]], ["scripts/lab_acesso.py"],
+                         "só o módulo alterado muda de hash")
+        for medida in ("sha256_bytes_brutos", "sha256_normalizado_lf"):
+            self.assertNotEqual(original["scripts/lab_acesso.py"][medida], alterado["scripts/lab_acesso.py"][medida], medida)
+
+    def test_o_codigo_avaliado_cobre_todos_os_modulos_que_o_chat_importa(self):
+        importados = {f"{nome}.py" for nome in modulos_do_laboratorio("chat_web")}
+        self.assertIn("lab_acesso.py", importados)
+        self.assertEqual(sorted(importados - set(ac.ARQUIVOS_DO_CODIGO)), [], "módulo do chat fora da impressão digital do relatório")
 
     def test_resumo_soma_chamadas_tokens_e_tempos_por_categoria(self):
         relogio = RelogioFalso()

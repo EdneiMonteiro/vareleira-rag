@@ -1,0 +1,340 @@
+# L300 · Implantação manual e protegida. O padrão é SIMULAR (what-if); aplicar exige confirmação e aprovação humana.
+#
+# Este workflow só roda por disparo manual (workflow_dispatch) e só na branch principal. Nada roda por push, por pull
+# request nem por agendamento. Ele valida as entradas, repete a validação dos pull requests (validar.yml) e, só então,
+# simula e, se pedido, aplica o Bicep do L300 no Azure com login por OIDC (federação de identidade: a implantação não usa
+# segredo de cliente; a única CREDENCIAL com segredo é a do login da APLICAÇÃO, descrita abaixo). O JSON do what-if tem
+# identificadores privados e nunca é impresso nem guardado: ele fica em um arquivo temporário do runner, é reduzido por
+# scripts/operar_l300.py a contagens, tipos e caminhos, e é apagado.
+#
+# Configurado FORA deste repositório, por quem administra (este workflow não cria nem altera nada disto):
+#   - Ambiente do GitHub "vareleira-l300", com revisores obrigatórios e restrito à branch principal. Quando um workflow
+#     referencia um ambiente que não existe, o GitHub o cria SEM nenhuma regra. Por isso o job comprova a proteção real
+#     pela API do GitHub antes do login (ver o passo "Comprovar a proteção real do ambiente"): o login só acontece com as
+#     regras do ambiente (revisores obrigatórios e restrição de branches) E a aprovação registrada desta execução, lidas da API.
+#     Qualquer lacuna (resposta ausente, 403, JSON ilegível ou incompleto) bloqueia o job. Não existe atestação nem variável que
+#     substitua essa prova.
+#   - CONFIGURAÇÃO PRIVADA, em SECRETS individuais do ambiente protegido, todos sem valores padrão (um ausente interrompe a execução
+#     antes de qualquer chamada ao Azure). NÃO são credenciais: são identificadores e nomes que sozinhos não dão acesso a nada, mas
+#     que não devem aparecer nos registros. O runner imprime os env e os with de cada passo ANTES de executá-lo e só mascara o que
+#     vem de secrets: por isso estes campos nunca vêm de vars nem do contexto vars serializado, que sairia em claro antes de
+#     qualquer máscara. Cada um é mapeado individualmente, e o job ainda os mascara de novo antes de exportá-los.
+#       * Identidade de IMPLANTAÇÃO (OIDC): AZURE_CLIENT_ID, AZURE_TENANT_ID e AZURE_SUBSCRIPTION_ID.
+#       * Destinos que o infra/levels/l300.bicepparam exige em todas as fases: VARELEIRA_GRUPO_RECURSOS, VARELEIRA_NOME_CONTA,
+#         VARELEIRA_NOME_BUSCA, VARELEIRA_NOME_MODELOS, VARELEIRA_NOME_REGISTRO, VARELEIRA_NOME_IDENTIDADE_APLICACAO,
+#         VARELEIRA_NOME_WORKSPACE_LOGS e VARELEIRA_ID_OBJETO_CARGA.
+#       * Fase aplicacao (LOGIN DA APLICAÇÃO): VARELEIRA_ID_APLICACAO_LOGIN e VARELEIRA_ID_TENANT_LOGIN.
+#   - CONFIGURAÇÃO NÃO PRIVADA, em variáveis (vars) do ambiente, mapeadas uma a uma (nunca o contexto vars inteiro): na fase isolar,
+#     a configuração ATUAL dos serviços de dados (VARELEIRA_SKU_ARMAZENAMENTO, VARELEIRA_SKU_BUSCA, VARELEIRA_REPLICAS_BUSCA e
+#     VARELEIRA_PARTICOES_BUSCA); as regiões VARELEIRA_LOCALIZACAO_ARMAZENAMENTO, _BUSCA e _MODELOS, só se algum serviço não estiver
+#     na região do grupo de recursos; e, opcional na fase aplicacao, VARELEIRA_ACAO_SEM_LOGIN (Return401 ou RedirectToLoginPage).
+#     A fase, a conectividade privada validada e o ingresso externo vão para o Bicep pelas variáveis VARELEIRA_L300_FASE,
+#     VARELEIRA_L300_CONECTIVIDADE_PRIVADA_VALIDADA e VARELEIRA_L300_INGRESSO_EXTERNO, validadas por scripts/operar_l300.py antes.
+#   - DUAS credenciais diferentes, que nunca se confundem (os IDs acima não são credenciais):
+#       1) IDENTIDADE DE IMPLANTAÇÃO (quem executa o Azure): login por OIDC com os IDs AZURE_* (configuração privada, em secrets).
+#          Não existe segredo de cliente: o GitHub emite um token de vida curta. Segredo de cliente da identidade de implantação:
+#          nunca no GitHub (este workflow recusa AZURE_CLIENT_SECRET e as demais credenciais do Azure).
+#       2) LOGIN DA APLICAÇÃO (quem entra no chat): o registro de aplicativo do Microsoft Entra ID do chat, OUTRO objeto, criado fora
+#          do Bicep. Na fase aplicacao o Bicep recebe o segredo de cliente dele como parâmetro @secure e o guarda nos Secrets do
+#          Azure Container Apps. Essa é a ÚNICA credencial com segredo que este workflow usa: o secret VARELEIRA_SEGREDO_LOGIN,
+#          criado por quem administra no ambiente protegido (nunca em vars, nunca neste repositório). Ele é uma variável efêmera,
+#          mapeada só nos três passos que precisam dele (validar, simular e aplicar) e só na fase aplicacao; nas outras fases o
+#          passo recebe vazio. Nunca vai para vars, GITHUB_ENV, argumentos, registros nem relatórios. Um valor persistente no
+#          runner NÃO é pré-requisito: o passo de ferramentas falha se existir um, e o mapeamento do passo prevalece sobre ele.
+#   - Credencial federada no Microsoft Entra ID para o ambiente (da identidade de IMPLANTAÇÃO). O sub do token OIDC precisa bater
+#     EXATAMENTE com o que foi configurado: repositórios criados depois de 15/07/2026 usam um sub imutável (com os IDs do dono e do
+#     repositório), diferente do formato legado com nomes. Confirme qual vale e use o sub real informado pelo administrador; não
+#     copie exemplos. Segredo de cliente da identidade de implantação: nunca no GitHub.
+#   - Runner confiável com os rótulos [self-hosted, linux, vareleira-l300], dentro da rede privada, com az, Bicep
+#     (v0.48.1 ou mais novo, no PATH), python3 3.12+, curl e git. Só este workflow, na branch principal, deve poder usá-lo.
+#   - Papéis do Azure proporcionais à fase para a identidade federada. Este workflow não atribui papéis.
+name: L300 · Implantar (manual e protegido)
+
+on:
+  workflow_dispatch:
+    inputs:
+      fase:
+        description: "Fase do L300. A fase isolar fecha o acesso público dos dados e só se aplica com a conectividade privada validada."
+        type: choice
+        required: true
+        default: rede
+        options:
+          - rede
+          - aplicacao
+          - isolar
+      aplicar:
+        description: "false (padrão): só simula (what-if). true: aplica de verdade, depois da aprovação do ambiente."
+        type: boolean
+        required: true
+        default: false
+      conectividade_privada_validada:
+        description: "Obrigatório em isolar: sua atestação de que validou a conectividade privada com evidências. O workflow não consegue verificar isto."
+        type: boolean
+        required: true
+        default: false
+      ingresso_externo:
+        description: "Só na fase aplicacao: abre o endereço público da aplicação (com login). Ligue só depois de conferir o login e a autorização documental."
+        type: boolean
+        required: true
+        default: false
+      tag_imagem:
+        description: "Tag IMUTÁVEL da imagem já publicada no registro. Obrigatória na fase aplicacao; nunca use latest."
+        type: string
+        required: false
+        default: ""
+      confirmacao:
+        description: "Só com aplicar=true: digite APLICAR-L300-REDE, APLICAR-L300-APLICACAO ou APLICAR-L300-ISOLAR, conforme a fase."
+        type: string
+        required: false
+        default: ""
+      qualificar_nao_suportado:
+        description: "Opcional. Itens que o what-if não consegue prever e que você revisou: TIPO=N,TIPO=N (quantidade exata)."
+        type: string
+        required: false
+        default: ""
+      qualificar_propriedades_removidas:
+        description: "Opcional. Propriedades removidas em recursos existentes que você revisou: TIPO=N,TIPO=N (quantidade exata)."
+        type: string
+        required: false
+        default: ""
+      plano_sha256:
+        description: "Opcional, recomendado ao aplicar: o plano_sha256 impresso por uma simulação que você revisou."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: l300-implantar
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  entradas:
+    name: Entradas e portões (sem nuvem)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Baixar o repositório no commit exato
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validar entradas e contexto (sem rede)
+        env:
+          VARELEIRA_L300_FASE: ${{ inputs.fase }}
+          VARELEIRA_APLICAR: ${{ inputs.aplicar }}
+          VARELEIRA_L300_CONECTIVIDADE_PRIVADA_VALIDADA: ${{ inputs.conectividade_privada_validada }}
+          VARELEIRA_L300_INGRESSO_EXTERNO: ${{ inputs.ingresso_externo }}
+          VARELEIRA_TAG_IMAGEM: ${{ inputs.tag_imagem }}
+          VARELEIRA_CONFIRMACAO: ${{ inputs.confirmacao }}
+          VARELEIRA_QUALIFICAR_NAO_SUPORTADO: ${{ inputs.qualificar_nao_suportado }}
+          VARELEIRA_QUALIFICAR_PROPRIEDADES_REMOVIDAS: ${{ inputs.qualificar_propriedades_removidas }}
+          VARELEIRA_PLANO_SHA256: ${{ inputs.plano_sha256 }}
+        run: python3 scripts/operar_l300.py --etapa validar --exigir-github
+
+      - name: Plano declarativo da fase (sem rede)
+        env:
+          VARELEIRA_L300_FASE: ${{ inputs.fase }}
+        run: python3 scripts/operar_l300.py --etapa plano
+
+  ci:
+    name: Testes e validações (CI)
+    needs: entradas
+    uses: ./.github/workflows/validar.yml
+    permissions:
+      contents: read
+
+  implantar:
+    name: Implantar (${{ inputs.fase }})
+    needs: [entradas, ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, linux, vareleira-l300]
+    environment: vareleira-l300
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - name: Baixar o repositório no commit exato
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Conferir as ferramentas e os arquivos do runner (sem rede)
+        run: |
+          for ferramenta in az bicep python3 curl; do
+            if ! command -v "$ferramenta" > /dev/null 2>&1; then
+              echo "[ERRO] Ferramenta ausente no runner confiável: $ferramenta. Nada foi enviado ao Azure." >&2
+              exit 1
+            fi
+          done
+          if [ -n "${VARELEIRA_SEGREDO_LOGIN:-}" ]; then
+            echo "[ERRO] O runner confiável tem o segredo do login da aplicação como variável persistente. Esse segredo só vem de secrets do ambiente protegido, nos passos da fase aplicacao: remova-o do runner. O valor não é exibido. Nada foi enviado ao Azure." >&2
+            exit 1
+          fi
+          if [ ! -f infra/levels/l300.bicepparam ]; then
+            echo "[ERRO] infra/levels/l300.bicepparam não existe neste commit. Nada foi enviado ao Azure." >&2
+            exit 1
+          fi
+          bicep --version
+
+      - name: Isolar o estado do Azure CLI deste job
+        run: echo "AZURE_CONFIG_DIR=${RUNNER_TEMP}/azure-cli" >> "$GITHUB_ENV"
+
+      - name: Mascarar de novo a configuração privada (antes de validar e exportar)
+        env:
+          # Os mesmos secrets individuais do passo de validação (não são credenciais). O runner já os mascara; aqui se acrescentam as
+          # variações de maiúsculas e minúsculas, porque as ferramentas costumam imprimir GUIDs e nomes em outra caixa.
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          VARELEIRA_GRUPO_RECURSOS: ${{ secrets.VARELEIRA_GRUPO_RECURSOS }}
+          VARELEIRA_NOME_CONTA: ${{ secrets.VARELEIRA_NOME_CONTA }}
+          VARELEIRA_NOME_BUSCA: ${{ secrets.VARELEIRA_NOME_BUSCA }}
+          VARELEIRA_NOME_MODELOS: ${{ secrets.VARELEIRA_NOME_MODELOS }}
+          VARELEIRA_NOME_REGISTRO: ${{ secrets.VARELEIRA_NOME_REGISTRO }}
+          VARELEIRA_NOME_IDENTIDADE_APLICACAO: ${{ secrets.VARELEIRA_NOME_IDENTIDADE_APLICACAO }}
+          VARELEIRA_NOME_WORKSPACE_LOGS: ${{ secrets.VARELEIRA_NOME_WORKSPACE_LOGS }}
+          VARELEIRA_ID_OBJETO_CARGA: ${{ secrets.VARELEIRA_ID_OBJETO_CARGA }}
+          VARELEIRA_ID_APLICACAO_LOGIN: ${{ secrets.VARELEIRA_ID_APLICACAO_LOGIN }}
+          VARELEIRA_ID_TENANT_LOGIN: ${{ secrets.VARELEIRA_ID_TENANT_LOGIN }}
+        run: |
+          for nome in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID $(compgen -v | grep -E '^VARELEIRA_(NOME|ID|GRUPO)_'); do
+            valor="${!nome:-}"
+            if [ -n "$valor" ]; then
+              echo "::add-mask::$valor"
+              echo "::add-mask::${valor,,}"
+              echo "::add-mask::${valor^^}"
+            fi
+          done
+
+      - name: Validar portões e variáveis (sem rede)
+        env:
+          VARELEIRA_L300_FASE: ${{ inputs.fase }}
+          VARELEIRA_APLICAR: ${{ inputs.aplicar }}
+          VARELEIRA_L300_CONECTIVIDADE_PRIVADA_VALIDADA: ${{ inputs.conectividade_privada_validada }}
+          VARELEIRA_L300_INGRESSO_EXTERNO: ${{ inputs.ingresso_externo }}
+          VARELEIRA_TAG_IMAGEM: ${{ inputs.tag_imagem }}
+          VARELEIRA_CONFIRMACAO: ${{ inputs.confirmacao }}
+          VARELEIRA_QUALIFICAR_NAO_SUPORTADO: ${{ inputs.qualificar_nao_suportado }}
+          VARELEIRA_QUALIFICAR_PROPRIEDADES_REMOVIDAS: ${{ inputs.qualificar_propriedades_removidas }}
+          VARELEIRA_PLANO_SHA256: ${{ inputs.plano_sha256 }}
+          # CONFIGURAÇÃO PRIVADA (não são credenciais): um secret individual por campo, que o runner mascara desde este passo. Nunca vars.
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          VARELEIRA_GRUPO_RECURSOS: ${{ secrets.VARELEIRA_GRUPO_RECURSOS }}
+          VARELEIRA_NOME_CONTA: ${{ secrets.VARELEIRA_NOME_CONTA }}
+          VARELEIRA_NOME_BUSCA: ${{ secrets.VARELEIRA_NOME_BUSCA }}
+          VARELEIRA_NOME_MODELOS: ${{ secrets.VARELEIRA_NOME_MODELOS }}
+          VARELEIRA_NOME_REGISTRO: ${{ secrets.VARELEIRA_NOME_REGISTRO }}
+          VARELEIRA_NOME_IDENTIDADE_APLICACAO: ${{ secrets.VARELEIRA_NOME_IDENTIDADE_APLICACAO }}
+          VARELEIRA_NOME_WORKSPACE_LOGS: ${{ secrets.VARELEIRA_NOME_WORKSPACE_LOGS }}
+          VARELEIRA_ID_OBJETO_CARGA: ${{ secrets.VARELEIRA_ID_OBJETO_CARGA }}
+          VARELEIRA_ID_APLICACAO_LOGIN: ${{ secrets.VARELEIRA_ID_APLICACAO_LOGIN }}
+          VARELEIRA_ID_TENANT_LOGIN: ${{ secrets.VARELEIRA_ID_TENANT_LOGIN }}
+          # CONFIGURAÇÃO NÃO PRIVADA: vars, uma a uma (nunca o contexto vars inteiro).
+          VARELEIRA_SKU_ARMAZENAMENTO: ${{ vars.VARELEIRA_SKU_ARMAZENAMENTO }}
+          VARELEIRA_SKU_BUSCA: ${{ vars.VARELEIRA_SKU_BUSCA }}
+          VARELEIRA_REPLICAS_BUSCA: ${{ vars.VARELEIRA_REPLICAS_BUSCA }}
+          VARELEIRA_PARTICOES_BUSCA: ${{ vars.VARELEIRA_PARTICOES_BUSCA }}
+          VARELEIRA_LOCALIZACAO_ARMAZENAMENTO: ${{ vars.VARELEIRA_LOCALIZACAO_ARMAZENAMENTO }}
+          VARELEIRA_LOCALIZACAO_BUSCA: ${{ vars.VARELEIRA_LOCALIZACAO_BUSCA }}
+          VARELEIRA_LOCALIZACAO_MODELOS: ${{ vars.VARELEIRA_LOCALIZACAO_MODELOS }}
+          VARELEIRA_ACAO_SEM_LOGIN: ${{ vars.VARELEIRA_ACAO_SEM_LOGIN }}
+          # LOGIN DA APLICAÇÃO (registro do Entra ID do chat), não a identidade de implantação (OIDC). Segredo efêmero, só na fase
+          # aplicacao: aqui só se confere a presença e o formato; o valor não é exibido, exportado nem gravado.
+          VARELEIRA_SEGREDO_LOGIN: ${{ inputs.fase == 'aplicacao' && secrets.VARELEIRA_SEGREDO_LOGIN || '' }}
+        run: python3 scripts/operar_l300.py --etapa validar --exigir-github --exigir-oidc --exigir-azure --exportar-github-env
+
+      - name: Comprovar a proteção real do ambiente (antes de qualquer login)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATOR: ${{ github.triggering_actor }}
+        run: |
+          if [ "${GITHUB_API_URL}" != "https://api.github.com" ]; then
+            echo "[ERRO] Destino inesperado para a API do GitHub: o token não será enviado. Nada foi enviado ao Azure." >&2
+            exit 1
+          fi
+          umask 077
+          pasta="$(mktemp -d "${RUNNER_TEMP}/ambiente.XXXXXXXX")"
+          trap 'rm -rf "$pasta"' EXIT
+          buscar() {
+            curl --silent --show-error --max-time 30 \
+              --header "Accept: application/vnd.github+json" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              --config <(printf 'header = "Authorization: Bearer %s"\n' "$GH_TOKEN") \
+              --output "$2" "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/$1" || : > "$2"
+          }
+          buscar "actions/runs/${GITHUB_RUN_ID}/approvals" "$pasta/aprovacoes.json"
+          buscar "environments/vareleira-l300" "$pasta/ambiente.json"
+          python3 scripts/operar_l300.py --etapa verificar-ambiente --nome-ambiente vareleira-l300 \
+            --aprovacoes "$pasta/aprovacoes.json" --ambiente "$pasta/ambiente.json" --ator "$ATOR"
+
+      - name: Entrar no Azure por OIDC (federação, sem segredo de cliente)
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Simular (what-if) e sanitizar o plano
+        env:
+          # LOGIN DA APLICAÇÃO, não a identidade de implantação (OIDC). O bicepparam lê este segredo (parâmetro @secure) só na
+          # fase aplicacao; nas outras o valor é vazio. Só o az compila os parâmetros: este workflow nunca os imprime.
+          VARELEIRA_SEGREDO_LOGIN: ${{ inputs.fase == 'aplicacao' && secrets.VARELEIRA_SEGREDO_LOGIN || '' }}
+        run: |
+          umask 077
+          pasta="$(mktemp -d "${RUNNER_TEMP}/l300.XXXXXXXX")"
+          trap 'rm -rf "$pasta"' EXIT
+          bruto="$pasta/whatif.json"
+          : > "$bruto"
+          chmod 600 "$bruto"
+          if ! az deployment group what-if \
+              --resource-group "$VARELEIRA_GRUPO_RECURSOS" \
+              --parameters infra/levels/l300.bicepparam \
+              --no-pretty-print --only-show-errors --output json \
+              > "$bruto" 2> "$pasta/erro.txt"; then
+            echo "[ERRO] A simulação (what-if) falhou. Os detalhes foram omitidos de propósito, porque podem conter identificadores privados. Repita a simulação no seu computador." >&2
+            exit 1
+          fi
+          python3 scripts/operar_l300.py --etapa sanitizar-whatif --arquivo "$bruto" \
+            --relatorio "$pasta/relatorio-sanitizado.json" --rotulo "$VARELEIRA_L300_FASE"
+
+      - name: Aplicar (só com aplicar=true, confirmação digitada e plano sem pendências)
+        if: inputs.aplicar == true
+        env:
+          # LOGIN DA APLICAÇÃO, não a identidade de implantação (OIDC): mesmo segredo efêmero, só na fase aplicacao.
+          VARELEIRA_SEGREDO_LOGIN: ${{ inputs.fase == 'aplicacao' && secrets.VARELEIRA_SEGREDO_LOGIN || '' }}
+        run: |
+          python3 scripts/operar_l300.py --etapa validar --exigir-github --exigir-segredo-login
+          umask 077
+          pasta="$(mktemp -d "${RUNNER_TEMP}/l300-aplicar.XXXXXXXX")"
+          trap 'rm -rf "$pasta"' EXIT
+          if ! az deployment group create \
+              --resource-group "$VARELEIRA_GRUPO_RECURSOS" \
+              --name "vareleira-l300-${VARELEIRA_L300_FASE}" \
+              --parameters infra/levels/l300.bicepparam \
+              --mode Incremental \
+              --only-show-errors --output none \
+              2> "$pasta/erro.txt"; then
+            echo "[ERRO] A aplicação falhou. Os detalhes foram omitidos de propósito, porque podem conter identificadores privados. Consulte a implantação vareleira-l300-${VARELEIRA_L300_FASE} no Azure." >&2
+            exit 1
+          fi
+          echo "Aplicação da fase ${VARELEIRA_L300_FASE} concluída. Colete as evidências localmente (scripts/operar_l300.py --etapa conferir)."
+
+      - name: Encerrar a sessão do Azure e limpar o estado do job
+        if: always()
+        run: |
+          az logout > /dev/null 2>&1 || true
+          az account clear > /dev/null 2>&1 || true
+          rm -rf "${RUNNER_TEMP}/azure-cli"

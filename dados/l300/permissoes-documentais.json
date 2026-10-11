@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "pacote": "vareleira-lar-l300",
+  "descricao": "Permissões documentais do exercício L300 do laboratório Vareleira RAG: a classe de acesso de cada cópia enviada ao contêiner do L300. A classe é metadado novo do laboratório, não uma regra de seguro nem uma política já aprovada da seguradora fictícia. Só documentos sintéticos; os três documentos do L100 são lidos em dados/l100/documentos, sem alteração, e conferidos contra o inventário do L100.",
+  "sintetico": true,
+  "classes": [
+    "compartilhado",
+    "atendimento",
+    "corretor"
+  ],
+  "documentos": [
+    {
+      "id": "VLAR-CG-1.0",
+      "titulo": "Vareleira Lar — Condições Gerais",
+      "tipo": "condicoes-gerais",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "origem": "l100",
+      "arquivo": "dados/l100/documentos/vareleira-lar-condicoes-gerais-v1.0.md",
+      "blob": "vareleira-lar-l300/condicoes-gerais-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 11171,
+      "sha256": "a43850c173f881929afc9cf70590c9807db5850aea7777da7bf22a47885ba1bc",
+      "acesso": "compartilhado",
+      "revisao_real": {
+        "status": "aprovada"
+      }
+    },
+    {
+      "id": "VLAR-GL-1.0",
+      "titulo": "Vareleira Lar — Glossário",
+      "tipo": "glossario",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "origem": "l100",
+      "arquivo": "dados/l100/documentos/vareleira-lar-glossario-v1.0.md",
+      "blob": "vareleira-lar-l300/glossario-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 4527,
+      "sha256": "89c76858d94178982f56e89165a718a54dec8e7f15b126747e0c1decf5fd2d75",
+      "acesso": "compartilhado",
+      "revisao_real": {
+        "status": "aprovada"
+      }
+    },
+    {
+      "id": "VLAR-FAQ-1.0",
+      "titulo": "Vareleira Lar — Perguntas frequentes para Atendimento e corretores",
+      "tipo": "faq",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "origem": "l100",
+      "arquivo": "dados/l100/documentos/vareleira-lar-faq-v1.0.md",
+      "blob": "vareleira-lar-l300/faq-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 5452,
+      "sha256": "1d0f2b26b3fac1d41f2c4f6fade0f5990f83cf3573086c851e37da195d606e66",
+      "acesso": "compartilhado",
+      "revisao_real": {
+        "status": "aprovada"
+      }
+    },
+    {
+      "id": "VLAR-OP-ATD-1.0",
+      "titulo": "Vareleira Lar — Roteiro interno de atendimento",
+      "tipo": "roteiro-operacional",
+      "produto": "vareleira-lar",
+      "versao": "1.0",
+      "origem": "l300",
+      "arquivo": "dados/l300/documentos/roteiro-interno-atendimento-v1.0.md",
+      "blob": "vareleira-lar-l300/roteiro-interno-atendimento-v1.0.md",
+      "tipo_conteudo": "text/markdown; charset=utf-8",
+      "tamanho_bytes": 2977,
+      "sha256": "8b9dd567037b20fe68ff13c4821ce6949a7987407883d6c1035342ad7f3f0ff0",
+      "acesso": "atendimento",
+      "revisao_real": {
+        "status": "aprovada",
+        "observacao": "Conteúdo sintético apresentado e aprovado pelo mantenedor em 10 de outubro de 2026 para uso no laboratório L300. Descreve processo de trabalho e não cria regra de seguro. A aprovação não autoriza envio ao Azure nem alterações externas."
+      }
+    }
+  ]
+}

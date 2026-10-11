@@ -7,7 +7,7 @@
 | Situação | Exercício executável, conferido no Azure em 10 de outubro de 2026. |
 | Público | Pessoas de negócio, operações, arquitetura e desenvolvimento; escrever código é opcional. |
 | Resultado | Fonte de dados, processamento e indexador disponíveis em um índice separado, usando a identidade do serviço de busca. |
-| Custo | Embeddings dos trechos ingeridos, busca e armazenamento. A implantação também prepara registro de imagens, identidade, ambiente e logs para o chat; esses recursos têm custos próprios. |
+| Custo | Embeddings, vetores numéricos dos trechos ingeridos, busca e armazenamento. A implantação também prepara registro de imagens, identidade, ambiente e logs para o chat; esses recursos têm custos próprios. |
 
 ## Conteúdo
 
@@ -40,7 +40,8 @@ identidade própria para lê-los e calcular embeddings.
 ## Objetivos
 
 1. Separar a identidade do operador, a do serviço de busca e a do futuro chat.
-2. Criar os quatro objetos do pipeline, sequência de processamento: índice, fonte, skillset e indexador.
+2. Criar os quatro objetos do pipeline, sequência de processamento: índice, fonte, skillset
+   (conjunto de habilidades de processamento) e indexador.
 3. Ver o plano antes de gravar; criar o indexador desabilitado e executá-lo em uma etapa separada.
 4. Conferir documentos, metadados e falhas, preservando `vareleira-lar-l100`.
 
@@ -78,6 +79,9 @@ O pipeline os lê do blob e os mapeia para os campos do índice.
 Conclua o Desafio 01 e mantenha `$assinatura`, `$grupo`, `$regiao`, `$tenant`, `$conta`, `$busca` e
 `$modelos` no terminal PowerShell 7. Em um terminal novo, recupere essas variáveis pelo procedimento
 do desafio anterior.
+Mantenha a assinatura ativa e as autorizações de implantação e de dados conferidas. Execute os
+comandos separadamente e confira `$LASTEXITCODE` logo após cada chamada de `az` ou Python;
+uma falha interrompe a sequência antes da próxima alteração.
 
 Você precisa de permissão para implantar recursos e atribuir os papéis previstos, além de
 `Search Service Contributor` para administrar os objetos da busca e dos papéis de consulta do L100.
@@ -128,7 +132,11 @@ az role assignment list --subscription $assinatura --assignee $principalBusca --
 ```
 
 **Resultado esperado:** identidade da busca habilitada, dois papéis para ingestão e três para a
-identidade do chat. O Desafio 05 usa as saídas da base para construir a imagem e configurar a aplicação.
+identidade do chat. A listagem acima confere somente a identidade da busca. Para conferir a outra,
+use `principalIdIdentidadeAplicacao` nas saídas de `$l200` como `--assignee` numa segunda
+`az role assignment list`, mantendo assinatura explícita. Compare papel, principal e escopo de cada
+atribuição com a tabela; a listagem pode incluir atribuições anteriores, fora do alvo.
+O Desafio 05 usa as saídas da base para construir a imagem e configurar a aplicação.
 
 ## Etapa 2: simular e criar o pipeline
 
@@ -190,6 +198,8 @@ python scripts\gerenciar_ingestao.py --etapa conferir --busca $busca --assinatur
 Habilitar o indexador inicia a primeira execução; o script acompanha essa rodada sem pedir uma segunda
 em paralelo. **Resultado esperado:** três blobs processados, nenhuma falha, erro ou aviso e trechos
 dos três documentos no índice. Nesta versão foram conferidos 21 trechos.
+As contagens e a execução de referência constam no
+[registro do desafio](../../docs/validacao/l200-02-ingestao-gerenciada.md), não são garantias para outras fontes.
 
 Leia a **última execução**, não apenas o estado geral `running`: esse estado também apareceu quando
 a última execução já era `success`. Ao atingir o limite de espera, o processamento pode continuar;
@@ -255,6 +265,7 @@ de exclusão foi `1`, não uma prova de consumo zero. Veja o
 | Identidade gerenciada | Identidade com credencial administrada pelo Azure |
 | Prefixo | Parte inicial do nome dos blobs selecionados para leitura |
 | Exclusão reversível | Retenção temporária de um objeto excluído |
+| Embedding | Vetor numérico calculado a partir do texto |
 
 ## Referências
 
@@ -267,3 +278,6 @@ de exclusão foi `1`, não uma prova de consumo zero. Veja o
 
 Texto e revisão: GPT-6.1 Sol. Código e testes: Claude Sonnet 5.5.
 O Astra não estava disponível; os modelos do aluno e da aplicação são escolhas separadas.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure.

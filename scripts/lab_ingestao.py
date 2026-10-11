@@ -27,6 +27,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
+import lab_acesso
 import lab_comum
 import lab_indexacao
 from lab_comum import ErroLab, Inventario
@@ -244,6 +245,12 @@ class Parametros:
     dimensoes: int
     tamanho_maximo: int
     sobreposicao: int
+    # Variações do L300 (acesso documental e execução privada). Os padrões mantêm as definições do L200 como sempre foram.
+    marcador: str = MARCADOR  # na descrição de cada objeto: prova de quem o criou
+    nivel: str = "L200"
+    acesso: bool = False  # acrescenta o campo `acesso` ao índice e o projeta do metadado `acesso` do blob
+    privado: bool | None = None  # None: não define o ambiente de execução; True: "private"; False: "standard"
+    intervalo: str | None = None  # agenda do indexador (ISO 8601, como PT2H); None: sem agenda
 
     @property
     def resource_id(self) -> str:
@@ -268,8 +275,8 @@ def prefixo_do_inventario(inventario: Inventario) -> str:
 # Definição dos objetos (API REST do plano de dados)
 # --------------------------------------------------------------------------------------
 
-def _descricao(texto: str, extra: str = "") -> str:
-    return f"{texto} [{MARCADOR}{extra}]"
+def _descricao(p: Parametros, texto: str, extra: str = "") -> str:
+    return f"{texto} [{p.marcador}{extra}]"
 
 
 def definicao_do_indice(p: Parametros) -> dict[str, Any]:
@@ -287,7 +294,7 @@ def definicao_do_indice(p: Parametros) -> dict[str, Any]:
 
     return {
         "name": p.nomes.indice,
-        "description": _descricao("Laboratorio Vareleira RAG (L200): trechos gerados pelo indexador do Azure AI Search"),
+        "description": _descricao(p, f"Laboratorio Vareleira RAG ({p.nivel}): trechos gerados pelo indexador do Azure AI Search"),
         "fields": [
             # A chave de um índice com projeção precisa ser texto com o analisador keyword.
             campo("id", chave=True, pesquisavel=True, filtravel=True, analisador="keyword"),
@@ -302,6 +309,8 @@ def definicao_do_indice(p: Parametros) -> dict[str, Any]:
             campo("fonte", filtravel=True),
             campo("sha256"),
             campo("sintetico", filtravel=True),
+            # L300: classe de acesso do documento (texto filtrável), projetada do metadado `acesso` do blob. Sem coleção nem delimitador.
+            *([campo(lab_acesso.CAMPO_ACESSO, filtravel=True)] if p.acesso else []),
             {
                 "name": lab_indexacao.CAMPO_VETOR, "type": "Collection(Edm.Single)", "key": False, "searchable": True,
                 "filterable": False, "sortable": False, "facetable": False, "retrievable": False, "stored": False,
@@ -319,7 +328,7 @@ def definicao_da_fonte(p: Parametros) -> dict[str, Any]:
     """Data source do Blob Storage por identidade gerenciada (ResourceId, sem chave), restrito à pasta do inventário."""
     return {
         "name": p.nomes.fonte,
-        "description": _descricao("Laboratorio Vareleira RAG (L200): documentos sinteticos no Blob Storage", f" destino={p.destino}"),
+        "description": _descricao(p, f"Laboratorio Vareleira RAG ({p.nivel}): documentos sinteticos no Blob Storage", f" destino={p.destino}"),
         "type": "azureblob",
         "credentials": {"connectionString": p.resource_id},
         "container": {"name": p.container, "query": p.prefixo},
@@ -330,10 +339,11 @@ def definicao_da_fonte(p: Parametros) -> dict[str, Any]:
 
 def definicao_do_skillset(p: Parametros) -> dict[str, Any]:
     """Skillset que divide o texto (Text Split) e gera os embeddings; a projeção grava cada trecho como documento do índice."""
-    campos_dos_documentos = [(nome, f"/document/{nome}") for nome in ("documento_id", "versao", "produto", "sha256", "sintetico")]
+    nomes_dos_metadados = ("documento_id", "versao", "produto", "sha256", "sintetico", *((lab_acesso.CAMPO_ACESSO,) if p.acesso else ()))
+    campos_dos_documentos = [(nome, f"/document/{nome}") for nome in nomes_dos_metadados]
     return {
         "name": p.nomes.skillset,
-        "description": _descricao("Laboratorio Vareleira RAG (L200): divide o texto e gera embeddings"),
+        "description": _descricao(p, f"Laboratorio Vareleira RAG ({p.nivel}): divide o texto e gera embeddings"),
         "skills": [
             {
                 "@odata.type": "#Microsoft.Skills.Text.SplitSkill",
@@ -380,10 +390,17 @@ def definicao_do_skillset(p: Parametros) -> dict[str, Any]:
 
 
 def definicao_do_indexador(p: Parametros) -> dict[str, Any]:
-    """Indexador criado desabilitado: criar ou atualizar um indexador o executa na hora, e a execução é uma etapa à parte."""
-    return {
+    """Indexador criado desabilitado: criar ou atualizar um indexador o executa na hora, e a execução é uma etapa à parte.
+
+    No L300, `privado` define o ambiente de execução ("private" para sair pelas conexões privadas compartilhadas da busca) e
+    `intervalo` acrescenta uma agenda; sem ele, o indexador não tem agenda e só roda sob demanda.
+    """
+    configuracao: dict[str, Any] = {"dataToExtract": "contentAndMetadata", "parsingMode": "text", "indexedFileNameExtensions": ".md"}
+    if p.privado is not None:
+        configuracao["executionEnvironment"] = "private" if p.privado else "standard"
+    definicao: dict[str, Any] = {
         "name": p.nomes.indexador,
-        "description": _descricao("Laboratorio Vareleira RAG (L200): le os blobs e grava os trechos no indice"),
+        "description": _descricao(p, f"Laboratorio Vareleira RAG ({p.nivel}): le os blobs e grava os trechos no indice"),
         "dataSourceName": p.nomes.fonte,
         "skillsetName": p.nomes.skillset,
         "targetIndexName": p.nomes.indice,
@@ -391,9 +408,12 @@ def definicao_do_indexador(p: Parametros) -> dict[str, Any]:
         "parameters": {
             "maxFailedItems": 0,
             "maxFailedItemsPerBatch": 0,
-            "configuration": {"dataToExtract": "contentAndMetadata", "parsingMode": "text", "indexedFileNameExtensions": ".md"},
+            "configuration": configuracao,
         },
     }
+    if p.intervalo:
+        definicao["schedule"] = {"interval": p.intervalo}
+    return definicao
 
 
 def definicoes_em_ordem(p: Parametros) -> list[tuple[str, str, dict[str, Any]]]:
@@ -436,8 +456,15 @@ def validar_consistencia(p: Parametros) -> None:
     nomes = (indexador["dataSourceName"], indexador["skillsetName"], indexador["targetIndexName"])
     if nomes != (p.nomes.fonte, p.nomes.skillset, p.nomes.indice):
         problemas.append("o indexador deve apontar para a fonte, o skillset e o índice do laboratório")
+    if p.acesso:
+        acesso = campos.get(lab_acesso.CAMPO_ACESSO)
+        if acesso is None or acesso["type"] != "Edm.String" or not acesso["filterable"] or acesso["searchable"] or acesso["key"]:
+            problemas.append("o campo de acesso deve ser texto, filtrável, não pesquisável e diferente da chave")
+        origem = next((mapeamento["source"] for mapeamento in seletor["mappings"] if mapeamento["name"] == lab_acesso.CAMPO_ACESSO), None)
+        if origem != f"/document/{lab_acesso.CAMPO_ACESSO}":
+            problemas.append("o campo de acesso deve ser projetado do metadado 'acesso' do blob")
     if problemas:
-        raise ErroLab("Definições do L200 inconsistentes (defeito do script; use --detalhes e abra uma issue):\n  - "
+        raise ErroLab(f"Definições do {p.nivel} inconsistentes (defeito do script; use --detalhes e abra uma issue):\n  - "
                       + "\n  - ".join(problemas), lab_comum.CODIGO_INESPERADO)
 
 
@@ -551,8 +578,8 @@ def diferencas_de_definicao(tipo: str, esperado: Mapping[str, Any], atual: Mappi
     return saida
 
 
-def objeto_do_laboratorio(atual: Mapping[str, Any]) -> bool:
-    return MARCADOR in str(atual.get("description") or "")
+def objeto_do_laboratorio(atual: Mapping[str, Any], marcador: str = MARCADOR) -> bool:
+    return marcador in str(atual.get("description") or "")
 
 
 @dataclass(frozen=True)
@@ -574,7 +601,7 @@ def planejar_objetos(parametros: Parametros, atuais: Mapping[tuple[str, str], Ma
         if atual is None:
             acoes.append(AcaoObjeto(tipo, nome, definicao, CRIAR))
             continue
-        proprio = objeto_do_laboratorio(atual)
+        proprio = objeto_do_laboratorio(atual, parametros.marcador)
         diferencas = diferencas_de_definicao(tipo, definicao, atual)
         if not proprio:
             diferencas.insert(0, "o objeto existente não traz o marcador do laboratório na descrição: não foi criado por este script")
@@ -591,14 +618,15 @@ class AcaoRemocao:
     etag: str | None = None
 
 
-def planejar_remocao(nomes: Nomes, atuais: Mapping[tuple[str, str], Mapping[str, Any] | None]) -> list[AcaoRemocao]:
+def planejar_remocao(nomes: Nomes, atuais: Mapping[tuple[str, str], Mapping[str, Any] | None],
+                     marcador: str = MARCADOR) -> list[AcaoRemocao]:
     """Só entram na remoção os quatro objetos derivados do índice; os que não trazem o marcador do laboratório são recusados."""
     acoes = []
     for tipo, nome in nomes.em_ordem_de_remocao():
         atual = atuais.get((tipo, nome))
         if atual is None:
             acoes.append(AcaoRemocao(tipo, nome, AUSENTE))
-        elif not objeto_do_laboratorio(atual):
+        elif not objeto_do_laboratorio(atual, marcador):
             acoes.append(AcaoRemocao(tipo, nome, ALHEIO))
         else:
             acoes.append(AcaoRemocao(tipo, nome, REMOVER, atual.get("@odata.etag")))

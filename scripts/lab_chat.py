@@ -13,6 +13,12 @@ com o texto do trecho recuperado, sem que o modelo o reescreva, aplica a políti
 
 Configuração por variáveis de ambiente (nomes das constantes VAR_*). Na nuvem, VARELEIRA_EXIGIR_AUTENTICACAO=true,
 VARELEIRA_TENANT_AUTORIZADO, VARELEIRA_BUSCA e VARELEIRA_MODELOS são obrigatórias, e a ausência de qualquer uma impede a partida.
+
+Acesso documental (L300, opcional): com VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true, cada requisição só recupera trechos das classes que
+os papéis de aplicação da identidade autenticada permitem (veja lab_acesso.py). Sem papel reconhecido, a resposta é 403 antes de
+qualquer busca, embedding ou chamada ao modelo, e o filtro age na própria consulta, antes de montar o contexto do modelo. A opção
+só vale na nuvem, com autenticação e tenant, e com o índice do L300. Sem ela (padrão), o comportamento e o protocolo do L200
+não mudam.
 """
 
 from __future__ import annotations
@@ -29,6 +35,7 @@ from dataclasses import dataclass, replace
 from types import SimpleNamespace
 from typing import Any, Callable, Collection, Mapping, Protocol, Sequence
 
+import lab_acesso
 import lab_comum
 import lab_geracao
 import lab_indexacao
@@ -59,6 +66,7 @@ LIMITE_DO_ID = 1024  # caracteres: o limite oficial da chave de documento do Azu
 CABECALHO_PRINCIPAL = "x-ms-client-principal"
 
 VAR_EXIGIR_AUTENTICACAO = "VARELEIRA_EXIGIR_AUTENTICACAO"
+VAR_EXIGIR_ACESSO_DOCUMENTAL = "VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL"
 VAR_TENANT_AUTORIZADO = "VARELEIRA_TENANT_AUTORIZADO"
 VAR_TENANT_ID = "VARELEIRA_TENANT_ID"
 VAR_CLIENT_ID = "AZURE_CLIENT_ID"
@@ -186,6 +194,7 @@ class ConfiguracaoChat:
     k: int = lab_geracao.K_PADRAO
     max_concorrencia: int = CONCORRENCIA_PADRAO
     timeout_segundos: float = TEMPO_PADRAO
+    exigir_acesso_documental: bool = False
 
 
 def host_local(host: str) -> bool:
@@ -301,6 +310,13 @@ def _lacunas(config: ConfiguracaoChat) -> list[tuple[str, str]]:
     if config.exigir_autenticacao and not config.tenants_autorizados:
         lacunas.append((VAR_TENANT_AUTORIZADO, "obrigatória com autenticação. Informe o GUID do tenant cujos usuários "
                                                "podem usar o chat."))
+    if config.exigir_acesso_documental:
+        if config.modo != MODO_NUVEM:
+            lacunas.append((VAR_EXIGIR_ACESSO_DOCUMENTAL, f"só vale na nuvem, com autenticação: {OPCOES_DOS_MODOS[config.modo]} não "
+                                                          "entrega os papéis de uma identidade validada pela plataforma."))
+        if not lab_acesso.indice_l300(config.indice):
+            lacunas.append((VAR_INDICE, f"com o acesso documental, use o índice do L300 ('{lab_acesso.PREFIXO_INDICE}', com no máximo 3 "
+                                        "sufixos de letras minúsculas e números): os índices do L100 e do L200 não têm o campo de acesso."))
     if config.modo != MODO_DEMO:
         if not config.busca:
             lacunas.append((VAR_BUSCA, "obrigatória. Informe o nome do serviço de busca (saída nomeBusca da implantação)."))
@@ -349,6 +365,7 @@ def carregar_configuracao(ambiente: Mapping[str, str], *, modo: str = MODO_NUVEM
             return padrao
 
     padrao = ConfiguracaoChat()
+    exigir_acesso = ler(VAR_EXIGIR_ACESSO_DOCUMENTAL, _booleano, False)
     config = ConfiguracaoChat(
         modo=modo,
         host=host,
@@ -358,7 +375,7 @@ def carregar_configuracao(ambiente: Mapping[str, str], *, modo: str = MODO_NUVEM
         client_id=ler(VAR_CLIENT_ID, _guid, None),
         busca=ler(VAR_BUSCA, lab_indexacao.validar_busca, None),
         modelos=ler(VAR_MODELOS, lab_indexacao.validar_modelos, None),
-        indice=ler(VAR_INDICE, lab_indexacao.validar_indice, padrao.indice),
+        indice=ler(VAR_INDICE, lab_indexacao.validar_indice, lab_acesso.INDICE_PADRAO if exigir_acesso else padrao.indice),
         deployment_embeddings=ler(VAR_DEPLOYMENT_EMBEDDINGS, lab_indexacao.validar_deployment, padrao.deployment_embeddings),
         dimensoes=ler(VAR_DIMENSOES, lab_indexacao.validar_dimensoes, padrao.dimensoes),
         deployment_geracao=ler(VAR_DEPLOYMENT_GERACAO, lab_indexacao.validar_deployment, padrao.deployment_geracao),
@@ -368,6 +385,7 @@ def carregar_configuracao(ambiente: Mapping[str, str], *, modo: str = MODO_NUVEM
         k=ler(VAR_K, lab_indexacao.validar_k, padrao.k),
         max_concorrencia=ler(VAR_MAX_CONCORRENCIA, validar_concorrencia, padrao.max_concorrencia),
         timeout_segundos=ler(VAR_TIMEOUT, validar_tempo, padrao.timeout_segundos),
+        exigir_acesso_documental=exigir_acesso,
     )
     problemas += [f"{nome}: {orientacao}" for nome, orientacao in _lacunas(config) if nome not in invalidas]
     if problemas:
@@ -380,7 +398,8 @@ def resumo_publico(config: ConfiguracaoChat) -> str:
     return (f"modo={config.modo} autenticacao={'sim' if config.exigir_autenticacao else 'nao'} indice={config.indice} "
             f"deployment_embeddings={config.deployment_embeddings} dimensoes={config.dimensoes} "
             f"deployment_geracao={config.deployment_geracao} esforco={config.esforco} modo_busca={config.modo_busca} k={config.k} "
-            f"concorrencia={config.max_concorrencia} tempo={config.timeout_segundos:g}s")
+            f"concorrencia={config.max_concorrencia} tempo={config.timeout_segundos:g}s "
+            f"acesso_documental={'sim' if config.exigir_acesso_documental else 'nao'}")
 
 
 # --------------------------------------------------------------------------------------
@@ -389,14 +408,18 @@ def resumo_publico(config: ConfiguracaoChat) -> str:
 
 @dataclass(frozen=True)
 class Principal:
+    """Quem fez a requisição, como a plataforma autenticou. `papeis` traz só os papéis do exercício que a identidade tem."""
+
     tenant: str
     sujeito: str
+    papeis: tuple[str, ...] = ()
 
 
 def decodificar_principal(cabecalho: str) -> Principal:
-    """Decodifica o cabeçalho X-MS-CLIENT-PRINCIPAL e devolve tenant e sujeito, ambos preenchidos.
+    """Decodifica o cabeçalho X-MS-CLIENT-PRINCIPAL e devolve tenant e sujeito, ambos preenchidos, e os papéis reconhecidos.
 
-    Não verifica assinatura: quem autenticou foi o Azure Container Apps (autenticação integrada) e só ele escreve esse
+    Os papéis vêm só das claims `roles` (ou da URI de papel) desta identidade: nada que a pessoa escreva na requisição os
+    define. Não verifica assinatura: quem autenticou foi o Azure Container Apps (autenticação integrada) e só ele escreve esse
     cabeçalho. Isso vale apenas se todo o tráfego chega pelo ingresso com a autenticação exigida; uma aplicação alcançável
     sem ele não pode confiar no cabeçalho.
     """
@@ -423,7 +446,7 @@ def decodificar_principal(cabecalho: str) -> Principal:
             sujeitos.append(valor)
     if len(tenants) != 1 or not _PADRAO_GUID.fullmatch(next(iter(tenants))) or not sujeitos:
         raise invalido
-    return Principal(next(iter(tenants)), sujeitos[0])
+    return Principal(next(iter(tenants)), sujeitos[0], lab_acesso.papeis_dos_claims(claims))
 
 
 def validar_principal(cabecalho: str | None, tenants_autorizados: Collection[str]) -> Principal:
@@ -434,6 +457,17 @@ def validar_principal(cabecalho: str | None, tenants_autorizados: Collection[str
     if principal.tenant not in {tenant.lower() for tenant in tenants_autorizados}:
         raise ErroChat(NAO_AUTORIZADO, "tenant_nao_autorizado")
     return principal
+
+
+def contexto_de_acesso(principal: Principal) -> lab_acesso.ContextoAcesso:
+    """As classes de documento que a identidade pode consultar, decididas só pelos papéis dela (acesso documental, L300).
+
+    Sem nenhum papel reconhecido, a resposta é 403 e nada mais acontece: nem busca, nem embedding, nem chamada ao modelo.
+    """
+    try:
+        return lab_acesso.autorizar(principal.papeis)
+    except lab_acesso.ErroSemPapel:
+        raise ErroChat(NAO_AUTORIZADO, "sem_papel_conhecido") from None
 
 
 # --------------------------------------------------------------------------------------
@@ -664,7 +698,9 @@ def _com_ids_originais(decisao: lab_politica.Decisao, trechos: Mapping[str, Any]
 # --------------------------------------------------------------------------------------
 
 class ServicoChat(Protocol):
-    def perguntar(self, pergunta: str) -> RespostaChat: ...
+    """O que a interface exige de um serviço. Com o acesso documental, `perguntar` recebe também o contexto da requisição."""
+
+    def perguntar(self, pergunta: str, acesso: lab_acesso.ContextoAcesso | None = None) -> RespostaChat: ...
 
 
 class ServicoRag:
@@ -672,14 +708,25 @@ class ServicoRag:
 
     As citações são o texto dos trechos recuperados, montado pelo programa. Não guarda histórico, cache nem estado por
     usuário: cada chamada recebe só a pergunta atual, e os clientes do Azure são seguros para chamadas simultâneas.
+
+    Com `exigir_acesso` (L300), cada chamada traz o contexto de acesso da requisição. O filtro dele vai na própria busca, antes
+    de qualquer trecho existir para o modelo; sem contexto a chamada é recusada, e um trecho fora do perfil interrompe a
+    requisição. O contexto vale só para a chamada: o serviço não o guarda.
     """
 
-    def __init__(self, recuperador: Any, gerador: Any, modo_busca: str = lab_geracao.MODO_PADRAO, k: int = lab_geracao.K_PADRAO):
+    def __init__(self, recuperador: Any, gerador: Any, modo_busca: str = lab_geracao.MODO_PADRAO, k: int = lab_geracao.K_PADRAO,
+                 exigir_acesso: bool = False):
         self.recuperador, self.gerador, self.modo_busca, self.k = recuperador, gerador, modo_busca, k
+        self.exige_acesso = exigir_acesso
 
-    def perguntar(self, pergunta: str) -> RespostaChat:
-        recuperacao = self.recuperador.recuperar(pergunta, self.modo_busca, self.k)
+    def perguntar(self, pergunta: str, acesso: lab_acesso.ContextoAcesso | None = None) -> RespostaChat:
+        if acesso is None and self.exige_acesso:
+            raise ErroChat(NAO_AUTORIZADO, "sem_contexto_de_acesso")
+        consulta = {} if acesso is None else {"filtro": acesso.filtro}
+        recuperacao = self.recuperador.recuperar(pergunta, self.modo_busca, self.k, **consulta)
         resultados = list(recuperacao.resultados)
+        if acesso is not None:
+            acesso.exigir_resultados_permitidos(resultados)
         if not resultados:
             # Sem trechos o modelo não é chamado: equivale a "sem evidência", com o texto da própria política.
             saida = {"tipo": lab_politica.SEM_EVIDENCIA, "resposta": "", "evidencias": []}
@@ -760,11 +807,12 @@ def criar_servico_azure(config: ConfiguracaoChat) -> ServicoRag:
     credencial = criar_credencial(config)
     argumentos = SimpleNamespace(
         modo=config.modo_busca, modelos=config.modelos, deployment=config.deployment_embeddings, dimensoes=config.dimensoes,
-        tenant_id=config.tenant_id, busca=config.busca, indice=config.indice, credencial=credencial)
+        tenant_id=config.tenant_id, busca=config.busca, indice=config.indice, credencial=credencial,
+        exigir_filtro=config.exigir_acesso_documental)
     recuperador = lab_geracao.criar_recuperador(argumentos)
     gerador = lab_geracao.criar_cliente_geracao(
         config.modelos, config.deployment_geracao, config.esforco, config.tenant_id, credencial)
-    return ServicoRag(recuperador, gerador, config.modo_busca, config.k)
+    return ServicoRag(recuperador, gerador, config.modo_busca, config.k, config.exigir_acesso_documental)
 
 
 def criar_servico(config: ConfiguracaoChat) -> ServicoChat:
@@ -800,6 +848,11 @@ def classificar_erro(erro: BaseException) -> ErroChat:
     cadeia = _cadeia(erro)
     if any(isinstance(item, lab_geracao.ErroDeFormato) for item in cadeia):
         return ErroChat(RESPOSTA_NAO_VERIFICADA, "formato_do_modelo")
+    if any(isinstance(item, lab_acesso.ErroSemPapel) for item in cadeia):
+        return ErroChat(NAO_AUTORIZADO, "sem_papel_conhecido")
+    de_acesso = next((item for item in cadeia if isinstance(item, lab_acesso.ErroAcesso)), None)
+    if de_acesso is not None:  # filtro ausente ou resultado fora do perfil: falha do servidor, nunca uma consulta sem filtro
+        return ErroChat(INDISPONIVEL, de_acesso.causa)
     for item in cadeia:
         if type(item).__module__.split(".")[0] not in {"openai", "azure"}:
             continue

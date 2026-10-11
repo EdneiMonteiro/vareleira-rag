@@ -14,6 +14,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
+import lab_acesso
 import lab_comum
 import lab_indexacao
 from lab_comum import ErroLab
@@ -65,28 +66,45 @@ class Recuperacao:
 
 
 class Recuperador:
-    """Escolhe os trechos mais pertinentes a uma pergunta, no modo de busca pedido."""
+    """Escolhe os trechos mais pertinentes a uma pergunta, no modo de busca pedido.
 
-    def __init__(self, indice: Any, embeddings: Any):
-        self.indice, self.embeddings = indice, embeddings
+    Com `exigir_filtro` (L300), recuperar sem o filtro de acesso é erro: ele é conferido antes de qualquer embedding ou busca.
+    """
 
-    def recuperar(self, pergunta: str, modo: str, k: int) -> Recuperacao:
+    def __init__(self, indice: Any, embeddings: Any, exigir_filtro: bool = False):
+        self.indice, self.embeddings, self.exigir_filtro = indice, embeddings, exigir_filtro
+
+    def recuperar(self, pergunta: str, modo: str, k: int, *, filtro: str | None = None) -> Recuperacao:
+        if filtro is not None:
+            lab_acesso.validar_filtro(filtro)
+        elif self.exigir_filtro:
+            raise lab_acesso.ErroAcesso("Recuperação sem filtro de acesso recusada: nada foi buscado nem enviado ao modelo.",
+                                        "filtro_ausente")
         vetor, tokens = None, 0
         if modo != "texto":
             gerado = self.embeddings.gerar([pergunta])
             vetor, tokens = gerado.vetores[0], gerado.tokens
-        resultados = self.indice.consultar(pergunta if modo != "vetorial" else None, vetor, k)
+        consulta = {} if filtro is None else {"filtro": filtro}
+        resultados = self.indice.consultar(pergunta if modo != "vetorial" else None, vetor, k, **consulta)
         return Recuperacao(resultados, tokens)
 
 
 def criar_recuperador(args: argparse.Namespace) -> Recuperador:
-    """Abre o índice e o cliente de embeddings (Desafio 02) com a identidade do Azure CLI ou com `args.credencial`."""
+    """Abre o índice e o cliente de embeddings (Desafio 02) com a identidade do Azure CLI ou com `args.credencial`.
+
+    Com `args.exigir_filtro` (L300), o índice e o recuperador só consultam com o filtro de acesso.
+    """
     credencial = getattr(args, "credencial", None)
+    exigir_filtro = bool(getattr(args, "exigir_filtro", False))
     embeddings = None
     if args.modo != "texto":
         embeddings = lab_indexacao.criar_cliente_embeddings(
             args.modelos, args.deployment, args.dimensoes, args.tenant_id, credencial)
-    return Recuperador(lab_indexacao.abrir_indice(args.busca, args.indice, args.tenant_id, credencial), embeddings)
+    if exigir_filtro:
+        indice = lab_indexacao.abrir_indice(args.busca, args.indice, args.tenant_id, credencial, exigir_filtro=True)
+    else:
+        indice = lab_indexacao.abrir_indice(args.busca, args.indice, args.tenant_id, credencial)
+    return Recuperador(indice, embeddings, exigir_filtro)
 
 
 # --------------------------------------------------------------------------------------

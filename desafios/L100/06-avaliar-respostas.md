@@ -7,7 +7,7 @@
 | Situação | Exercício executável, validado no Azure e aprovado pelo mantenedor em 9 de outubro de 2026 (Windows e PowerShell). Documentos e perguntas são sintéticos; o resultado histórico abaixo da meta permanece registrado em [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de negócio, arquitetura, operações e desenvolvimento. Use o Visual Studio Code (VS Code) para executar os comandos e interpretar os números; escrever código é opcional. |
 | Pré-requisito | [Desafio 05](05-agente-com-maf.md) concluído: este desafio mede os dois fluxos de resposta, a recuperação obrigatória (Desafios 03 e 04) e a recuperação por ferramenta (Desafio 05), com a política do Desafio 04. |
-| Resultado | O programa `avaliar_respostas.py` e dois conjuntos de 12 perguntas, um de ajuste e um de teste. Você mede a recuperação e as respostas, escolhe uma configuração por um critério definido antes e mede o conjunto de teste uma única vez. |
+| Resultado | O programa `avaliar_respostas.py` e dois conjuntos de 12 perguntas, um de ajuste e um de teste. Você estuda a comparação no ajuste e interpreta a medição final já encerrada; uma nova avaliação final exige perguntas novas. |
 | Custo | Nenhum recurso novo. Cada medição das respostas consome tokens: de 14 mil a 34 mil tokens de entrada por execução de 12 perguntas. Veja [Custos, pausa e limpeza](#custos-pausa-e-limpeza). |
 
 ## Conteúdo
@@ -47,6 +47,11 @@ configurações que cumprem a meta, o desempate usa a menor média de tokens de 
 
 > **Lembre-se:** o cenário é fictício. Não use apólices, nomes, endereços ou documentos de segurados reais, mesmo que tenha acesso a eles no trabalho.
 
+> **Atenção:** o teste final L100 já foi executado e seu resultado está neste guia. Use as Etapas 1 a 5
+> para estudar o método, mas trate a Etapa 6 como registro histórico, não como pedido para repetir o
+> teste com o código atual. Uma nova avaliação final exige um conjunto novo, revisado e reservado
+> após congelar código e configuração; este guia não fornece esse conjunto.
+
 ## Objetivos
 
 Ao concluir este desafio, você terá:
@@ -55,7 +60,7 @@ Ao concluir este desafio, você terá:
 - medido a recuperação com acerto@k (todos os assuntos entre os primeiros `k` trechos) e MRR (*mean reciprocal rank*, média do inverso da posição do primeiro trecho pertinente);
 - medido as respostas dos dois fluxos, com tipo, situação, descartes, falsas recusas, falsas respostas e fatos esperados;
 - repetido a medição para ver quanto o resultado varia sem mudar nada, e escolhido uma configuração pela meta definida antes;
-- medido o conjunto de teste uma única vez e comparado o resultado com o do ajuste;
+- interpretado a medição única do conjunto de teste histórico e comparado seu resultado com o do ajuste;
 - executado os testes automáticos da avaliação, sem Azure.
 
 **Próximos desafios:** o [Desafio 07](07-identidade-da-aplicacao.md) usa service principal (identidade de uma aplicação no Microsoft Entra ID) e Azure Key Vault (serviço de guarda de segredos).
@@ -76,7 +81,11 @@ Ao concluir este desafio, você terá:
 | Testes automáticos da avaliação (sem Azure) | [tests\test_avaliacao.py](../../tests/test_avaliacao.py) | Disponíveis |
 | Documentos sintéticos e inventário | [dados\l100\inventario.json](../../dados/l100/inventario.json) | Disponível; aprovação do mantenedor confirmada |
 
-> **Atenção:** este desafio não altera o Azure. As medições só leem o índice, mas as das respostas consomem tokens (as unidades de texto que o modelo conta e cobra). Os conjuntos de perguntas ficam no repositório e não são enviados ao Blob Storage nem ao índice. A decisão de executar cada comando é sua, mesmo quando você pede ao Copilot que "meça" ou "execute" algo.
+> **Atenção:** este desafio não altera recursos do Azure. As medições só leem o índice; a recuperação
+> vetorial ou híbrida consome tokens de embeddings, e a etapa de respostas também consome tokens de
+> geração (unidades de texto que o modelo conta e cobra). Os conjuntos não são enviados ao Blob Storage
+> nem ao índice, mas as perguntas são enviadas aos modelos conforme a etapa. A decisão de executar
+> cada comando é sua, mesmo quando você pede ao Copilot que "meça" ou "execute" algo.
 
 ## Tecnologias e conceitos
 
@@ -172,7 +181,7 @@ Em um terminal novo, defina as variáveis de novo. Substitua `<ID-DA-SUA-ASSINAT
 
 ```powershell
 $assinatura = "<ID-DA-SUA-ASSINATURA>"
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $busca = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeBusca.value --output tsv
 $modelos = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeModelos.value --output tsv
 $deploymentGeracao = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d03 --query properties.outputs.nomeDeploymentGeracao.value --output tsv
@@ -476,11 +485,13 @@ descarte. A investigação registrada de `AJ-06` está no
 
 ## Etapa 6: medir o conjunto de teste uma única vez
 
-**Objetivo:** estimar o desempenho com perguntas novas, com a configuração escolhida. O programa mostra só os números. Cada comando é executado uma única vez, e esta etapa não altera o Azure.
+**Objetivo do procedimento original:** estimar o desempenho com perguntas então reservadas, com a
+configuração escolhida. O programa mostra só os números. Os comandos abaixo documentam a medição já
+encerrada; não os repita sobre `teste.json` para avaliar mudanças posteriores.
 
-Com a escolha registrada, meça o conjunto de teste e mantenha a configuração durante a medição.
+No procedimento de uma avaliação nova, registre a escolha e mantenha a configuração durante a medição.
 Os comandos abaixo correspondem à escolha do registro: recuperação obrigatória, modo híbrido,
-`k=3`, esforço `low`. Se você escolheu outra configuração, ajuste seus argumentos **antes** de medir.
+`k=3`, esforço `low`. Em um conjunto novo autorizado, escolha os argumentos **antes** de medir.
 Alterar a configuração em resposta aos números do teste transforma esse conjunto em ajuste [1].
 
 ```powershell
@@ -597,7 +608,7 @@ Cuidados obrigatórios: não grave o texto das perguntas, os ids do conjunto de 
 se o arquivo já existir, recuse com mensagem em pt-BR e código de saída 1, sem sobrescrever; não altere as métricas, a política nem os conjuntos de perguntas.
 Escreva testes com unittest e dublês, sem acessar o Azure.
 Use o Python do ambiente virtual, .\.venv\Scripts\python.exe, e execute apenas:
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_avaliacao.py"
 Não instale pacotes, não acesse o Azure, não leia dados/l100/avaliacao/teste.json e não altere o índice.
 ```
 
@@ -626,7 +637,7 @@ Qualquer ação que altere o Azure continua dependendo da sua decisão.
 | Respostas com a recuperação obrigatória | Etapa 3 e as Atividades 4 e 5 | Resumo com tipos, situações, falsas recusas, falsas respostas e descartes, inclusive quando a meta falhar |
 | Comparação das configurações | Etapa 4 e a Atividade 6 | Tabela com as quatro configurações e o consumo de tokens |
 | Variação e escolha | Etapa 5 e a Atividade 7 | Faixas das três repetições e uma configuração escolhida pela meta |
-| Conjunto de teste | Etapa 6 e a Atividade 8 | Uma medição por etapa, com configuração previamente escolhida; registrar os números e se a meta foi atingida |
+| Conjunto de teste histórico | Leitura da Etapa 6 e a Atividade 8 | Resultado preservado, sem repetir o teste; 10 de 12 situações corretas, abaixo da meta |
 | Testes sem Azure | Etapa 7 e a Atividade 9 | `Ran 48 tests` e `OK` |
 
 Antes de encerrar, registre em local privado o grupo de recursos, os nomes da busca e dos modelos, a configuração escolhida e a decisão de manter, pausar ou remover os recursos. Ao compartilhar evidências, remova das saídas do terminal os identificadores do ambiente, os nomes de recursos e as contas de usuário.
@@ -706,6 +717,10 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 Sonnet 5.5 no GitHub Copilot CLI; o Astra estava indisponível. Revisão editorial por GPT-6.1 Sol, em
 9 de outubro de 2026. Os modelos de autoria e revisão são independentes do modelo escolhido no Copilot
 e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini`).
+
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure
+nem repetição da avaliação final; autoria, revisões anteriores e resultados históricos permanecem.
 
 ## Glossário
 

@@ -9,6 +9,11 @@ O modo padrão é o da nuvem: a configuração vem de variáveis de ambiente (ve
 a falta de qualquer valor impede a partida. --demo (respostas simuladas, sem Azure) e --local-sem-autenticacao (Azure com a
 sua sessão do Azure CLI) só aceitam 127.0.0.1, ::1 ou localhost.
 
+Acesso documental (L300): com VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true, os papéis de aplicação da identidade autenticada (claims
+`roles` do X-MS-CLIENT-PRINCIPAL) definem, por requisição, quais classes de documento a busca pode devolver. Uma identidade sem
+papel reconhecido recebe 403 antes de qualquer busca, embedding ou chamada ao modelo, e o JSON e a query da pergunta não aceitam
+papéis, filtro, índice, tenant nem usuário. A opção não combina com --demo nem com --local-sem-autenticacao.
+
 Exemplos:
     python scripts\\chat_web.py --host 127.0.0.1 --port 8000 --demo
     python scripts\\chat_web.py --host 0.0.0.0 --port 8000
@@ -30,6 +35,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+import lab_acesso
 import lab_chat
 import lab_comum
 from lab_comum import ErroLab
@@ -161,18 +167,21 @@ async def ler_corpo(request: Request, limite: int) -> bytes:
     return bytes(corpo)
 
 
-async def consultar(estado: Estado, pergunta: str) -> lab_chat.RespostaChat:
+async def consultar(estado: Estado, pergunta: str, acesso: lab_acesso.ContextoAcesso | None = None) -> lab_chat.RespostaChat:
     """Executa a consulta (síncrona) em uma thread, com concorrência limitada e tempo máximo.
 
     Sem vaga, responde logo com 429 em vez de enfileirar. A vaga só volta quando a thread termina, mesmo que a requisição
-    já tenha expirado: assim o número de consultas em andamento nunca passa do limite.
+    já tenha expirado: assim o número de consultas em andamento nunca passa do limite. O contexto de acesso (L300) pertence a
+    esta requisição e só chega ao serviço como argumento da chamada: nada dele fica no estado compartilhado.
     """
     if not estado.capacidade.acquire(blocking=False):
         raise lab_chat.ErroChat(lab_chat.OCUPADO)
 
     def trabalho() -> lab_chat.RespostaChat:
         try:
-            return estado.servico.perguntar(pergunta)
+            if acesso is None:
+                return estado.servico.perguntar(pergunta)
+            return estado.servico.perguntar(pergunta, acesso)
         finally:
             estado.capacidade.release()
 
@@ -203,6 +212,9 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
         lab_chat.validar_configuracao(configuracao)
         arquivos = carregar_arquivos(pasta_web, configuracao)
         servico = fabrica(configuracao)
+        if configuracao.exigir_acesso_documental and getattr(servico, "exige_acesso", False) is not True:
+            raise ErroLab("O serviço do chat não aplica o filtro de acesso documental: com a opção ativa, o chat não inicia assim.",
+                          lab_comum.CODIGO_USO)
         executor = ThreadPoolExecutor(max_workers=configuracao.max_concorrencia, thread_name_prefix="chat")
         app.state.chat = Estado(configuracao, servico, executor, threading.BoundedSemaphore(configuracao.max_concorrencia), arquivos)
         LOG.info("assistente pronto %s", lab_chat.resumo_publico(configuracao))
@@ -221,13 +233,17 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
         id_requisicao = uuid.uuid4().hex
         request.state.id_requisicao = id_requisicao
         request.state.causa = None
+        request.state.acesso = None
         try:
             erro_de_acesso = None
             if not lab_chat.host_permitido(configuracao.modo, request.headers.get("host")):
                 erro_de_acesso = lab_chat.ErroChat(lab_chat.HOST_INVALIDO)
             elif configuracao.exigir_autenticacao and request.url.path not in ROTAS_ISENTAS:
                 try:
-                    lab_chat.validar_principal(request.headers.get(lab_chat.CABECALHO_PRINCIPAL), configuracao.tenants_autorizados)
+                    principal = lab_chat.validar_principal(request.headers.get(lab_chat.CABECALHO_PRINCIPAL),
+                                                           configuracao.tenants_autorizados)
+                    if configuracao.exigir_acesso_documental:
+                        request.state.acesso = lab_chat.contexto_de_acesso(principal)  # sem papel reconhecido: 403 aqui
                 except lab_chat.ErroChat as erro:
                     erro_de_acesso = erro
             resposta = responder_erro(request, erro_de_acesso) if erro_de_acesso else await call_next(request)
@@ -284,9 +300,12 @@ def create_app(configuracao: lab_chat.ConfiguracaoChat,
                 raise lab_chat.ErroChat(lab_chat.NAO_PRONTO)
             if request.url.query:
                 raise lab_chat.ErroChat(lab_chat.CAMPOS_NAO_PERMITIDOS)
+            acesso = request.state.acesso if estado.configuracao.exigir_acesso_documental else None
+            if estado.configuracao.exigir_acesso_documental and acesso is None:
+                raise lab_chat.ErroChat(lab_chat.NAO_AUTORIZADO, "sem_papel_conhecido")
             corpo = await ler_corpo(request, lab_chat.LIMITE_DO_CORPO)
             pedido = lab_chat.ler_pedido(corpo, request.headers.get("content-type"))
-            resposta = await consultar(estado, pedido.pergunta)
+            resposta = await consultar(estado, pedido.pergunta, acesso)
         except Exception as erro:  # noqa: BLE001 - toda falha vira um código público; o texto da exceção não sai daqui
             return responder_erro(request, lab_chat.classificar_erro(erro))
         return JSONResponse({"id": pedido.id_cliente, "id_requisicao": request.state.id_requisicao, **resposta.a_dict()})
@@ -322,6 +341,9 @@ def mostrar_inicio(configuracao: lab_chat.ConfiguracaoChat, porta: int) -> None:
         lab_chat.MODO_NUVEM: "autenticação exigida: a identidade do Azure Container Apps é conferida contra o tenant autorizado.",
     }
     print(f"Chat do Vareleira Lar, {descricoes[configuracao.modo]}")
+    if configuracao.exigir_acesso_documental:
+        print("Acesso documental ativo: os papéis de aplicação da identidade definem as classes de documento da busca, "
+              "e quem não tem papel reconhecido recebe 403 antes de qualquer consulta.")
     print(f"Endereço: http://{configuracao.host}:{porta}  (encerre com Ctrl+C)")
 
 

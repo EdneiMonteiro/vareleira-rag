@@ -96,9 +96,9 @@ Os cinco tipos de pergunta e a conduta do programa:
 | `contratacao_individual` | A pessoa pergunta se o seguro dela cobre ou paga um caso dela | Introdução fixa do programa, evidências conferidas e aviso; o texto livre do modelo é suprimido |
 | `sem_evidencia` | O assunto é do produto, mas os trechos não trazem a informação | Uma recusa com texto do programa; nada do que o modelo escreveu |
 | `fora_de_escopo` | A pergunta não trata do Vareleira Lar nem de seguro residencial | Uma recusa com texto do programa |
-| `ambigua` | A pergunta admite mais de um sentido | A pergunta de esclarecimento escrita pelo modelo |
+| `ambigua` | A pergunta admite mais de um sentido | A pergunta de esclarecimento escrita pelo modelo; se vier vazia, o programa usa seu texto fixo |
 
-**2. Evidência literal.** Em cada resposta de tipo `documentada` ou `contratacao_individual`, o modelo lista as **evidências**: o id do trecho e uma frase copiada dele, com pelo menos 20 caracteres. O programa procura a frase no texto do trecho, sem diferenciar maiúsculas de minúsculas e ignorando marcas de Markdown (como `**`) e espaços repetidos. Uma citação que não aparece no trecho, ou que aponta para um trecho que não foi recuperado, descarta a resposta inteira: o programa não a mostra. As citações com menos de 20 caracteres são ignoradas e não contam como evidência. Sem nenhuma evidência válida, a resposta também é descartada.
+**2. Evidência literal.** Em cada resposta de tipo `documentada` ou `contratacao_individual`, o modelo lista as **evidências**: o id do trecho e uma frase copiada dele, com pelo menos 20 caracteres após normalização. O programa procura a frase no texto do trecho, sem diferenciar maiúsculas de minúsculas e ignorando marcas de Markdown (como `**`) e espaços repetidos. Uma citação longa o suficiente que não aparece no trecho, ou qualquer fonte que não foi recuperada, descarta a resposta inteira: o programa não a mostra. Citações de fontes conhecidas com menos de 20 caracteres após normalização são ignoradas e não contam como evidência. Sem nenhuma evidência válida, ou se o campo `resposta` vier vazio, a resposta também é descartada.
 
 > **Para guardar na memória: a nota fiscal.** Cada evidência é um item da nota fiscal da resposta. O fiscal (o programa) abre a caixa e confere se o item da nota está mesmo no estoque, que são os trechos recuperados. Nota com item que não existe invalida a entrega inteira. Analogia criada para este curso.
 
@@ -152,7 +152,7 @@ Em um terminal novo, defina as variáveis de novo. Substitua `<ID-DA-SUA-ASSINAT
 
 ```powershell
 $assinatura = "<ID-DA-SUA-ASSINATURA>"
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $busca = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeBusca.value --output tsv
 $modelos = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeModelos.value --output tsv
 $deploymentGeracao = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d03 --query properties.outputs.nomeDeploymentGeracao.value --output tsv
@@ -381,10 +381,14 @@ Aviso:
   Esta resposta explica a regra geral do produto. ...
 ```
 
+Esse exemplo preserva a saída anterior à correção do Desafio 04. Na política atual, o mesmo tipo
+suprime o texto livre e apresenta a introdução fixa, as evidências e o aviso da Etapa 2.3.
+
 **Atividade 6:** por que o programa mudou o tipo? A mudança causou algum dano? Como você reduziria esse falso positivo sem criar falsos negativos?
 
 **Conferência:** a pergunta contém "meu" e "sinistro", e a regra a tratou como caso individual, embora
-ela peça um procedimento. O efeito observado foi um aviso desnecessário. Uma exceção para perguntas de
+ela peça um procedimento. O efeito observado originalmente foi um aviso desnecessário; hoje esse
+falso positivo também retira a explicação livre e mantém as citações. Uma exceção para perguntas de
 procedimento pode reduzir esse falso positivo e também deixar passar casos individuais. Avalie ambas
 as consequências antes de alterar a regra.
 
@@ -408,7 +412,7 @@ o padrão continua sendo o valor atual de MINIMO_DA_CITACAO; a política básica
 nas instruções da política completa, ajuste apenas o mínimo solicitado ao modelo para que ele corresponda ao valor usado pelo programa.
 Escreva testes com unittest e dublês, sem acessar o Azure.
 Use o Python do ambiente virtual, .\.venv\Scripts\python.exe, e execute apenas:
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_politica.py"
 Não instale pacotes, não acesse o Azure e não altere o índice.
 ```
 
@@ -493,6 +497,10 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 Sonnet 5.5 no GitHub Copilot CLI; o Astra estava indisponível. Revisão editorial por GPT-6.1 Sol, em
 9 de outubro de 2026. Os modelos de autoria e revisão são independentes do modelo escolhido no Copilot
 e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini`).
+
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
+autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
 
 ## Glossário
 

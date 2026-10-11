@@ -137,6 +137,11 @@ ambas as situações.
 | Testes | `tests\test_agente.py` novo | Executam a biblioteca MAF instalada contra um serviço de modelos simulado, sem Azure |
 | Reverter | Deixar de usar `agente_maf.py` | Os desafios anteriores não dependem do MAF |
 
+O agente deste desafio continua no console. O chat do L200 usa recuperação e política em fluxo fixo;
+ele não repete a validação de escolha de ferramentas. Acesso documental do L300 e coordenação do
+L400 dependem de ativação explícita em seus próprios caminhos e não são habilitados por executar
+`agente_maf.py`. Preserve esses limites ao modificar as bibliotecas compartilhadas.
+
 ## Pré-requisitos
 
 Os comandos deste guia são escritos para Windows e PowerShell, no terminal integrado do Visual Studio Code (VS Code), como nos desafios anteriores.
@@ -153,7 +158,7 @@ Em um terminal novo, defina as variáveis de novo. Substitua `<ID-DA-SUA-ASSINAT
 
 ```powershell
 $assinatura = "<ID-DA-SUA-ASSINATURA>"
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $busca = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeBusca.value --output tsv
 $modelos = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeModelos.value --output tsv
 $deploymentGeracao = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d03 --query properties.outputs.nomeDeploymentGeracao.value --output tsv
@@ -500,7 +505,7 @@ o padrão continua sendo o valor atual; a mensagem de tempo esgotado cita o valo
 não altere a política nem as instruções do agente.
 Escreva testes com unittest e dublês, sem acessar o Azure.
 Use o Python do ambiente virtual, .\.venv\Scripts\python.exe, e execute apenas:
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_agente.py"
 Não instale pacotes, não acesse o Azure e não altere o índice.
 ```
 
@@ -528,7 +533,7 @@ Qualquer ação que altere o Azure continua dependendo da sua decisão.
 | O que o agente recebe | Etapa 1.2 e a Atividade 1 | Instruções, ferramenta com o parâmetro `consulta` e limites |
 | Recuperação obrigatória | Etapa 2 e a Atividade 2 | Tipo `documentada`, evidências conferidas e rastro sem ferramentas |
 | Agente com ferramenta | Etapa 3.1 e a Atividade 3 | Uma ou duas buscas no rastro e evidências conferidas |
-| Pergunta sem busca | Etapa 3.2 e a Atividade 4 | "O agente não chamou a ferramenta", com recusa ou esclarecimento do programa |
+| Pergunta sem busca | Etapa 3.2 e a Atividade 4 | "O agente não chamou a ferramenta", com recusa fixa ou esclarecimento proposto pelo modelo (texto fixo se vier vazio) |
 | Política mantida | Etapa 3.3 e a Atividade 5 | Aviso fixo no caso individual |
 | Comparação dos modos | Etapas 4.1 e 4.2 e as Atividades 6 e 7 | Tipos, buscas e tokens anotados por modo |
 | Falha da busca | Etapa 4.3 e a Atividade 8 | `[ERRO]` com código 2, sem resposta do agente |
@@ -584,7 +589,7 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 
 | Item | Situação | Detalhe |
 | --- | --- | --- |
-| Comandos das Etapas 1 a 5 | Concluído | Executados em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03 |
+| Comandos das Etapas 1 a 5 da implementação original | Concluído | Executados em PowerShell 7.6, em `brazilsouth`, sobre o ambiente dos Desafios 01 a 03; a correção posterior da apresentação individual no agente tem a conferência local descrita na Etapa 3.3 |
 | Scripts e testes automáticos (sem Azure) | Concluído | Testes aprovados, com a biblioteca MAF instalada e o serviço de modelos simulado |
 | Links, âncoras, URLs e referências dos guias | Concluído | Nenhum link ou âncora inválido |
 | Aprovação do conteúdo dos documentos sintéticos | Confirmada | Pelo mantenedor, em 9 de outubro de 2026; registro no inventário |
@@ -599,6 +604,10 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 Sonnet 5.5 no GitHub Copilot CLI; o Astra estava indisponível. Revisão editorial por GPT-6.1 Sol, em
 9 de outubro de 2026. Os modelos de autoria e revisão são independentes do modelo escolhido no Copilot
 e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini`).
+
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
+autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
 
 ## Glossário
 
