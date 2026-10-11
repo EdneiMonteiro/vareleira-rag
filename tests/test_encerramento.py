@@ -9,6 +9,7 @@ import contextlib
 import copy
 import dataclasses
 import functools
+import hashlib
 import io
 import json
 import os
@@ -112,10 +113,12 @@ class Cenario:
         self.papel1, self.papel2 = novo_guid(), novo_guid()
         self.nome_app1, self.nome_app2 = f"vlr-login-{sufixo}", f"vlr-sonda-{sufixo}"
         self.busca = f"srch-{sufixo}"
+        self.mg = f"mg-{sufixo}"  # grupo de GERENCIAMENTO (acima da assinatura); não é o grupo gerenciado do Container Apps
         self.atribuicao1 = f"{self.prefixo}/providers/Microsoft.Authorization/roleAssignments/{novo_guid()}"
         self.escopo2 = self.recurso("Microsoft.Storage/storageAccounts", f"st{sufixo}")
         self.atribuicao2 = f"{self.escopo2}/providers/Microsoft.Authorization/roleAssignments/{novo_guid()}"
         self._papeis: list[dict] | None = None
+        self._herdados: list[dict] | None = None
 
     @property
     def prefixo(self) -> str:
@@ -175,6 +178,20 @@ class Cenario:
         if self._papeis is None:
             self._papeis = [self.papel_az(), self.papel_az(escopo=f"/subscriptions/{self.assinatura}/resourceGroups/rg-um"), self.papel_az()]
         return copy.deepcopy(self._papeis)
+
+    def papel_herdado_az(self, de: str = "grupo", principal: str | None = None, mg: str | None = None) -> dict:
+        """Atribuição herdada de um escopo ACIMA da assinatura, como o `az role assignment list --all` a devolve quando a assinatura fica
+        sob um grupo de gerenciamento: da raiz do tenant (scope "/", `de="raiz"`) ou de um grupo de gerenciamento (`de="grupo"`)."""
+        escopo = "/" if de == "raiz" else f"/providers/Microsoft.Management/managementGroups/{mg or self.mg}"
+        return {"id": f"{'' if escopo == '/' else escopo}/providers/Microsoft.Authorization/roleAssignments/{novo_guid()}",
+                "principalId": principal or novo_guid(), "scope": escopo,
+                "roleDefinitionId": f"/providers/Microsoft.Authorization/roleDefinitions/{novo_guid()}"}
+
+    def papeis_herdados(self) -> list[dict]:
+        """O caso real: três itens herdados, um da raiz do tenant e dois de grupos de gerenciamento."""
+        if self._herdados is None:
+            self._herdados = [self.papel_herdado_az("raiz"), self.papel_herdado_az(), self.papel_herdado_az(mg=f"{self.mg}-filho")]
+        return copy.deepcopy(self._herdados)
 
     def presenca(self, estado: str = "ausente") -> dict:
         return {item.chave: estado for item in enc.itens_de_presenca(self.carregado())}
@@ -592,12 +609,89 @@ class InstantaneoTests(ComPasta):
         self.recusa("assinatura do inventário", grupos=[{"id": f"/subscriptions/{c.assinatura}/resourceGroups/rg-um", "name": "rg-dois"}])
         self.recusa("assinatura do inventário", recursos=[{"id": f"/subscriptions/{outra}/resourceGroups/rg/providers/X.Y/z/a", "type": "X.Y/z"}])
         self.recusa("assinatura do inventário", papeis=[c.papel_az(escopo=f"/subscriptions/{outra}")])
-        mg = c.papel_az()
-        mg["scope"] = "/providers/Microsoft.Management/managementGroups/raiz"
-        self.recusa("grupo de gerenciamento", papeis=[mg])
+        herdada = self.carregar(papeis=[c.papel_herdado_az()])  # de grupo de gerenciamento: aceita, ignorada e contada (não é mais recusada)
+        self.assertEqual((herdada.atribuicoes_herdadas_ignoradas, len(herdada.atribuicoes)), (1, 0))
         self.recusa("tipos diferentes", recursos=[{"id": c.recursos_base()[0]["id"], "type": "A.B/c"}, {"id": c.recursos_base()[0]["id"], "type": "A.B/d"}])
         papel = c.papel_az()
         self.recusa("valores diferentes", papeis=[papel, dict(papel, principalId=novo_guid())])
+
+    def test_atribuicoes_herdadas_da_raiz_e_de_grupo_de_gerenciamento_sao_aceitas_ignoradas_e_contadas(self):
+        c = self.c
+        herdadas = c.papeis_herdados()
+        self.assertEqual(sorted(h["scope"] == "/" for h in herdadas), [False, False, True], "o caso real: uma da raiz e duas de grupos de gerenciamento")
+        sem, com = self.carregar(), self.carregar(papeis=c.papeis_base() + herdadas)
+        self.assertEqual((sem.atribuicoes_herdadas_ignoradas, com.atribuicoes_herdadas_ignoradas), (0, 3))
+        self.assertEqual((com.atribuicoes, com.grupos, com.recursos), (sem.atribuicoes, sem.grupos, sem.recursos),
+                         "os itens ignorados não entram no instantâneo: não são comparados")
+        self.assertFalse({h["id"].lower() for h in herdadas} & set(com.atribuicoes))
+        so_herdadas = self.carregar(papeis=herdadas)
+        self.assertEqual((so_herdadas.atribuicoes_herdadas_ignoradas, dict(so_herdadas.atribuicoes)), (3, {}))
+        maiusculas = [dict(h, id=h["id"].upper(), scope=h["scope"].upper()) for h in herdadas]  # sem diferenciar caixa; o repetido conta uma vez
+        self.assertEqual(self.carregar(papeis=herdadas + maiusculas).atribuicoes_herdadas_ignoradas, 3)
+
+    def test_a_mesma_atribuicao_herdada_com_valores_diferentes_e_recusada(self):
+        herdada = self.c.papel_herdado_az()
+        self.assertEqual(self.carregar(papeis=[herdada, dict(herdada)]).atribuicoes_herdadas_ignoradas, 1)
+        self.recusa("valores diferentes", papeis=[herdada, dict(herdada, principalId=novo_guid())])
+
+    def test_item_de_outra_assinatura_continua_recusado_ao_lado_de_itens_herdados(self):
+        c = self.c
+        outra = novo_guid()
+        casos = {
+            "id e scope da outra assinatura": c.papel_az(escopo=f"/subscriptions/{outra}"),
+            "grupo de recursos da outra assinatura": c.papel_az(escopo=f"/subscriptions/{outra}/resourceGroups/rg-um"),
+            "id da outra assinatura com scope da raiz": dict(
+                c.papel_herdado_az("raiz"), id=f"/subscriptions/{outra}/providers/Microsoft.Authorization/roleAssignments/{novo_guid()}"),
+            "id herdado com scope da outra assinatura": dict(c.papel_herdado_az(), scope=f"/subscriptions/{outra}"),
+        }
+        for rotulo, item in casos.items():
+            with self.subTest(rotulo):
+                mensagem = self.recusa("assinatura do inventário", papeis=c.papeis_base() + c.papeis_herdados() + [item])
+                self.assertEqual(mensagem.count("\n  - "), 1, "só o item de outra assinatura é apontado; os herdados não")
+                self.assertIn("--papeis-antes[6]", mensagem)
+                self.assertIn("outra assinatura ou formato desconhecido", mensagem)
+                self.assertNotIn("um escopo fora dela", mensagem)
+                self.assertNotIn(outra, mensagem)
+
+    def test_id_e_scope_incoerentes_ou_de_formato_desconhecido_sao_recusados(self):
+        c = self.c
+
+        def atribuicao_em(escopo: str) -> str:
+            return f"{escopo.rstrip('/')}/providers/Microsoft.Authorization/roleAssignments/{novo_guid()}"
+
+        raiz, grupo, da_assinatura = c.papel_herdado_az("raiz"), c.papel_herdado_az(), c.papel_az()
+        assinatura = f"/subscriptions/{c.assinatura}"
+        sem_nome, funda = "/providers/Microsoft.Management/managementGroups", grupo["scope"] + "/providers/Microsoft.Foo/bar"
+        casos = {
+            "id da assinatura e scope da raiz": dict(da_assinatura, scope="/"),
+            "id da assinatura e scope de grupo de gerenciamento": dict(da_assinatura, scope=grupo["scope"]),
+            "id da raiz e scope da assinatura": dict(raiz, scope=assinatura),
+            "id de grupo de gerenciamento e scope da assinatura": dict(grupo, scope=assinatura),
+            "id da raiz e scope de grupo de gerenciamento": dict(raiz, scope=grupo["scope"]),
+            "id de grupo de gerenciamento e scope da raiz": dict(grupo, scope="/"),
+            "id de um grupo de gerenciamento e scope de outro": dict(grupo, scope=f"{grupo['scope']}-outro"),
+            "scope de grupo de gerenciamento sem nome": dict(grupo, scope=sem_nome, id=atribuicao_em(sem_nome)),
+            "scope de grupo de gerenciamento com barra no fim": dict(
+                grupo, scope=sem_nome + "/", id=f"{sem_nome}//providers/Microsoft.Authorization/roleAssignments/{novo_guid()}"),
+            "scope com segmentos a mais": dict(grupo, scope=funda, id=atribuicao_em(funda)),
+            "scope desconhecido": dict(raiz, scope="/providers/Microsoft.Foo", id=atribuicao_em("/providers/Microsoft.Foo")),
+            "scope com espaço": dict(raiz, scope="/ "),
+            "id sem o nome da atribuição": dict(raiz, id="/providers/Microsoft.Authorization/roleAssignments/"),
+            "id que não é de atribuição": dict(raiz, id=f"/providers/Microsoft.Authorization/roleDefinitions/{novo_guid()}"),
+            "id da raiz com segmento a mais": dict(raiz, id=raiz["id"] + "/x"),
+            "id de grupo de gerenciamento com segmento a mais": dict(grupo, id=grupo["id"] + "/x"),
+        }
+        for rotulo, item in casos.items():
+            with self.subTest(rotulo):
+                self.recusa("assinatura do inventário", papeis=[item])
+
+    def test_o_sha256_do_arquivo_de_papeis_e_o_do_arquivo_inteiro_inclusive_com_os_itens_ignorados(self):
+        c = self.c
+        com = self.carregar(papeis=c.papeis_base() + c.papeis_herdados())
+        self.assertEqual(com.sha256["papeis"], hashlib.sha256((self.pasta / "p.json").read_bytes()).hexdigest())
+        sem = self.carregar()
+        self.assertEqual(sem.sha256["papeis"], hashlib.sha256((self.pasta / "p.json").read_bytes()).hexdigest())
+        self.assertNotEqual(com.sha256["papeis"], sem.sha256["papeis"], "os itens ignorados fazem parte do arquivo")
 
     def test_utf16_do_powershell_5_e_aceito(self):
         caminhos = []
@@ -654,6 +748,21 @@ class LinhaDeBaseTests(ComPasta):
     def test_principal_proprio_com_papel_na_linha_de_base_nao_e_proprio(self):
         mensagem = self.recusa("já existiam antes do laboratório", papeis=self.c.papeis_base() + [self.c.papel_az(principal=self.c.mi2)])
         self.assertNotIn(self.c.mi2, mensagem)
+
+    def test_atribuicao_herdada_de_principal_proprio_nao_reprova_a_linha_de_base_nem_conta_como_do_laboratorio(self):
+        c = self.c
+        # na assinatura, um principal próprio com papel na linha de base reprova: ele já existia antes do laboratório
+        self.recusa("já existiam antes do laboratório", papeis=c.papeis_base() + [c.papel_az(principal=c.mi2)])
+        # herdada da raiz ou de grupo de gerenciamento, a atribuição é ignorada: `validar_linha_de_base` só olha `base.atribuicoes`, onde ela
+        # não entra. Não reprova e não finge ser do laboratório (o laboratório só cria atribuições dentro do grupo exclusivo).
+        herdadas = [c.papel_herdado_az("raiz", principal=c.mi2), c.papel_herdado_az(principal=c.mi1), c.papel_herdado_az(principal=c.sp1)]
+        self.validar(papeis=c.papeis_base() + herdadas)
+        base = enc.carregar_instantaneo(self.escrever("g.json", c.grupos_base()), self.escrever("r.json", c.recursos_base()),
+                                        self.escrever("p.json", c.papeis_base() + herdadas), c.assinatura, "antes")
+        self.assertEqual((base.atribuicoes_herdadas_ignoradas, len(base.atribuicoes)), (3, 3))
+        self.assertFalse({principal for principal, _, _ in base.atribuicoes.values()} & set(c.inventario()["principais_proprios"]))
+        plano = enc.montar_plano(c.carregado(), not base.vazio, base.atribuicoes_herdadas_ignoradas)
+        self.assertTrue(plano.linha_de_base_conferida)
 
     def test_linha_de_base_de_outra_assinatura_e_recusada_na_leitura(self):
         with self.assertRaises(ErroLab):
@@ -987,6 +1096,25 @@ class PlanoTests(ComPasta):
         self.assertTrue(set(relatorio["passos_por_tipo"]) <= set(enc.TIPOS_DE_PASSO))
         self.assertEqual(relatorio["recursos_removidos_com_o_grupo"], 4)
         self.assertEqual(set(relatorio["passos_por_efeito"]), {"reversivel", "irreversivel"})
+        self.assertEqual(relatorio["atribuicoes_herdadas_ignoradas"], 0, "sem itens herdados o campo existe e vale 0")
+
+    def test_a_contagem_de_atribuicoes_herdadas_aparece_no_texto_no_json_e_no_relatorio_do_plano(self):
+        inv = self.c.carregado()
+        sem, com = enc.montar_plano(inv, True), enc.montar_plano(inv, True, 3)
+
+        def aviso(quantidade: int) -> str:
+            return (f"{quantidade} atribuição(ões) herdada(s) de grupo de gerenciamento ou da raiz do tenant foram ignoradas: o laboratório "
+                    "não as altera e esta ferramenta não as compara.")
+
+        self.assertNotIn("herdada(s)", enc.plano_em_texto(sem))
+        linhas = enc.plano_em_texto(com).splitlines()
+        self.assertEqual(linhas[2:4], ["Linha de base: conferida", "[AVISO] Linha de base: " + aviso(3)], "o aviso vem junto da linha 'Linha de base'")
+        self.assertEqual(sum("herdada(s)" in linha for linha in linhas), 1)
+        self.assertEqual(enc.plano_em_texto(enc.montar_plano(inv, True, 1)).splitlines()[3], "[AVISO] Linha de base: " + aviso(1), "uma só também é avisada")
+        for plano, esperado in ((sem, 0), (com, 3)):
+            self.assertEqual(enc.plano_em_dict(plano)["atribuicoes_herdadas_ignoradas"], esperado)
+            self.assertEqual(enc.relatorio_do_plano(plano)["atribuicoes_herdadas_ignoradas"], esperado)
+        self.assertEqual(com.passos, sem.passos, "a contagem é só informativa: o plano em si não muda")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1091,6 +1219,7 @@ class ConferenciaTests(ComPasta):
         self.assertIn("FASE 8 de 8", saida)
         self.assertNotIn("PRÉVIA", saida)
         self.assertEqual(json.loads(relatorio.read_text(encoding="utf-8"))["linha_de_base"], "conferida")
+        self.assertEqual(json.loads(relatorio.read_text(encoding="utf-8"))["atribuicoes_herdadas_ignoradas"], 0)
         conferencia = self.pasta / "conferencia.json"
         codigo, saida = self.conferir(caminhos, "--relatorio", str(conferencia))
         self.assertEqual(codigo, CODIGO_OK, saida)
@@ -1100,6 +1229,8 @@ class ConferenciaTests(ComPasta):
         self.assertEqual(dados["contagem"], {"atendido": 13, "reprovado": 0, "pendente": 0, "nao_aplicavel": 0})
         self.assertEqual({v["id"] for v in dados["verificacoes"]}, set(enc.CRITERIOS))
         self.assertEqual(dados["linha_de_base"], {"grupos": 3, "recursos": 3, "atribuicoes": 3})
+        self.assertEqual((dados["atribuicoes_herdadas_ignoradas"], dados["atribuicoes_herdadas_ignoradas_depois"]), (0, 0))
+        self.assertNotIn("herdada(s)", saida)
         self.assertEqual(dados["avisos"], [], "uma exportação real nunca repete a ordem e o texto da linha de base")
         self.assertEqual(len(dados["entradas_sha256"]), 1 + 3 + 3)
 
@@ -1330,13 +1461,96 @@ class ConferenciaTests(ComPasta):
                 self.assertEqual(codigo, CODIGO_USO, saida)
                 self.assertIn("já existia", saida)
 
+    def test_plano_e_conferencia_com_atribuicoes_herdadas_dao_o_mesmo_resultado_que_sem_elas_e_mostram_a_contagem(self):
+        c = self.c
+        aviso = ("atribuição(ões) herdada(s) de grupo de gerenciamento ou da raiz do tenant foram ignoradas: o laboratório não as altera e "
+                 "esta ferramenta não as compara.")
+
+        def planejar(caminhos, relatorio):
+            return executar_separado("--etapa", "plano", "--inventario", str(caminhos["inventario"]), "--grupos-antes", str(caminhos["grupos-antes"]),
+                                     "--recursos-antes", str(caminhos["recursos-antes"]), "--papeis-antes", str(caminhos["papeis-antes"]),
+                                     "--relatorio", str(self.pasta / relatorio))
+
+        # o instantâneo que a PRÓPRIA captura grava, de uma assinatura sob um grupo de gerenciamento: traz as 3 atribuições herdadas
+        com = self.montar(base=(c.grupos_base(), c.recursos_base(), c.papeis_base() + c.papeis_herdados()))
+        hash_do_arquivo = hashlib.sha256(com["papeis-antes"].read_bytes()).hexdigest()
+        codigo, plano_com, erro = planejar(com, "plano-com.json")
+        self.assertEqual(codigo, CODIGO_OK, erro)
+        self.assertIn(f"[AVISO] Linha de base: 3 {aviso}", plano_com)
+        self.assertNotIn("PRÉVIA", plano_com)
+        relatorio_do_plano = json.loads((self.pasta / "plano-com.json").read_text(encoding="utf-8"))
+        self.assertEqual((relatorio_do_plano["linha_de_base"], relatorio_do_plano["atribuicoes_herdadas_ignoradas"]), ("conferida", 3))
+        codigo, conferencia_com = self.conferir(com, "--relatorio", str(self.pasta / "conferencia-com.json"))
+        self.assertEqual(codigo, CODIGO_OK, conferencia_com)
+        self.assertIn("Resultado: APROVADO", conferencia_com)
+        for arquivo in ("Linha de base", "Estado final"):
+            self.assertIn(f"[AVISO] {arquivo}: 3 {aviso}", conferencia_com)
+        relatorio_com = json.loads((self.pasta / "conferencia-com.json").read_text(encoding="utf-8"))
+        self.assertEqual((relatorio_com["atribuicoes_herdadas_ignoradas"], relatorio_com["atribuicoes_herdadas_ignoradas_depois"]), (3, 3))
+        self.assertEqual(relatorio_com["linha_de_base"], {"grupos": 3, "recursos": 3, "atribuicoes": 3}, "as ignoradas não contam como atribuições")
+        self.assertEqual(relatorio_com["entradas_sha256"]["papeis_antes"], hash_do_arquivo, "o sha256 é o do arquivo inteiro")
+        # o mesmo cenário sem os itens herdados: o mesmo resultado, sem a contagem
+        sem = self.montar()
+        codigo, plano_sem, erro = planejar(sem, "plano-sem.json")
+        self.assertEqual(codigo, CODIGO_OK, erro)
+        self.assertNotIn("herdada(s)", plano_sem)
+        self.assertEqual(plano_com.replace(f"[AVISO] Linha de base: 3 {aviso}\n", ""), plano_sem, "só o aviso muda no plano")
+        codigo, conferencia_sem = self.conferir(sem, "--relatorio", str(self.pasta / "conferencia-sem.json"))
+        self.assertEqual(codigo, CODIGO_OK, conferencia_sem)
+        self.assertNotIn("herdada(s)", conferencia_sem)
+        retirado = conferencia_com.replace(f"[AVISO] Linha de base: 3 {aviso}\n", "").replace(f"[AVISO] Estado final: 3 {aviso}\n", "")
+        self.assertEqual(retirado, conferencia_sem, "só os avisos mudam na conferência")
+        relatorio_sem = json.loads((self.pasta / "conferencia-sem.json").read_text(encoding="utf-8"))
+        for chave in ("resultado", "contagem", "verificacoes", "linha_de_base", "avisos"):
+            self.assertEqual(relatorio_com[chave], relatorio_sem[chave], chave)
+        self.assertEqual((relatorio_sem["atribuicoes_herdadas_ignoradas"], relatorio_sem["atribuicoes_herdadas_ignoradas_depois"]), (0, 0))
+
+    def test_atribuicoes_herdadas_que_mudam_ou_somem_entre_antes_e_depois_nao_sao_comparadas_nem_contam_como_do_laboratorio(self):
+        c = self.c
+        # depois: os 3 herdados de antes sumiram e há um novo, de um principal próprio (nada disso é do laboratório nem é comparado)
+        base = (c.grupos_base(), c.recursos_base(), c.papeis_base() + c.papeis_herdados())
+        depois = (c.grupos_base(), c.recursos_base(), c.papeis_base() + [c.papel_herdado_az("raiz", principal=c.mi1)])
+        relatorio = self.pasta / "r.json"
+        codigo, saida = self.conferir(self.montar(base=base, depois=depois), "--relatorio", str(relatorio))
+        self.assertEqual(codigo, CODIGO_OK, saida)
+        self.assertEqual(self.estado(saida, "atribuicoes_anteriores_preservadas"), "atendido")
+        self.assertEqual(self.estado(saida, "atribuicoes_proprias_ausentes"), "atendido", "herdada de principal próprio não é atribuição própria restante")
+        dados = json.loads(relatorio.read_text(encoding="utf-8"))
+        self.assertEqual((dados["atribuicoes_herdadas_ignoradas"], dados["atribuicoes_herdadas_ignoradas_depois"]), (3, 1))
+        self.assertIn("[AVISO] Linha de base: 3 atribuição(ões) herdada(s)", saida)
+        self.assertIn("[AVISO] Estado final: 1 atribuição(ões) herdada(s)", saida, "uma só também é avisada")
+        # já uma atribuição de verdade da assinatura que some continua reprovando
+        sumiu = (c.grupos_base(), c.recursos_base(), c.papeis_base()[1:] + c.papeis_herdados())
+        codigo, saida = self.conferir(self.montar(base=base, depois=sumiu))
+        self.assertEqual((codigo, self.estado(saida, "atribuicoes_anteriores_preservadas")), (CODIGO_DIVERGENCIA, "reprovado"), saida)
+
+    def test_instantaneo_sem_a_contagem_vale_zero_e_a_conferencia_mostra_a_de_cada_arquivo(self):
+        c = self.c
+        inv = c.carregado()
+        base = enc.Instantaneo(grupos=frozenset({"rg-um"}), recursos={}, atribuicoes={}, sha256={"grupos": "a", "recursos": "b", "papeis": "c"})
+        self.assertEqual(base.atribuicoes_herdadas_ignoradas, 0, "quem constrói o instantâneo sem o campo novo continua funcionando")
+        antes = dataclasses.replace(base, atribuicoes_herdadas_ignoradas=2)
+        depois = dataclasses.replace(base, sha256={"grupos": "x", "recursos": "y", "papeis": "z"}, atribuicoes_herdadas_ignoradas=5)
+        conferencia = enc.conferir_encerramento(inv, antes, depois, c.presenca())
+        self.assertEqual(dict(conferencia.atribuicoes_herdadas_ignoradas), {"antes": 2, "depois": 5})
+        texto = enc.conferencia_em_texto(conferencia)
+        self.assertIn("[AVISO] Linha de base: 2 atribuição(ões) herdada(s) de grupo de gerenciamento ou da raiz do tenant foram ignoradas", texto)
+        self.assertIn("[AVISO] Estado final: 5 atribuição(ões) herdada(s) de grupo de gerenciamento ou da raiz do tenant foram ignoradas", texto)
+        relatorio = enc.relatorio_da_conferencia(conferencia)
+        self.assertEqual((relatorio["atribuicoes_herdadas_ignoradas"], relatorio["atribuicoes_herdadas_ignoradas_depois"]), (2, 5))
+        padrao = enc.Conferencia(resultado="aprovado", criterios=(), avisos=(), linha_de_base={}, inventario={}, sha256={})
+        self.assertEqual(dict(padrao.atribuicoes_herdadas_ignoradas), {"antes": 0, "depois": 0})
+        self.assertNotIn("herdada(s)", enc.conferencia_em_texto(padrao))
+
     def test_relatorio_de_conferencia_tem_so_vocabulario_fechado_e_numeros(self):
         relatorio = self.pasta / "r.json"
         codigo, _ = self.conferir(self.montar(), "--relatorio", str(relatorio))
         self.assertEqual(codigo, CODIGO_OK)
         dados = json.loads(relatorio.read_text(encoding="utf-8"))
         self.assertEqual(set(dados), {"versao_relatorio", "tipo", "resultado", "contagem", "verificacoes", "linha_de_base", "inventario", "avisos",
-                                      "entradas_sha256", "limite"})
+                                      "entradas_sha256", "limite", "atribuicoes_herdadas_ignoradas", "atribuicoes_herdadas_ignoradas_depois"})
+        self.assertEqual(dados["versao_relatorio"], 1, "campo novo, mesma versão do relatório")
+        self.assertTrue(all(isinstance(dados[k], int) for k in ("atribuicoes_herdadas_ignoradas", "atribuicoes_herdadas_ignoradas_depois")))
         self.assertIn(dados["resultado"], ("aprovado", "reprovado", "pendente"))
         for verificacao in dados["verificacoes"]:
             self.assertEqual(set(verificacao), {"id", "estado", "conferidos", "divergentes", "pendentes"})
@@ -1398,6 +1612,13 @@ class CliTests(ComPasta):
                          "Códigos de saída", ".\\.venv\\Scripts\\python.exe scripts\\planejar_encerramento.py", "PowerShell 7", "curinga",
                          "SOMENTE LEITURA", "nunca chama o Azure"):
             self.assertIn(esperado, saida)
+
+    def test_ajuda_explica_as_atribuicoes_herdadas_de_grupo_de_gerenciamento(self):
+        codigo, saida = executar("--help")
+        self.assertEqual(codigo, 0)
+        normalizado = " ".join(saida.split())
+        for esperado in ("HERDADAS de escopos acima da assinatura", "ignoradas e só contadas", "Item de OUTRA assinatura"):
+            self.assertIn(esperado, normalizado)
 
     def test_ajuda_e_modelo_explicam_que_os_principais_sao_ids_de_objeto_e_nunca_o_clientid(self):
         codigo, saida = executar("--help")
