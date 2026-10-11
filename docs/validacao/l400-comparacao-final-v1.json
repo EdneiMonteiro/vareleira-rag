@@ -1,0 +1,1077 @@
+{
+  "schema_version": 1,
+  "relatorio": "comparacao_l400",
+  "status": "concluido",
+  "simulado": false,
+  "interrupcao": null,
+  "codigo_de_saida": 0,
+  "inicio_utc": "2026-10-11T06:36:13+00:00",
+  "fim_utc": "2026-10-11T06:38:42+00:00",
+  "entrada": {
+    "nome": "L400 comparacao final v1",
+    "origem": "Perguntas sinteticas novas criadas pela coordenacao depois de congelar o runtime. Uma resposta por estrategia e caso; nao repetir para retunar.",
+    "casos": 16,
+    "campos_ignorados": [],
+    "sha256_bytes_brutos": "d38949b8481b026adb80e628f99bc31ed18be0078c9c724e720a1cc5a205c64f",
+    "sha256_normalizado_lf": "9e51054ad75c2e1d4593e5143cc7c7179a1e336ff6f35ea1c96431980896b086",
+    "conjunto_sha256": "27748bb584f18bea1e7b6b9276bb26c05a4c775849ab847f62bbeac52b8ae504"
+  },
+  "plano": {
+    "sha256": "5a74623e889de3b2c356195137403326f45160591bd65e9620fb218ab61eb1c8",
+    "ordem": "id_ascendente_com_estrategia_alternada",
+    "estrategias": [
+      "referencia",
+      "coordenacao"
+    ],
+    "chamadas_planejadas": 32,
+    "congelado_antes_da_execucao": true,
+    "hashes_esperados_conferidos": {
+      "conjunto": true,
+      "plano": true,
+      "codigo": true
+    }
+  },
+  "configuracao_avaliada": {
+    "valor": "Referencia convencional e coordenacao limitada, mesmas quatro fontes aprovadas, indice de referencia de 1536 dimensoes, perfil Atendimento e modelos anteriores. A CLI mede tipo, situacao e invariantes; fidelidade semantica exige conferencia separada.",
+    "informada_pelo_autor": true,
+    "verificada_pelo_avaliador": false,
+    "nota": "Texto informado pelo autor do arquivo de casos e gravado como veio; o avaliador não o confere com o serviço. Se for um marcador de configuração ainda por congelar, o congelamento efetivo fica em um registro separado, fora deste relatório."
+  },
+  "avaliador": {
+    "arquivo": "scripts/avaliar_l400.py",
+    "versao": 1,
+    "sha256_bytes_brutos": "d7a197c95ee0f39749822869b864c0c7e60d164fce4ffd19d961ee37e8de32e1",
+    "sha256_normalizado_lf": "bcccb306a28ea81a3f86d83aa8bfd20a198f604a2d58ec77cf582dd00df870cd"
+  },
+  "codigo_avaliado": {
+    "scripts/lab_comum.py": {
+      "sha256_bytes_brutos": "2a6ccbaedd95115b1034949c968d5346a815458bb324b26fe0183e56540fbb74",
+      "sha256_normalizado_lf": "78aeaafd814c6c57f36aae08ed3a271d0700afaffce4df902119bae393599049"
+    },
+    "scripts/lab_acesso.py": {
+      "sha256_bytes_brutos": "1869f3a0feef056f9f8b2da753ff10d8e40dea45ac25af6ab6e26d92d358c5fd",
+      "sha256_normalizado_lf": "a4773bd9187f234ca07775f4c94c791d355c3597443fb17892339d1005de23aa"
+    },
+    "scripts/lab_indexacao.py": {
+      "sha256_bytes_brutos": "44b229f68caf54ef5e076d09de2ad9e3a3c9f29077664c349d0ffa2a882dbb65",
+      "sha256_normalizado_lf": "5f0133bf574ab60a3803089b072b6e70e86004ace7920bfe69014b261fbcd9ba"
+    },
+    "scripts/lab_geracao.py": {
+      "sha256_bytes_brutos": "c76c55fac86051f5295336034bc499fd0f32aeccd3483044b5f36e1e9273468b",
+      "sha256_normalizado_lf": "77dd154e12fbec1737978fcd1fa00a82aef171bd4f0304e8f7fca83c82bfc84d"
+    },
+    "scripts/lab_politica.py": {
+      "sha256_bytes_brutos": "3a6ce44509aa7436e4dbb819c5977b50577f451136d1d705e47e811d17f832df",
+      "sha256_normalizado_lf": "d11144ab5c7a71b76241c6c9dfa8ae7ab8daadf5325d30c60558f8928a08b5b3"
+    },
+    "scripts/lab_chat.py": {
+      "sha256_bytes_brutos": "69795a88a0c1d749be17734b892471357c70274fb35e6d51d3e351e5c4c6d625",
+      "sha256_normalizado_lf": "1dfad021e0a18099057ac2a3a7f51ddc20fad0ea8704eca27020cde631fc891b"
+    },
+    "scripts/lab_orquestracao.py": {
+      "sha256_bytes_brutos": "7f9342e0241b64507e53c7e8a462ddf483c0627d56041e320db64f8a09efa876",
+      "sha256_normalizado_lf": "a70bafe66f2116ec37a33eda379db34dc6606053a5258349414cda2e0db2adb3"
+    },
+    "scripts/chat_web.py": {
+      "sha256_bytes_brutos": "859d275af7cb31745acf00360c68abbdf518163920f71d51453698799aad449b",
+      "sha256_normalizado_lf": "f5cd9c799a4afedf0534f59f0a6b886c200b4c28e928fc4d51d7bc0bd130f428"
+    },
+    "Dockerfile": {
+      "sha256_bytes_brutos": "10150e672c1ff6fdc1b9c03efb39bf6b3717fe6008d305389fe26963bf09b5a0",
+      "sha256_normalizado_lf": "3157b1e8526ac778c4ccfd4b5d62a3e20e58682c2961293a516a80aa41110362"
+    }
+  },
+  "codigo_sha256": "ef8f097c6a7c92e8100753b753b46237e7e264eefb6df2aea76461d4f5c3e03d",
+  "significado_dos_hashes": {
+    "sha256_bytes_brutos": "SHA-256 dos bytes exatos do arquivo, como estão no disco (com CRLF ou LF)",
+    "sha256_normalizado_lf": "SHA-256 do mesmo arquivo com CRLF trocado por LF: não muda entre o Windows e o Git"
+  },
+  "artefatos": {
+    "referencia": {
+      "origem_declarada": "sha256:c8a820442aa44735fdbca39d37319b62cc1237cec25ac85226a2487a8f808c88",
+      "verificada_pelo_avaliador": false
+    },
+    "coordenacao": {
+      "origem_declarada": "sha256:c8a820442aa44735fdbca39d37319b62cc1237cec25ac85226a2487a8f808c88",
+      "verificada_pelo_avaliador": false
+    }
+  },
+  "destinos": {
+    "referencia": {
+      "modo": "hospedado_https"
+    },
+    "coordenacao": {
+      "modo": "hospedado_https"
+    }
+  },
+  "identidade": {
+    "tipo": "bearer_de_variavel_de_ambiente"
+  },
+  "limites": {
+    "casos": 100,
+    "chamadas_por_caso_e_estrategia": 1,
+    "timeout_da_chamada_s": 120,
+    "tempo_maximo_s": 3000,
+    "falhas_seguidas_por_estrategia": 3,
+    "resposta_maxima_bytes": 131072,
+    "tentativas_automaticas_do_avaliador": 0
+  },
+  "estrategias": {
+    "referencia": {
+      "rotulo": "referência (L300)",
+      "resumo": {
+        "casos_planejados": 16,
+        "chamadas_http": 16,
+        "aprovados": 16,
+        "divergentes": 0,
+        "falhas_http": 0,
+        "erros": 0,
+        "nao_avaliados": 0,
+        "taxa_de_aprovacao": 1.0,
+        "denominador": "casos_planejados: falhas, descartes (429, 503), tempo esgotado, JSON inválido e não avaliados contam como falha",
+        "codigos_http": {
+          "200": 16
+        },
+        "erros_por_rotulo": {},
+        "erros_do_chat": {},
+        "acessos_recusados": 0,
+        "respostas_simuladas": 0,
+        "latencia_s": {
+          "respostas_http": 16,
+          "minimo": 1.921,
+          "p50": 2.688,
+          "p95": 28.516,
+          "maximo": 28.516,
+          "media": 4.313
+        },
+        "uso_de_tokens": {
+          "respostas_com_uso_informado": 16,
+          "chamadas_sem_uso_informado": 0,
+          "soma_do_uso_informado": {
+            "tokens_embeddings": 452,
+            "tokens_entrada": 28417,
+            "tokens_raciocinio": 854,
+            "tokens_saida": 2120
+          },
+          "observacao": "Soma só do uso que o chat informou em respostas 200. Respostas de erro, falhas de transporte e respostas sem o campo de uso (null, quando alguma tentativa falhou ou não informou) deixam o consumo desconhecido, não zero. Não é o total consumido nem o custo."
+        },
+        "custo": null,
+        "categorias": {
+          "duplo-assunto": {
+            "casos": 4,
+            "aprovados": 4
+          },
+          "documentada": {
+            "casos": 5,
+            "aprovados": 5
+          },
+          "operacional": {
+            "casos": 1,
+            "aprovados": 1
+          },
+          "individual": {
+            "casos": 2,
+            "aprovados": 2
+          },
+          "sem-evidencia": {
+            "casos": 2,
+            "aprovados": 2
+          },
+          "ambigua": {
+            "casos": 1,
+            "aprovados": 1
+          },
+          "fora-escopo": {
+            "casos": 1,
+            "aprovados": 1
+          }
+        },
+        "escopo_da_contagem": "só as chamadas HTTP do avaliador ao chat; as tentativas internas do chat aos modelos e à busca não são visíveis aqui"
+      },
+      "casos": [
+        {
+          "id": "l400-final-01",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 28.516,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 3,
+          "tokens": {
+            "tokens_embeddings": 40,
+            "tokens_entrada": 1826,
+            "tokens_saida": 177,
+            "tokens_raciocinio": 48
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 1
+        },
+        {
+          "id": "l400-final-02",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 3.141,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 29,
+            "tokens_entrada": 1916,
+            "tokens_saida": 138,
+            "tokens_raciocinio": 18
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 4
+        },
+        {
+          "id": "l400-final-03",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.875,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 38,
+            "tokens_entrada": 1835,
+            "tokens_saida": 125,
+            "tokens_raciocinio": 17
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 5
+        },
+        {
+          "id": "l400-final-04",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.829,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 30,
+            "tokens_entrada": 1906,
+            "tokens_saida": 132,
+            "tokens_raciocinio": 17
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 8
+        },
+        {
+          "id": "l400-final-05",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.687,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 25,
+            "tokens_entrada": 1493,
+            "tokens_saida": 76,
+            "tokens_raciocinio": 15
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 9
+        },
+        {
+          "id": "l400-final-06",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 3.172,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 34,
+            "tokens_entrada": 1812,
+            "tokens_saida": 190,
+            "tokens_raciocinio": 71
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 12
+        },
+        {
+          "id": "l400-final-07",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.953,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 30,
+            "tokens_entrada": 1759,
+            "tokens_saida": 105,
+            "tokens_raciocinio": 28
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 13
+        },
+        {
+          "id": "l400-final-08",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.563,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 34,
+            "tokens_entrada": 1826,
+            "tokens_saida": 99,
+            "tokens_raciocinio": 15
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 16
+        },
+        {
+          "id": "l400-final-09",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.875,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 24,
+            "tokens_entrada": 1753,
+            "tokens_saida": 103,
+            "tokens_raciocinio": 47
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 17
+        },
+        {
+          "id": "l400-final-10",
+          "categoria": "operacional",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.688,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 28,
+            "tokens_entrada": 1644,
+            "tokens_saida": 136,
+            "tokens_raciocinio": 43
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 20
+        },
+        {
+          "id": "l400-final-11",
+          "categoria": "individual",
+          "tipo_esperado": "contratacao_individual",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.656,
+          "tipo": "contratacao_individual",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 37,
+            "tokens_entrada": 1829,
+            "tokens_saida": 199,
+            "tokens_raciocinio": 120
+          },
+          "simulada": false,
+          "texto_individual_fixo": true,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 21
+        },
+        {
+          "id": "l400-final-12",
+          "categoria": "individual",
+          "tipo_esperado": "contratacao_individual",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 3.172,
+          "tipo": "contratacao_individual",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 28,
+            "tokens_entrada": 1823,
+            "tokens_saida": 405,
+            "tokens_raciocinio": 306
+          },
+          "simulada": false,
+          "texto_individual_fixo": true,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 24
+        },
+        {
+          "id": "l400-final-13",
+          "categoria": "sem-evidencia",
+          "tipo_esperado": "sem_evidencia",
+          "situacao_esperada": "recusada",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.641,
+          "tipo": "sem_evidencia",
+          "situacao": "recusada",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 27,
+            "tokens_entrada": 1756,
+            "tokens_saida": 61,
+            "tokens_raciocinio": 32
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 25
+        },
+        {
+          "id": "l400-final-14",
+          "categoria": "sem-evidencia",
+          "tipo_esperado": "sem_evidencia",
+          "situacao_esperada": "recusada",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.032,
+          "tipo": "sem_evidencia",
+          "situacao": "recusada",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 28,
+            "tokens_entrada": 1865,
+            "tokens_saida": 79,
+            "tokens_raciocinio": 50
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 28
+        },
+        {
+          "id": "l400-final-15",
+          "categoria": "ambigua",
+          "tipo_esperado": "ambigua",
+          "situacao_esperada": "esclarecimento",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 1.921,
+          "tipo": "ambigua",
+          "situacao": "esclarecimento",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 8,
+            "tokens_entrada": 1622,
+            "tokens_saida": 50,
+            "tokens_raciocinio": 12
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 29
+        },
+        {
+          "id": "l400-final-16",
+          "categoria": "fora-escopo",
+          "tipo_esperado": "fora_de_escopo",
+          "situacao_esperada": "recusada",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 2.282,
+          "tipo": "fora_de_escopo",
+          "situacao": "recusada",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 12,
+            "tokens_entrada": 1752,
+            "tokens_saida": 45,
+            "tokens_raciocinio": 15
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 32
+        }
+      ]
+    },
+    "coordenacao": {
+      "rotulo": "coordenação (L400)",
+      "resumo": {
+        "casos_planejados": 16,
+        "chamadas_http": 16,
+        "aprovados": 16,
+        "divergentes": 0,
+        "falhas_http": 0,
+        "erros": 0,
+        "nao_avaliados": 0,
+        "taxa_de_aprovacao": 1.0,
+        "denominador": "casos_planejados: falhas, descartes (429, 503), tempo esgotado, JSON inválido e não avaliados contam como falha",
+        "codigos_http": {
+          "200": 16
+        },
+        "erros_por_rotulo": {},
+        "erros_do_chat": {},
+        "acessos_recusados": 0,
+        "respostas_simuladas": 0,
+        "latencia_s": {
+          "respostas_http": 16,
+          "minimo": 3.75,
+          "p50": 4.875,
+          "p95": 6.203,
+          "maximo": 6.203,
+          "media": 5.014
+        },
+        "uso_de_tokens": {
+          "respostas_com_uso_informado": 16,
+          "chamadas_sem_uso_informado": 0,
+          "soma_do_uso_informado": {
+            "tokens_embeddings": 243,
+            "tokens_entrada": 36851,
+            "tokens_raciocinio": 1522,
+            "tokens_saida": 3482
+          },
+          "observacao": "Soma só do uso que o chat informou em respostas 200. Respostas de erro, falhas de transporte e respostas sem o campo de uso (null, quando alguma tentativa falhou ou não informou) deixam o consumo desconhecido, não zero. Não é o total consumido nem o custo."
+        },
+        "custo": null,
+        "categorias": {
+          "duplo-assunto": {
+            "casos": 4,
+            "aprovados": 4
+          },
+          "documentada": {
+            "casos": 5,
+            "aprovados": 5
+          },
+          "operacional": {
+            "casos": 1,
+            "aprovados": 1
+          },
+          "individual": {
+            "casos": 2,
+            "aprovados": 2
+          },
+          "sem-evidencia": {
+            "casos": 2,
+            "aprovados": 2
+          },
+          "ambigua": {
+            "casos": 1,
+            "aprovados": 1
+          },
+          "fora-escopo": {
+            "casos": 1,
+            "aprovados": 1
+          }
+        },
+        "escopo_da_contagem": "só as chamadas HTTP do avaliador ao chat; as tentativas internas do chat aos modelos e à busca não são visíveis aqui"
+      },
+      "casos": [
+        {
+          "id": "l400-final-01",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 5.734,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 3,
+          "tokens": {
+            "tokens_embeddings": 27,
+            "tokens_entrada": 2803,
+            "tokens_saida": 278,
+            "tokens_raciocinio": 96
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 2
+        },
+        {
+          "id": "l400-final-02",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 5.562,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 19,
+            "tokens_entrada": 2590,
+            "tokens_saida": 237,
+            "tokens_raciocinio": 83
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 3
+        },
+        {
+          "id": "l400-final-03",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 5.781,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 24,
+            "tokens_entrada": 2872,
+            "tokens_saida": 235,
+            "tokens_raciocinio": 77
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 6
+        },
+        {
+          "id": "l400-final-04",
+          "categoria": "duplo-assunto",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 6.203,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 3,
+          "tokens": {
+            "tokens_embeddings": 14,
+            "tokens_entrada": 3152,
+            "tokens_saida": 307,
+            "tokens_raciocinio": 144
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 7
+        },
+        {
+          "id": "l400-final-05",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.703,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 10,
+            "tokens_entrada": 1881,
+            "tokens_saida": 192,
+            "tokens_raciocinio": 95
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 10
+        },
+        {
+          "id": "l400-final-06",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.641,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 21,
+            "tokens_entrada": 2454,
+            "tokens_saida": 221,
+            "tokens_raciocinio": 45
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 11
+        },
+        {
+          "id": "l400-final-07",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.953,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 17,
+            "tokens_entrada": 2090,
+            "tokens_saida": 281,
+            "tokens_raciocinio": 176
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 14
+        },
+        {
+          "id": "l400-final-08",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 5.328,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 16,
+            "tokens_entrada": 2162,
+            "tokens_saida": 189,
+            "tokens_raciocinio": 61
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 15
+        },
+        {
+          "id": "l400-final-09",
+          "categoria": "documentada",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.843,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 1,
+          "tokens": {
+            "tokens_embeddings": 12,
+            "tokens_entrada": 2078,
+            "tokens_saida": 214,
+            "tokens_raciocinio": 105
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 18
+        },
+        {
+          "id": "l400-final-10",
+          "categoria": "operacional",
+          "tipo_esperado": "documentada",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.578,
+          "tipo": "documentada",
+          "situacao": "respondida",
+          "citacoes": 2,
+          "tokens": {
+            "tokens_embeddings": 9,
+            "tokens_entrada": 1946,
+            "tokens_saida": 235,
+            "tokens_raciocinio": 84
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 19
+        },
+        {
+          "id": "l400-final-11",
+          "categoria": "individual",
+          "tipo_esperado": "contratacao_individual",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 5.953,
+          "tipo": "contratacao_individual",
+          "situacao": "respondida",
+          "citacoes": 5,
+          "tokens": {
+            "tokens_embeddings": 25,
+            "tokens_entrada": 2863,
+            "tokens_saida": 255,
+            "tokens_raciocinio": 105
+          },
+          "simulada": false,
+          "texto_individual_fixo": true,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 22
+        },
+        {
+          "id": "l400-final-12",
+          "categoria": "individual",
+          "tipo_esperado": "contratacao_individual",
+          "situacao_esperada": "respondida",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.875,
+          "tipo": "contratacao_individual",
+          "situacao": "respondida",
+          "citacoes": 3,
+          "tokens": {
+            "tokens_embeddings": 12,
+            "tokens_entrada": 2087,
+            "tokens_saida": 241,
+            "tokens_raciocinio": 120
+          },
+          "simulada": false,
+          "texto_individual_fixo": true,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 23
+        },
+        {
+          "id": "l400-final-13",
+          "categoria": "sem-evidencia",
+          "tipo_esperado": "sem_evidencia",
+          "situacao_esperada": "recusada",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 5.437,
+          "tipo": "sem_evidencia",
+          "situacao": "recusada",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 15,
+            "tokens_entrada": 2187,
+            "tokens_saida": 166,
+            "tokens_raciocinio": 98
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 26
+        },
+        {
+          "id": "l400-final-14",
+          "categoria": "sem-evidencia",
+          "tipo_esperado": "sem_evidencia",
+          "situacao_esperada": "recusada",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 3.75,
+          "tipo": "sem_evidencia",
+          "situacao": "recusada",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 14,
+            "tokens_entrada": 1933,
+            "tokens_saida": 146,
+            "tokens_raciocinio": 80
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 27
+        },
+        {
+          "id": "l400-final-15",
+          "categoria": "ambigua",
+          "tipo_esperado": "ambigua",
+          "situacao_esperada": "esclarecimento",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 3.875,
+          "tipo": "ambigua",
+          "situacao": "esclarecimento",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 2,
+            "tokens_entrada": 1929,
+            "tokens_saida": 159,
+            "tokens_raciocinio": 88
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 30
+        },
+        {
+          "id": "l400-final-16",
+          "categoria": "fora-escopo",
+          "tipo_esperado": "fora_de_escopo",
+          "situacao_esperada": "recusada",
+          "resultado": "aprovado",
+          "motivos": [],
+          "http": 200,
+          "tempo_s": 4.0,
+          "tipo": "fora_de_escopo",
+          "situacao": "recusada",
+          "citacoes": 0,
+          "tokens": {
+            "tokens_embeddings": 6,
+            "tokens_entrada": 1824,
+            "tokens_saida": 126,
+            "tokens_raciocinio": 65
+          },
+          "simulada": false,
+          "texto_individual_fixo": false,
+          "erro": null,
+          "erro_do_chat": null,
+          "posicao": 31
+        }
+      ]
+    }
+  },
+  "comparacao": {
+    "base": "referencia",
+    "casos": 16,
+    "ambos_aprovados": 16,
+    "ambos_reprovados": 0,
+    "ganhos": 0,
+    "perdas": 0,
+    "saldo": 0,
+    "ids_dos_ganhos": [],
+    "ids_das_perdas": [],
+    "delta_da_taxa_de_aprovacao": 0.0,
+    "delta_da_latencia_p50_s": 2.187,
+    "delta_da_latencia_p95_s": -22.313,
+    "delta_dos_tokens": {
+      "tokens_embeddings": -209,
+      "tokens_entrada": 8434,
+      "tokens_raciocinio": 668,
+      "tokens_saida": 1362
+    },
+    "delta_do_custo_estimado": null,
+    "nota_dos_deltas": "null quando algum dos lados tem valor desconhecido: o desconhecido nunca é tratado como zero"
+  },
+  "custos": {
+    "regime": "nao_informado",
+    "moeda": null,
+    "precos_por_1m_de_tokens": null,
+    "observacao": "Nenhum preço foi informado: só tokens, sem custo."
+  },
+  "interpretacao": {
+    "permite": [
+      "Comparação descritiva entre as duas estratégias sobre o MESMO conjunto de casos, com o plano congelado antes das chamadas e a configuração relativa declarada igual.",
+      "Contagens, códigos HTTP, latências e tokens que o chat informou; falhas e casos não avaliados contam como falha, e o denominador é sempre o total de casos planejado."
+    ],
+    "nao_permite": [
+      "Comparar este relatório com o de outro conjunto de casos ou de outro plano (conjunto_sha256 ou plano_sha256 diferentes): não é uma comparação causal nem equivalente.",
+      "Concluir fidelidade, correção semântica ou qualidade das respostas: o avaliador confere o contrato e a política do chat, sem modelo como juiz.",
+      "Extrapolar latência, consumo ou custo para outro volume, concorrência ou horário, ou tratar a troca de um índice ou de uma configuração como prova de compatibilidade."
+    ]
+  },
+  "avisos": []
+}

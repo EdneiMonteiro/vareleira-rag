@@ -19,6 +19,12 @@ os papéis de aplicação da identidade autenticada permitem (veja lab_acesso.py
 qualquer busca, embedding ou chamada ao modelo, e o filtro age na própria consulta, antes de montar o contexto do modelo. A opção
 só vale na nuvem, com autenticação e tenant, e com o índice do L300. Sem ela (padrão), o comportamento e o protocolo do L200
 não mudam.
+
+Coordenação limitada (L400, opcional): com VARELEIRA_EXIGIR_COORDENACAO=true, a consulta passa por um fluxo do Microsoft Agent
+Framework com planejamento, recuperação filtrada, verificação e redação (veja lab_orquestracao.py). A opção exige a nuvem, a
+autenticação, o tenant e o acesso documental, e VARELEIRA_DEPLOYMENT_CONTINGENCIA (opcional) nomeia o deployment de reserva para
+falhas transitórias. Sem ela (padrão), o serviço, o protocolo e a resposta são os do L200 e do L300, e o módulo da coordenação nem
+é carregado.
 """
 
 from __future__ import annotations
@@ -54,6 +60,7 @@ CONCORRENCIA_MAXIMA = 32
 TEMPO_PADRAO = 90.0  # segundos para responder uma pergunta, da busca à política
 TEMPO_MINIMO = 5.0
 TEMPO_MAXIMO = 240.0
+TEMPO_MINIMO_COORDENACAO = 20.0  # com a coordenação (L400), o planejamento e a redação são duas chamadas ao modelo em sequência
 LIMITE_DA_PERGUNTA = lab_geracao.LIMITE_DA_PERGUNTA  # caracteres: o mesmo limite do console
 LIMITE_DO_CORPO = 16 * 1024  # bytes da requisição: a pergunta atual e pouco mais
 LIMITE_DO_CABECALHO = 48 * 1024  # caracteres do cabeçalho de identidade do Azure Container Apps
@@ -81,6 +88,8 @@ VAR_MODO_BUSCA = "VARELEIRA_MODO_BUSCA"
 VAR_K = "VARELEIRA_K"
 VAR_MAX_CONCORRENCIA = "VARELEIRA_MAX_CONCORRENCIA"
 VAR_TIMEOUT = "VARELEIRA_TIMEOUT_SEGUNDOS"
+VAR_EXIGIR_COORDENACAO = "VARELEIRA_EXIGIR_COORDENACAO"
+VAR_DEPLOYMENT_CONTINGENCIA = "VARELEIRA_DEPLOYMENT_CONTINGENCIA"
 
 AVISO_SIMULACAO = ("SIMULAÇÃO: esta resposta foi gerada pelo modo de demonstração, sem consultar documentos nem modelos. "
                    "Não a use como informação do produto.")
@@ -105,6 +114,9 @@ NAO_PRONTO = "nao_pronto"
 NAO_ENCONTRADO = "nao_encontrado"
 METODO_NAO_PERMITIDO = "metodo_nao_permitido"
 ERRO_INTERNO = "erro_interno"
+CANCELADO = "cancelado"  # L400: a consulta foi interrompida antes de terminar; nunca é uma resposta documentada
+EXECUCAO_NAO_ENCONTRADA = "execucao_nao_encontrada"  # L400: o cancelamento explícito não achou uma consulta em andamento desta conta
+ID_DA_EXECUCAO_INVALIDO = "id_da_execucao_invalido"  # L400: o cancelamento explícito veio sem o identificador da consulta ou com formato errado
 
 MENSAGENS = {
     NAO_AUTENTICADO: "Não foi possível confirmar a sua identidade. Recarregue a página para entrar de novo.",
@@ -128,10 +140,17 @@ MENSAGENS = {
     METODO_NAO_PERMITIDO: "Método não permitido para este endereço.",
     ERRO_INTERNO: ("Ocorreu um erro inesperado. Tente de novo; se o problema continuar, informe o código de suporte "
                    "à equipe responsável."),
+    CANCELADO: ("A consulta foi cancelada antes de terminar e nenhuma resposta foi produzida. Se precisar, envie a "
+                "pergunta de novo."),
+    EXECUCAO_NAO_ENCONTRADA: ("Não há consulta em andamento com esse identificador para a sua conta. Ela pode já ter terminado "
+                              "ou ter sido cancelada."),
+    ID_DA_EXECUCAO_INVALIDO: ("O cancelamento precisa do identificador da consulta (o cabeçalho X-Request-Id da resposta), "
+                              "com 32 caracteres hexadecimais."),
 }
 
 _PADRAO_GUID = re.compile(r"[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}")
 _PADRAO_ID_DO_CLIENTE = re.compile(r"[A-Za-z0-9_-]{8,64}")
+_PADRAO_ID_DA_EXECUCAO = re.compile(r"[0-9a-f]{32}")  # o X-Request-Id que o servidor gera para cada requisição
 _PADRAO_CAUSA = re.compile(r"[a-z_]{1,40}")
 _FORA_DO_ID_DE_TRECHO = re.compile(r"[^A-Za-z0-9_=-]")
 _FORA_DA_VERSAO = re.compile(r"[^0-9A-Za-z.-]")
@@ -195,6 +214,8 @@ class ConfiguracaoChat:
     max_concorrencia: int = CONCORRENCIA_PADRAO
     timeout_segundos: float = TEMPO_PADRAO
     exigir_acesso_documental: bool = False
+    exigir_coordenacao: bool = False
+    deployment_contingencia: str | None = None
 
 
 def host_local(host: str) -> bool:
@@ -317,6 +338,23 @@ def _lacunas(config: ConfiguracaoChat) -> list[tuple[str, str]]:
         if not lab_acesso.indice_l300(config.indice):
             lacunas.append((VAR_INDICE, f"com o acesso documental, use o índice do L300 ('{lab_acesso.PREFIXO_INDICE}', com no máximo 3 "
                                         "sufixos de letras minúsculas e números): os índices do L100 e do L200 não têm o campo de acesso."))
+    if config.exigir_coordenacao:
+        if config.modo != MODO_NUVEM:
+            lacunas.append((VAR_EXIGIR_COORDENACAO, f"só vale na nuvem, com autenticação: {OPCOES_DOS_MODOS[config.modo]} não "
+                                                    "entrega os papéis de uma identidade validada pela plataforma."))
+        if not config.exigir_acesso_documental:
+            lacunas.append((VAR_EXIGIR_ACESSO_DOCUMENTAL, "obrigatória com a coordenação: o filtro documental da identidade vale "
+                                                          "em todas as consultas que o planejamento propõe."))
+        if TEMPO_MINIMO <= config.timeout_segundos < TEMPO_MINIMO_COORDENACAO:
+            lacunas.append((VAR_TIMEOUT, f"com a coordenação, deve ser de {TEMPO_MINIMO_COORDENACAO:g} a {TEMPO_MAXIMO:g} segundos: "
+                                         "o planejamento e a redação são duas chamadas ao modelo em sequência."))
+    if config.deployment_contingencia is not None:
+        if not config.exigir_coordenacao:
+            lacunas.append((VAR_DEPLOYMENT_CONTINGENCIA, f"só vale com {VAR_EXIGIR_COORDENACAO}=true: fora da coordenação o chat "
+                                                         "não troca de deployment."))
+        elif config.deployment_contingencia == config.deployment_geracao:
+            lacunas.append((VAR_DEPLOYMENT_CONTINGENCIA, f"deve nomear outro deployment, diferente do de {VAR_DEPLOYMENT_GERACAO}: a "
+                                                         "contingência é um segundo deployment do mesmo modelo e da mesma versão."))
     if config.modo != MODO_DEMO:
         if not config.busca:
             lacunas.append((VAR_BUSCA, "obrigatória. Informe o nome do serviço de busca (saída nomeBusca da implantação)."))
@@ -386,6 +424,8 @@ def carregar_configuracao(ambiente: Mapping[str, str], *, modo: str = MODO_NUVEM
         max_concorrencia=ler(VAR_MAX_CONCORRENCIA, validar_concorrencia, padrao.max_concorrencia),
         timeout_segundos=ler(VAR_TIMEOUT, validar_tempo, padrao.timeout_segundos),
         exigir_acesso_documental=exigir_acesso,
+        exigir_coordenacao=ler(VAR_EXIGIR_COORDENACAO, _booleano, False),
+        deployment_contingencia=ler(VAR_DEPLOYMENT_CONTINGENCIA, lab_indexacao.validar_deployment, None),
     )
     problemas += [f"{nome}: {orientacao}" for nome, orientacao in _lacunas(config) if nome not in invalidas]
     if problemas:
@@ -395,11 +435,14 @@ def carregar_configuracao(ambiente: Mapping[str, str], *, modo: str = MODO_NUVEM
 
 def resumo_publico(config: ConfiguracaoChat) -> str:
     """Os valores efetivos que ajudam a operar, sem o nome dos recursos, o tenant ou a identidade da aplicação."""
-    return (f"modo={config.modo} autenticacao={'sim' if config.exigir_autenticacao else 'nao'} indice={config.indice} "
-            f"deployment_embeddings={config.deployment_embeddings} dimensoes={config.dimensoes} "
-            f"deployment_geracao={config.deployment_geracao} esforco={config.esforco} modo_busca={config.modo_busca} k={config.k} "
-            f"concorrencia={config.max_concorrencia} tempo={config.timeout_segundos:g}s "
-            f"acesso_documental={'sim' if config.exigir_acesso_documental else 'nao'}")
+    resumo = (f"modo={config.modo} autenticacao={'sim' if config.exigir_autenticacao else 'nao'} indice={config.indice} "
+              f"deployment_embeddings={config.deployment_embeddings} dimensoes={config.dimensoes} "
+              f"deployment_geracao={config.deployment_geracao} esforco={config.esforco} modo_busca={config.modo_busca} k={config.k} "
+              f"concorrencia={config.max_concorrencia} tempo={config.timeout_segundos:g}s "
+              f"acesso_documental={'sim' if config.exigir_acesso_documental else 'nao'}")
+    if config.exigir_coordenacao:  # o resumo dos outros modos continua idêntico
+        resumo += f" coordenacao=sim contingencia={'sim' if config.deployment_contingencia else 'nao'}"
+    return resumo
 
 
 # --------------------------------------------------------------------------------------
@@ -507,6 +550,27 @@ def ler_pedido(corpo: bytes, tipo_de_conteudo: str | None) -> PedidoChat:
     if id_cliente is not None and not (isinstance(id_cliente, str) and _PADRAO_ID_DO_CLIENTE.fullmatch(id_cliente)):
         raise ErroChat(ID_INVALIDO)
     return PedidoChat(pergunta, id_cliente)
+
+
+def ler_pedido_de_cancelamento(corpo: bytes, tipo_de_conteudo: str | None) -> str:
+    """O identificador da consulta a cancelar (L400): o X-Request-Id da resposta e nenhum outro campo.
+
+    Perfil, papéis, tenant, filtro e destino nunca vêm do JSON: quem pede o cancelamento é a identidade autenticada da requisição.
+    """
+    if (tipo_de_conteudo or "").split(";")[0].strip().lower() != "application/json":
+        raise ErroChat(TIPO_DE_CONTEUDO_INVALIDO)
+    try:
+        dados = json.loads(corpo.decode("utf-8"))
+    except (ValueError, RecursionError):
+        raise ErroChat(JSON_INVALIDO) from None
+    if not isinstance(dados, dict):
+        raise ErroChat(JSON_INVALIDO)
+    if set(dados) - {"id_requisicao"}:
+        raise ErroChat(CAMPOS_NAO_PERMITIDOS)
+    alvo = dados.get("id_requisicao")
+    if not isinstance(alvo, str) or not _PADRAO_ID_DA_EXECUCAO.fullmatch(alvo):
+        raise ErroChat(ID_DA_EXECUCAO_INVALIDO)
+    return alvo
 
 
 # --------------------------------------------------------------------------------------
@@ -693,12 +757,32 @@ def _com_ids_originais(decisao: lab_politica.Decisao, trechos: Mapping[str, Any]
                                              for evidencia in decisao.evidencias))
 
 
+def pedido_de_referencias(pergunta: str, resultados: Sequence[Mapping[str, Any]]) -> tuple[lab_geracao.Pedido, lab_geracao.Contrato]:
+    """O pedido ao modelo e o contrato de referências curtas desta requisição: os mesmos do `ServicoRag`, para quem os reutiliza."""
+    trechos = _com_ids_curtos(resultados)
+    return lab_geracao.montar_pedido(pergunta, list(trechos.values()), INSTRUCOES_L200), contrato_de_referencias(list(trechos))
+
+
+def compor_resposta(pergunta: str, saida: Any, resultados: Sequence[Mapping[str, Any]], uso: UsoChat | None = None) -> RespostaChat:
+    """Da saída do modelo no contrato de referências à resposta pública: citações do programa, política do L100 e ids do índice.
+
+    `resultados` precisa estar na mesma ordem que em `pedido_de_referencias`, porque os ids curtos (T1, T2...) vêm da posição.
+    """
+    trechos = _com_ids_curtos(resultados)
+    decisao = lab_politica.aplicar_politica(_saida_da_politica(saida, trechos), list(trechos.values()), pergunta)
+    return montar_resposta(_com_ids_originais(decisao, trechos, resultados), resultados, uso)
+
+
 # --------------------------------------------------------------------------------------
 # Serviço de consulta
 # --------------------------------------------------------------------------------------
 
 class ServicoChat(Protocol):
-    """O que a interface exige de um serviço. Com o acesso documental, `perguntar` recebe também o contexto da requisição."""
+    """O que a interface exige de um serviço. Com o acesso documental, `perguntar` recebe também o contexto da requisição.
+
+    O serviço coordenado do L400 (`lab_orquestracao.ServicoCoordenado`) aceita ainda, só por nome, `progresso` e `cancelar`: a
+    interface os entrega somente a ele (`coordenado = True`), e os demais serviços continuam chamados como antes.
+    """
 
     def perguntar(self, pergunta: str, acesso: lab_acesso.ContextoAcesso | None = None) -> RespostaChat: ...
 
@@ -802,9 +886,16 @@ def criar_credencial(config: ConfiguracaoChat) -> Any:
     return AzureCliCredential(tenant_id=config.tenant_id, process_timeout=30)
 
 
-def criar_servico_azure(config: ConfiguracaoChat) -> ServicoRag:
-    """Abre a busca e o modelo de geração com os ajudantes do L100 e a credencial da aplicação. Não faz chamadas de rede."""
+def criar_servico_azure(config: ConfiguracaoChat) -> ServicoChat:
+    """Abre a busca e o modelo de geração com os ajudantes do L100 e a credencial da aplicação. Não faz chamadas de rede.
+
+    Com a coordenação (L400), o serviço é o de `lab_orquestracao`, que abre os próprios clientes sem repetições escondidas.
+    """
     credencial = criar_credencial(config)
+    if config.exigir_coordenacao:
+        import lab_orquestracao  # só aqui: sem a coordenação, nem o módulo nem o MAF são carregados
+
+        return lab_orquestracao.criar_servico_coordenado(lab_orquestracao.parametros_da_configuracao(config), credencial)
     argumentos = SimpleNamespace(
         modo=config.modo_busca, modelos=config.modelos, deployment=config.deployment_embeddings, dimensoes=config.dimensoes,
         tenant_id=config.tenant_id, busca=config.busca, indice=config.indice, credencial=credencial,

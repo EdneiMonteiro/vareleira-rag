@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/app.js" defer></script>
 </head>
-<body data-modo="{{MODO}}" data-limite-pergunta="{{LIMITE_PERGUNTA}}">
+<body data-modo="{{MODO}}" data-limite-pergunta="{{LIMITE_PERGUNTA}}" data-coordenacao="{{COORDENACAO}}">
   <a class="pular" href="#pergunta">Ir para o campo da pergunta</a>
 
   <header class="topo">
@@ -32,6 +32,7 @@
       <p id="dica" class="dica">Enter envia; Shift+Enter quebra a linha. Não escreva dados pessoais reais.</p>
       <div class="acoes">
         <span id="contador" class="contador">0 / 1000</span>
+        <button type="button" id="cancelar" class="secundario" hidden>Cancelar consulta</button>
         <button type="button" id="nova-conversa" class="secundario">Nova conversa</button>
         <button type="submit" id="enviar">Perguntar</button>
       </div>

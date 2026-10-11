@@ -40,12 +40,13 @@ com informações sensíveis ou documentos sem autorização de redistribuição
 Prepare o ambiente com Python 3.12 ou superior e execute, na pasta do projeto:
 
 ```powershell
-python -m pip install -r requirements\l200.txt
+python -m pip install -r requirements\l400.txt
 python -m unittest discover -s tests
 ```
 
 Use `requirements\l100.txt` para uma cópia que contenha somente o L100.
-Na entrega L300, use `requirements\l300.txt`, que reutiliza o L200.
+Para L200, use `requirements\l200.txt`; para L300, use `requirements\l300.txt`, que reutiliza o L200.
+O L400 reutiliza o L300, sem acrescentar dependências diretas.
 Os testes não acessam o Azure. Ao alterar o Bicep, execute também
 `az bicep lint --file infra/main.bicep` (a saída deve ficar vazia: o comando termina
 com código 0 mesmo com avisos) e `az bicep build --file infra/main.bicep --stdout`.
@@ -75,7 +76,22 @@ as fontes novas exigem classificação e revisão correspondentes.
 Testes com dublês e parsing de workflows não substituem login, conectividade ou execução Actions.
 A rodada posterior L300 recebeu autorização específica para executar e limpar os temporários
 Azure; consulte o [registro](docs/validacao/l300-azure-validacao.md).
-Isso não autoriza novas execuções ou destinos. Actions e federação não foram ativados.
+Isso não autoriza novas execuções ou destinos. Actions e federação não foram ativados nessa rodada Azure.
+A [publicação posterior](docs/validacao/publicacao-l300-l400.md) executou somente a CI
+em runners hospedados; o workflow de implantação e a confiança federada continuam não executados.
+
+No L400, `python scripts\operar_l400.py --etapa planejar --validar-bicep` confere o plano e
+o template sem rede. Coordenação e contingência preservam acesso documental e política L100;
+novas perguntas finais devem ser congeladas depois do código e fora do corpus.
+O [registro L400](docs/validacao/l400-validacao.md) identifica a implementação e as verificações.
+Um relatório simulado, uma guarda Bicep ou um JSON do operador não comprova execução Azure.
+O cancelamento explícito L400 exige o mesmo ator autenticado e um registro limitado às
+execuções ativas; não trate fechar a conexão como prova de interrupção através da borda.
+O registro atual é por processo, com uma réplica. Preserve a comparação congelada da versão
+que respondeu o teste final; correções operacionais posteriores recebem provas específicas.
+A rodada autorizada L400 foi encerrada com ausência real dos temporários, expurgos e preservação
+da linha de base conferidos. Isso não autoriza reproduzir a implantação, publicar ou ativar Actions.
+Cobrança ainda indisponível não é custo zero.
 
 Ao introduzir código, inclua instruções reproduzíveis, dependências com versões
 fixas, testes proporcionais ao comportamento e, se houver serviços pagos, custos

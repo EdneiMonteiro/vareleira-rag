@@ -95,6 +95,15 @@ param esforco string
 @description('Define VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true na aplicação, e o servidor passa a exigir os papéis de aplicação da pessoa autenticada. Falso (padrão): a variável não é definida.')
 param exigirAcessoDocumental bool = false
 
+// Parâmetros opcionais acrescentados para o L400, que também reaproveita este módulo. Os padrões preservam o L200 e o L300: sem
+// exigirCoordenacao, nenhuma variável da coordenação é definida, mesmo que um nome de contingência seja informado.
+@description('Define VARELEIRA_EXIGIR_COORDENACAO=true na aplicação, e o servidor passa a exigir a coordenação de especialistas do L400. Falso (padrão): a variável não é definida.')
+param exigirCoordenacao bool = false
+
+@description('Nome do deployment de geração de contingência (mesmo modelo e versão do principal, nome diferente), usado só em falhas transitórias. Só vale com exigirCoordenacao; vazio (padrão): VARELEIRA_DEPLOYMENT_CONTINGENCIA não é definida.')
+@maxLength(64)
+param nomeDeploymentContingencia string = ''
+
 var portaAplicacao = 8000
 var nomeSegredoLogin = 'login-entraid'
 
@@ -127,6 +136,26 @@ var variaveisDeAmbiente = concat(
       ]
     : []
 )
+
+// Variáveis da coordenação (L400), separadas das do L200 e do L300 e acrescentadas ao fim da lista. Vazia por padrão.
+var variaveisDaCoordenacao = exigirCoordenacao
+  ? concat(
+      [
+        {
+          value: 'true'
+          name: 'VARELEIRA_EXIGIR_COORDENACAO'
+        }
+      ],
+      empty(nomeDeploymentContingencia)
+        ? []
+        : [
+            {
+              value: nomeDeploymentContingencia
+              name: 'VARELEIRA_DEPLOYMENT_CONTINGENCIA'
+            }
+          ]
+    )
+  : []
 
 // Sem chaves de registro: a identidade atribuída ao usuário baixa a imagem (papel AcrPull, atribuído antes) e
 // também acessa busca e modelos. Escala de 0 a 1 réplica: com zero réplicas, não há computação cobrada.
@@ -172,7 +201,7 @@ resource aplicacao 'Microsoft.App/containerApps@2026-07-01' = {
             cpu: json('0.5')
             memory: '1Gi'
           }
-          env: variaveisDeAmbiente
+          env: concat(variaveisDeAmbiente, variaveisDaCoordenacao)
           // Limites da API: até 10 falhas e 240 s entre verificações. Até 100 s para a primeira resposta de /healthz.
           probes: [
             {

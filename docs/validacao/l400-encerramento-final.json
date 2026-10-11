@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "nivel": "L400",
+  "resultado": "encerramento_verificado",
+  "conferido_em_utc": "2026-10-11T08:02:05.290945+00:00",
+  "origem": "leituras_reais_ARM_e_Microsoft_Graph_apos_exclusao",
+  "limpeza": {
+    "grupos_proprios_ausentes": true,
+    "recursos_proprios_remanescentes": 0,
+    "atribuicoes_proprias_remanescentes": 0,
+    "consumidores_removidos": 3,
+    "shared_private_links_removidos": 2,
+    "credenciais_de_login_revogadas": 1,
+    "atribuicoes_proprias_revogadas": 15,
+    "aplicativos_expurgados": 5,
+    "principais_de_aplicacao_expurgados": 5,
+    "principais_de_identidade_gerenciada_ausentes": 3,
+    "workspace_proprio_exclusao_permanente_conferida": true,
+    "ambientes_excluidos_via_servico": 2,
+    "conta_de_modelos_expurgada": true
+  },
+  "preservacao": {
+    "grupos_anteriores": 8,
+    "recursos_anteriores": 46,
+    "atribuicoes_anteriores_do_operador": 8,
+    "atribuicoes_anteriores_fora_da_rodada": 20,
+    "criterio_atribuicoes": "mesmo_id_principal_role_definition_e_escopo",
+    "contagens_de_atribuicoes_nao_sao_aditivas": true
+  },
+  "retomada": {
+    "primeiro_processo_exit_code": 3,
+    "primeiro_erro": "ValueError_na_guarda_de_papeis_herdados",
+    "papeis_fora_do_grupo": "preservados_sem_alteracao",
+    "segundo_processo_exit_code": 0,
+    "verificador_final_exit_code": 0
+  },
+  "evidencias_privadas_sha256": {
+    "l400-limpeza-execucao.json": "f6ac3c1b14fc22d65e2e19d9e8b68353d84aef790e64a8c9e2812f0725e71171",
+    "l400-limpeza-retomada.json": "9ff2246ec6284537c9fe2a836dda9b22c91279845ecd61d00e380f6381d57e29",
+    "l400-encerramento-verificado.json": "b81bd9a02194d691cec36a4dd3237f95492d9a6efa50e84f7463a4835f0e21a5"
+  },
+  "limites": [
+    "Nenhum ID, nome de conta ou endpoint privado e publicado neste resumo",
+    "Nenhum grupo gerenciado foi excluido manualmente",
+    "403 nao foi tratado como ausencia",
+    "Exclusao de temporarios nao elimina consumo ja ocorrido nem comprova custo zero"
+  ]
+}

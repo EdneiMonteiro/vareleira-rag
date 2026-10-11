@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "nome": "L400 comparacao final v1",
+  "origem": "Perguntas sinteticas novas criadas pela coordenacao depois de congelar o runtime. Uma resposta por estrategia e caso; nao repetir para retunar.",
+  "configuracao_avaliada": "Referencia convencional e coordenacao limitada, mesmas quatro fontes aprovadas, indice de referencia de 1536 dimensoes, perfil Atendimento e modelos anteriores. A CLI mede tipo, situacao e invariantes; fidelidade semantica exige conferencia separada.",
+  "casos": [
+    {
+      "id": "l400-final-01", "categoria": "duplo-assunto",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Nas regras gerais do Vareleira Lar, por que eletricista de emergencia e indenizacao por danos eletricos nao sao a mesma coisa?",
+      "justificativa": "O corpus distingue servico de assistencia e cobertura adicional.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "acionar a assistência não abre um sinistro e não garante indenização"}]
+    },
+    {
+      "id": "l400-final-02", "categoria": "duplo-assunto",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Compare a franquia de danos eletricos com a de vendaval e granizo no produto, incluindo os valores minimos.",
+      "justificativa": "A tabela de franquias traz as duas regras gerais.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "10% do prejuízo, com mínimo de R$ 300,00"}]
+    },
+    {
+      "id": "l400-final-03", "categoria": "duplo-assunto",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Quais sao os prazos gerais para avisar um sinistro e para concluir sua analise, e quando a contagem da analise pode ficar suspensa?",
+      "justificativa": "As regras de aviso e analise constam nas clausulas de sinistro.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "A análise é concluída em até 30 dias corridos"}]
+    },
+    {
+      "id": "l400-final-04", "categoria": "duplo-assunto",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Para joias mantidas no imovel, quais sublimites o Vareleira Lar descreve e como trata dinheiro e documentos?",
+      "justificativa": "Sublimites e exclusoes estao presentes, sem determinar uma contratacao individual.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "R$ 5.000,00 por item e de R$ 15.000,00 no total de cada sinistro"}]
+    },
+    {
+      "id": "l400-final-05", "categoria": "documentada",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "A renovacao do produto ocorre automaticamente ou exige uma proposta, e qual antecedencia esta descrita?",
+      "justificativa": "Renovacao nao automatica e antecedencia estao explicitadas.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "A renovação não é automática."}]
+    },
+    {
+      "id": "l400-final-06", "categoria": "documentada",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Como as regras gerais diferenciam dano eletrico por variacao de tensao de dano causado diretamente por queda de raio?",
+      "justificativa": "A cobertura adicional remete o dano direto por raio a cobertura basica.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "Se o dano elétrico for causado diretamente por queda de raio, aplica-se a cobertura básica"}]
+    },
+    {
+      "id": "l400-final-07", "categoria": "documentada",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Qual requisito das regras de vendaval e granizo condiciona a indenizacao dos danos ao conteudo do imovel?",
+      "justificativa": "Dano anterior a estrutura de acesso ou fechamento do imovel e condicao descrita.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "Os danos ao conteúdo só são indenizados se o vento ou o granizo tiver danificado antes"}]
+    },
+    {
+      "id": "l400-final-08", "categoria": "documentada",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "No Vareleira Lar, quantos acionamentos de assistencia estao previstos por servico e quem arca com materiais e pecas?",
+      "justificativa": "A assistencia tem limites de acionamento e exclui materiais do pagamento de mao de obra.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "até 2 acionamentos por tipo de serviço"}]
+    },
+    {
+      "id": "l400-final-09", "categoria": "documentada",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Quais danos ligados a atividade profissional ficam fora da responsabilidade civil familiar descrita pelo produto?",
+      "justificativa": "A exclusao profissional esta explicita nas regras gerais.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "nem danos relacionados a atividade profissional"}]
+    },
+    {
+      "id": "l400-final-10", "categoria": "operacional",
+      "tipo_esperado": "documentada", "situacao_esperada": "respondida",
+      "pergunta": "Para que serve o roteiro interno de atendimento usado no laboratorio Vareleira Lar e o que ele permite verificar?",
+      "justificativa": "O roteiro aprovado fornece contexto operacional sintetico do exercicio ao Atendimento.",
+      "evidencias_referencia": [{"documento_id": "VLAR-OP-ATD-1.0", "citacao": "Documento sintético"}]
+    },
+    {
+      "id": "l400-final-11", "categoria": "individual",
+      "tipo_esperado": "contratacao_individual", "situacao_esperada": "respondida",
+      "pergunta": "A minha televisao parou depois de uma sobrecarga. Com a minha contratacao Vareleira Lar, posso afirmar que receberei indenizacao?",
+      "justificativa": "Contratacao e sinistro individuais exigem a apolice, sem promessa de pagamento.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "só valem se constarem como contratadas na apólice individual"}]
+    },
+    {
+      "id": "l400-final-12", "categoria": "individual",
+      "tipo_esperado": "contratacao_individual", "situacao_esperada": "respondida",
+      "pergunta": "Meu telhado foi danificado por granizo. A minha apolice Vareleira Lar vai pagar o conserto?",
+      "justificativa": "Pergunta de cobertura e pagamento do caso da pessoa deve usar a introducao fixa.",
+      "evidencias_referencia": [{"documento_id": "VLAR-CG-1.0", "citacao": "só valem se constarem como contratadas na apólice individual"}]
+    },
+    {
+      "id": "l400-final-13", "categoria": "sem-evidencia",
+      "tipo_esperado": "sem_evidencia", "situacao_esperada": "recusada",
+      "pergunta": "Qual percentual de desconto comercial por renovar duas vezes consecutivas o Vareleira Lar aparece nestes documentos?",
+      "justificativa": "Corpus nao estabelece percentual de desconto comercial.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "l400-final-14", "categoria": "sem-evidencia",
+      "tipo_esperado": "sem_evidencia", "situacao_esperada": "recusada",
+      "pergunta": "Qual tarifa administrativa em reais a Vareleira cobra para emitir um endosso de mudanca de endereco?",
+      "justificativa": "Corpus descreve necessidade de endosso, nao sua tarifa.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "l400-final-15", "categoria": "ambigua",
+      "tipo_esperado": "ambigua", "situacao_esperada": "esclarecimento",
+      "pergunta": "E nesse caso, como fica?",
+      "justificativa": "Nao identifica assunto ou referente e nao ha historico conversacional.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "l400-final-16", "categoria": "fora-escopo",
+      "tipo_esperado": "fora_de_escopo", "situacao_esperada": "recusada",
+      "pergunta": "Como preparar uma massa de pizza para um jantar?",
+      "justificativa": "Assunto fora do produto e seguro residencial.",
+      "evidencias_referencia": []
+    }
+  ]
+}

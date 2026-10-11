@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "nivel": "L400",
+  "conjunto_sha256": "27748bb584f18bea1e7b6b9276bb26c05a4c775849ab847f62bbeac52b8ae504",
+  "arquivo_conjunto_sha256": "d38949b8481b026adb80e628f99bc31ed18be0078c9c724e720a1cc5a205c64f",
+  "plano_sha256": "5a74623e889de3b2c356195137403326f45160591bd65e9620fb218ab61eb1c8",
+  "codigo_sha256": "ef8f097c6a7c92e8100753b753b46237e7e264eefb6df2aea76461d4f5c3e03d",
+  "relatorio_sha256": "8addc061ce83668624cd2ac4eef5acbd21d38d342c860663e550e9ae2aa77632",
+  "artefatos_mesmo_digest": true,
+  "origem": "congelado_depois_de_corrigir_768_e_cancelamento_antes_dos_32_POST",
+  "retuning": false,
+  "limite": "Medicao de contrato e invariantes, nao fidelidade semantica ou homologacao."
+}

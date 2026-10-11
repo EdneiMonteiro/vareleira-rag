@@ -267,3 +267,27 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+.progresso {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  font-style: normal;
+}
+
+.progresso .etapa {
+  color: var(--suave);
+}
+
+.progresso .etapa.iniciada {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.progresso .etapa.concluida {
+  color: var(--texto);
+}
+
+.progresso .etapa.falhou {
+  color: var(--borda-erro);
+  font-weight: 600;
+}

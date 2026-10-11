@@ -31,20 +31,38 @@ foi concluída: ingestão privada, fontes por perfil, controles HTTP, bloqueio p
 três serviços de dados e retorno de revisão foram exercitados em um grupo temporário exclusivo.
 O grupo e o grupo gerenciado foram removidos; identidades, papéis e expurgos próprios foram
 conferidos, com os recursos anteriores preservados.
-GitHub Actions e confiança federada continuam fora desta execução.
+GitHub Actions e confiança federada não foram executados nessa rodada Azure.
+A CI foi executada posteriormente para publicação, conforme o
+[registro de publicação](docs/validacao/publicacao-l300-l400.md); implantação federada permanece pendente.
 
-A [revisão Astra para publicação](docs/validacao/revisao-publicacao-l300.md)
-conferiu os 21 guias desta versão. Sondas privadas e limpeza completa exigem
-roteiro administrativo próprio revisado. O verificador L100 D07 não deve ser usado
-em ambiente compartilhado, pois tenta excluir um índice de nome fixo.
-CI e publicação receberam autorização posterior; isso não autoriza implantação
-ou confiança federada.
+**L400:** coordenação limitada com Microsoft Agent Framework, contingência de geração,
+índice candidato e comparação com a referência L300 foram implementados e exercitados.
+A suíte final teve 1.015 casos, com 1.014 aprovados e um ignorado no Windows;
+os 100 testes do runtime e 24 de sanitização operacional, incluindo permissões POSIX, passaram em Linux.
+A comparação nova teve **16/16 conformes nas duas estratégias**, sem ganho observado da coordenação,
+que usou mais tokens de geração e teve maior latência mediana.
+O cancelamento explícito autenticado foi conferido separadamente depois dessa comparação,
+sem repetir o conjunto final ou usar desconexão como prova de interrupção remota.
+O [roteiro L400](docs/roteiro-l400.md) organiza sete desafios; o
+[registro de validação](docs/validacao/l400-validacao.md) separa testes, comparação, falhas e
+encerramento dos temporários. A limpeza foi verificada: grupo exclusivo e gerenciado ausentes,
+zero recursos e papéis próprios, identidades e modelos expurgados, com oito grupos, 46 recursos
+e atribuições anteriores preservados. Cobrança efetiva ainda indisponível não significa custo zero.
+Nenhum resultado L400 é tratado como aprovação automática para produção.
+
+A [revisão Astra dos 28 guias](docs/validacao/revisao-publicacao-l400.md) delimita
+a entrega pública: sondas privadas e limpeza completa exigem roteiro próprio revisado.
+O verificador L100 D07 não deve ser usado em ambiente compartilhado, pois tenta excluir
+um índice de nome fixo. A [análise de respostas](docs/validacao/avaliacao-semantica-2026-10-11.md)
+preserva as duas divergências L200; a revisão semântica integral está bloqueada pela ausência
+dos textos originais nos relatórios, sem repetição das avaliações finais.
 
 No L100, L200 e L300, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
 `gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` entre 9 e 11 de outubro de 2026.
 O modelo usado pelo aluno no Copilot e os modelos de autoria e revisão da documentação são escolhas
 separadas. O L300 conservou os modelos e as versões dos deployments anteriores na validação Azure.
-Modelos L400 dependem de disponibilidade, cota e avaliação.
+O L400 conservou esses modelos e versões, criou um deployment de geração de contingência
+separado e executou a comparação sem repetir o conjunto após observar os resultados.
 
 ## Comece pelo primeiro desafio
 
@@ -119,13 +137,14 @@ Para verificar o projeto localmente, sem Azure, use Python 3.12 ou superior:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements\l300.txt
+python -m pip install -r requirements\l400.txt
 python -m unittest discover -s tests
 ```
 
 Para uma cópia somente do L100, use `requirements\l100.txt`; para L200, use `requirements\l200.txt`.
-O arquivo L300 reutiliza os requisitos L200. Instale dependências ao preparar uma cópia nova ou
-quando faltarem bibliotecas; uma instalação existente pode ser conferida com `python -m pip check`.
+O arquivo L300 reutiliza os requisitos L200, e o L400 reutiliza o L300.
+Instale dependências ao preparar uma cópia nova ou quando faltarem bibliotecas;
+uma instalação existente pode ser conferida com `python -m pip check`.
 
 ### Níveis e continuidade
 
@@ -136,7 +155,7 @@ quando faltarem bibliotecas; uma instalação existente pode ser conferida com `
 | L300 | Automatizar, controlar acesso e operar com dependências privadas | Evoluir identidade, rede e observabilidade |
 | L400 | Medir coordenação de agentes, resiliência e uso de múltiplos deployments | Comparar com a solução anterior e testar migrações |
 
-L100, L200 e L300 contêm sete desafios incrementais por nível, com procedimentos
+L100, L200, L300 e L400 contêm sete desafios incrementais por nível, com procedimentos
 de migração para mudanças de rede, índice ou identidade, verificação e recuperação.
 Remova recursos temporários de comparação quando terminar a atividade.
 
@@ -206,6 +225,27 @@ O [registro local L300](docs/validacao/l300-validacao-local.md) reúne comandos,
 limites da validação. A imagem deve ser construída da revisão L300; reutilizar uma tag anterior
 não acrescenta os filtros ao contêiner.
 
+### Continue pelo L400
+
+O [roteiro L400](docs/roteiro-l400.md) conserva a referência convencional e delimita a complexidade
+adicional. A comparação teve 16/16 conformes em ambas as estratégias, sem ganho observado.
+O cancelamento explícito foi validado separadamente; a simples desconexão através da borda
+não comprova interrupção do workflow.
+
+| Desafio | Prática conferida |
+| --- | --- |
+| [01: delimitar a coordenação](desafios/L400/01-delimitar-coordenacao.md) | Referência, fontes, identidade, limites e plano local |
+| [02: coordenar especialistas](desafios/L400/02-coordenar-especialistas.md) | Planejamento e redação MAF, recuperação filtrada e política original |
+| [03: operar deployments](desafios/L400/03-operar-deployments.md) | Contingência em falha transitória, sem contornar acesso negado |
+| [04: evoluir o índice](desafios/L400/04-evoluir-indice.md) | Candidato de 768 dimensões, promoção e retorno à referência |
+| [05: comparar estratégias](desafios/L400/05-comparar-estrategias.md) | Conjunto novo congelado, falhas no denominador e relatório preservado |
+| [06: testar carga e interrupção](desafios/L400/06-testar-carga-interrupcao.md) | Carga finita, progresso e cancelamento explícito pelo mesmo ator |
+| [07: recuperar e limpar](desafios/L400/07-recuperar-limpar.md) | Retorno, remoção granular e encerramento próprio registrado |
+
+Consulte o [registro L400](docs/validacao/l400-validacao.md) para as provas de limpeza e os limites.
+O registro de cancelamento é local ao processo e exige uma réplica; sua evolução para múltiplas
+réplicas precisa de um desenho e testes próprios. O curso não homologa a aplicação para produção.
+
 ## O caso do laboratório
 
 Na narrativa, em **2025**, Beatriz Torres, responsável pelo Atendimento,
@@ -270,8 +310,8 @@ sintéticos do repositório.
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
 | L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
-| L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. Actions/OIDC e login humano não executados |
-| L400 | Planejado |
+| L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. CI Windows/Linux aprovada; implantação Actions/OIDC e login humano não executados |
+| L400: coordenação, comparação, contingência e recuperação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos. Comparação 16/16 em ambas, sem ganho; limites e histórico preservados |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
 no commit `d4a93cc`; a [pré-release `v0.1.1-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.1-l100)
@@ -283,6 +323,15 @@ A [pré-release corrigida `v0.2.1-l200`](https://github.com/EdneiMonteiro/varele
 preserva essa história e acrescenta referências restritas, novo teste de 16 de 18 sem descartes
 e o encerramento da rodada de correção. O [PR #1](https://github.com/EdneiMonteiro/vareleira-rag/pull/1)
 disponibiliza a entrega para revisão; a branch principal não foi mesclada automaticamente.
+
+As pré-releases [L300 `v0.3.0-l300`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.3.0-l300)
+e [L400 `v0.4.0-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.0-l400)
+publicam árvores distintas nos commits `0093629` e `429a4ba`, com CI Windows/Linux,
+Bicep e JavaScript aprovada. Os [PRs #2](https://github.com/EdneiMonteiro/vareleira-rag/pull/2)
+e [#3](https://github.com/EdneiMonteiro/vareleira-rag/pull/3) seguem a cadeia #1 → #2 → #3,
+sem merge. O [registro de publicação](docs/validacao/publicacao-l300-l400.md) separa essas
+verificações das execuções Azure históricas e da avaliação semântica ainda incompleta.
+
 A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
 Azure quando você executa os comandos deles; permissões, custos e limpeza estão
 descritos em cada guia.

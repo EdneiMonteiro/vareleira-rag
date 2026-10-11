@@ -1,0 +1,4 @@
+# Dependências do L400 (Python 3.12 ou superior): as do L300, que incluem as do L200 e as do L100.
+# O L400 ainda não acrescenta pacotes diretos: a coordenação usa o Microsoft Agent Framework e o cliente da OpenAI que o L100 já fixa.
+# Instalação: python -m pip install -r requirements/l400.txt
+-r l300.txt
