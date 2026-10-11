@@ -4,6 +4,7 @@ import datetime as dt
 import io
 import sys
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
@@ -302,10 +303,12 @@ class VerificarIdentidadeTests(unittest.TestCase):
 
         indice = SimpleNamespace(contar=levanta(leitura, 54))
         inexistente = SimpleNamespace(apagar=levanta(apagar))
+        self.nomes_abertos = []
 
         def abrir(busca, nome, tenant=None, credencial_usada=None):
             capturadas.append(credencial_usada)
-            return inexistente if nome == verificar_identidade.INDICE_INEXISTENTE else indice
+            self.nomes_abertos.append(nome)
+            return inexistente if nome.startswith(verificar_identidade.PREFIXO_INDICE_DESCARTAVEL) else indice
 
         def criar_embeddings(modelos, deployment, dimensoes, tenant=None, credencial_usada=None):
             capturadas.append(credencial_usada)
@@ -334,12 +337,12 @@ class VerificarIdentidadeTests(unittest.TestCase):
                 "--busca", BUSCA, "--modelos", MODELOS, "--conta", CONTA, "--cofre", COFRE, *identidade])
         return codigo, saida.getvalue(), credencial, capturadas
 
-    def test_privilegio_minimo_confirmado_quando_so_leitura_e_modelos_sao_permitidos(self):
+    def test_cinco_tentativas_como_esperado_quando_so_leitura_e_modelos_sao_permitidos(self):
         negado = erro_azure("HttpResponseError", 403)
         codigo, saida, credencial, capturadas = self.rodar(apagar=negado, segredo=negado, blobs=negado)
         self.assertEqual(codigo, lab_comum.CODIGO_OK, saida)
         self.assertEqual(saida.count("[OK   ]"), 5)
-        self.assertIn("Privilégio mínimo confirmado", saida)
+        self.assertIn("as três proibidas foram recusadas", saida)
         self.assertIn(f"cofre '{COFRE}'", saida)
         self.assertNotIn(APLICACAO, saida)
         self.assertNotIn(SEGREDO, saida)
@@ -357,6 +360,54 @@ class VerificarIdentidadeTests(unittest.TestCase):
         codigo, saida, _, _ = self.rodar(apagar=erro_azure("ResourceNotFoundError", 404), segredo=negado, blobs=negado)
         self.assertEqual(codigo, lab_comum.CODIGO_DIVERGENCIA)
         self.assertIn("PRIVILÉGIO DEMAIS", saida)
+
+    def test_nome_descartavel_e_aleatorio_valido_e_novo_a_cada_chamada(self):
+        nomes = {verificar_identidade.nome_de_indice_descartavel() for _ in range(50)}
+        self.assertEqual(len(nomes), 50)
+        for nome in nomes:
+            self.assertRegex(nome, r"^vlr-verificacao-[0-9a-f]{16}$")
+            self.assertLessEqual(len(nome), 128)
+
+    def test_a_exclusao_so_visa_um_nome_aleatorio_diferente_do_indice_informado(self):
+        negado = erro_azure("HttpResponseError", 403)
+        descartaveis = set()
+        for _ in range(10):
+            codigo, saida, _, _ = self.rodar(apagar=negado, segredo=negado, blobs=negado)
+            self.assertEqual(codigo, lab_comum.CODIGO_OK, saida)
+            consultado, descartavel = self.nomes_abertos
+            self.assertEqual(consultado, lab_indexacao.INDICE_PADRAO)
+            self.assertRegex(descartavel, r"^vlr-verificacao-[0-9a-f]{16}$")
+            descartaveis.add(descartavel)
+        self.assertEqual(len(descartaveis), 10, "um nome novo a cada execução")
+
+    def test_nome_sorteado_igual_ao_indice_informado_e_descartado(self):
+        negado = erro_azure("HttpResponseError", 403)
+        outro = verificar_identidade.PREFIXO_INDICE_DESCARTAVEL + "a" * 16
+        with mock.patch.object(verificar_identidade, "nome_de_indice_descartavel",
+                               side_effect=[lab_indexacao.INDICE_PADRAO, outro]):
+            codigo, _, _, _ = self.rodar(apagar=negado, segredo=negado, blobs=negado)
+        self.assertEqual(codigo, lab_comum.CODIGO_OK)
+        self.assertEqual(self.nomes_abertos, [lab_indexacao.INDICE_PADRAO, outro])
+
+    def test_nao_resta_nome_fixo_de_indice_para_exclusao(self):
+        fonte = Path(verificar_identidade.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("vlr-verificacao-inexistente", fonte)
+        self.assertFalse(hasattr(verificar_identidade, "INDICE_INEXISTENTE"))
+
+    def test_o_resultado_declara_o_alcance_das_cinco_tentativas_sem_prometer_privilegio_minimo_geral(self):
+        negado = erro_azure("HttpResponseError", 403)
+        for argumentos, esperado in (
+            (dict(apagar=negado, segredo=negado, blobs=negado), lab_comum.CODIGO_OK),
+            (dict(apagar=negado, blobs=negado), lab_comum.CODIGO_DIVERGENCIA),
+        ):
+            codigo, saida, _, _ = self.rodar(**argumentos)
+            self.assertEqual(codigo, esperado, saida)
+            self.assertIn("só para as cinco tentativas", saida)
+            self.assertIn("nome aleatório de um índice que não existe", saida)
+            self.assertNotIn("nada além", saida)
+            self.assertNotIn("Privilégio mínimo confirmado", saida)
+        self.assertIn("não prova que a identidade não tenha outros acessos",
+                      self.rodar(apagar=negado, segredo=negado, blobs=negado)[1])
 
     def test_leitura_negada_e_privilegio_de_menos(self):
         negado = erro_azure("HttpResponseError", 403)

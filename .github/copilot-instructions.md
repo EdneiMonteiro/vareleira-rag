@@ -154,10 +154,14 @@
   recrie dependências automaticamente e não manipule o grupo gerenciado Container Apps.
   Listagens de atribuições podem incluir papéis fora do alvo: confira escopo e principal contra
   o inventário próprio antes de revogar e compare os papéis anteriores depois da limpeza.
-- Workflows L300 são arquivos não ativados nesta rodada: CI em runners hospedados sem identidade
-  Azure; implantação manual em runner confiável, com ambiente protegido e OIDC. Identidade
-  federada de implantação e registro de login do chat são diferentes; somente o login do chat
-  usa segredo efêmero na fase `aplicacao`. Não publique IDs ou configurações brutas nos logs.
+- Os workflows L300 estão na principal desde os merges de 11 de outubro de 2026:
+  `validar.yml` executa integração contínua (CI) em runners hospedados, só leitura e sem identidade
+  Azure. `l300-implantar.yml` só aceita disparo manual (`workflow_dispatch`), exige runner
+  self-hosted `vareleira-l300`, ambiente protegido e configuração em Secrets e identidade
+  federada ainda inexistentes. Nunca foi executado; nenhuma federação OpenID Connect (OIDC)
+  foi criada. Identidade federada de implantação e registro de login do chat são diferentes;
+  somente o login do chat usa segredo efêmero na fase `aplicacao`.
+  Não publique IDs ou configurações brutas nos logs.
 - O mantenedor indicou uma assinatura de teste fora do repositório para validar
   os laboratórios. Nunca registre o ID dela, de tenants ou de pessoas em arquivos
   versionados; guarde esse tipo de evidência apenas em local privado.
@@ -175,9 +179,36 @@
   confunda reexame dos dois gabaritos L200 com avaliação semântica integral.
 - As pré-releases `v0.3.0-l300` e `v0.4.0-l400` foram publicadas nos commits
   `0093629` e `429a4ba`, com CI Windows/Linux, Bicep e JavaScript aprovada.
-  Os PRs #2 e #3 dependem, em sequência, do #1; nenhum foi mesclado nesta rodada.
-  Essa CI não executou implantação, OIDC ou login humano. O registro é
+  Os pull requests (PRs) #1 → #2 → #3 foram mesclados em sequência em 11 de outubro de 2026;
+  a CI passou também na principal. As tags originais não incluem a rodada de operação pública.
+  Essa CI não executou implantação, OIDC ou login humano. O registro histórico é
   `docs/validacao/publicacao-l300-l400.md`.
+- Em 11 de outubro de 2026, o mantenedor autorizou corrigir o D07, completar as ferramentas e
+  receitas públicas L300/L400, encerrar a lacuna semântica e mesclar os PRs #1 → #2 → #3.
+  O D07 usa alvo aleatório diferente do índice informado; essa correção, encerramento, sondas
+  e carga só foram testados localmente, nada validado no Azure.
+  Os textos finais são tratados como irrecuperáveis,
+  sem reexecução. Código/testes e coordenação: Claude Sonnet 5.5; documentação: GPT-6.1 Sol,
+  com Astra indisponível. O PR #4, aberto a partir da branch `fix/operacao-publica-l300-l400`,
+  com base `main`, foi mesclado por ordem expressa do mantenedor, com a branch preservada.
+  Foi publicada a pré-release `v0.4.1-l400`, com tag anotada no commit de merge e as correções.
+  As tags `v0.3.0-l300` e `v0.4.0-l400` permanecem intactas, sem essas correções.
+  O escopo inicial não incluía execução Azure ou novas pré-releases; a autorização posterior
+  está delimitada abaixo. Registro: `docs/validacao/operacao-publica-l300-l400-2026-10-11.md`.
+- Em 11 de outubro de 2026, o mantenedor autorizou uma única rodada Azure das ferramentas
+  públicas, completa em etapas: encerramento → sonda L300 em rede privada → carga e receitas
+  L400 D03/D04. Use somente a assinatura de testes privada já confirmada e `brazilsouth`,
+  em grupo exclusivo novo, com teto estimado de US$ 30 para toda a rodada.
+  Colete a linha de base ANTES de criar o grupo. Identidades, credenciais e papéis temporários
+  foram autorizados, com remoção ao final; ao primeiro bloqueio, pare e limpe os próprios.
+  Use o planejador público `scripts\planejar_encerramento.py` para orientar a limpeza final;
+  ele não executa a exclusão. Confira escopo e principal contra o inventário antes de revogar.
+  Preserve grupos, recursos, identidades e papéis preexistentes; não imprima nem registre IDs
+  em arquivos públicos ou logs. Isso não autoriza outros destinos, novas execuções,
+  login humano, implantação Actions/OIDC/federação ou publicação além de `v0.4.1-l400`.
+  Custo efetivo indisponível não é custo zero. A execução está pendente; registre cada resultado
+  real, falha, retomada e limpeza em um registro próprio em `docs/validacao`,
+  criado quando a rodada terminar.
 
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.
@@ -193,4 +224,8 @@
   Não imprima a compilação do arquivo de parâmetros quando houver segredo real na sessão.
 - Plano L400 sem rede: `python scripts/operar_l400.py --etapa planejar --validar-bicep`.
   Runtime com dublês: `python -m unittest discover -s tests -p test_orquestracao.py`.
+- Ferramentas públicas, sem rede: `python scripts\planejar_encerramento.py --etapa modelo`,
+  `python scripts\sonda_l300.py --etapa validar`, `python scripts\montar_contexto_sonda_l300.py --help`
+  e `python scripts\gerar_carga_l400.py --help`. Planejar não executa; linha de base antes do grupo.
+  Testes só com dublês; nenhuma dessas ferramentas foi validada no Azure.
 - Instruções por tipo de arquivo ficam em `.github/instructions/`.

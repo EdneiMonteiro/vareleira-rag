@@ -7,6 +7,9 @@ e o que não foi executado, a matriz de testes, as medições e as decisões de 
 credencial, dois papéis, cinco operações, pergunta como aplicação e limpeza.
 O histórico da primeira rodada, parcial, permanece abaixo; o
 [complemento autorizado](#complemento-autorizado-execução-e-limpeza-da-aplicação) registra o fechamento.
+As execuções Azure deste histórico usaram a versão com nome fixo; a
+[correção posterior do verificador](#correção-posterior-do-verificador-11-de-outubro-de-2026)
+foi conferida apenas localmente, sem nova execução Azure.
 
 ## Primeira rodada: antes da autorização
 
@@ -70,14 +73,20 @@ Execução real de `verificar_identidade.py --identidade operador`, na Etapa 4 e
 | Ler o segredo do cofre | Negado | Permitido: `[FALHA]`, "PRIVILÉGIO DEMAIS" |
 | Listar os documentos da conta de armazenamento | Negado | Permitido: `[FALHA]`, "PRIVILÉGIO DEMAIS" |
 
-Observação: ao apagar um índice que não existe, o serviço de busca **aceitou** a operação (sem HTTP 404) para quem tem permissão. O verificador já trata os dois resultados (aceita ou 404 depois da autorização) como "permitido", e a ausência do alvo garante que nada seja alterado.
+Observação histórica (9 de outubro de 2026): na execução com o nome fixo
+`vlr-verificacao-inexistente`, o alvo não existia e o serviço de busca **aceitou** a operação
+(sem HTTP 404) para quem tinha permissão. O verificador já tratava os dois resultados (aceita ou
+404 depois da autorização) como "permitido". A ausência do alvo naquela execução explica por que
+nenhum índice foi alterado; não era uma garantia para repetir a versão antiga, que não verificava
+a ausência antes da exclusão. Veja a
+[correção posterior](#correção-posterior-do-verificador-11-de-outubro-de-2026).
 
 ### Decisões de projeto
 
 - **Proteção contra expurgo.** A primeira versão do módulo do cofre deixava a proteção desligada, sem exceção declarada, o que contrariava a instrução do projeto de não desativar proteções como a do Key Vault. O módulo passou a ligá-la por padrão (`protecaoContraExpurgo = true`); só o arquivo `l100-desafio07.bicepparam` a desliga, de propósito, com o motivo em um comentário, no guia e na instrução de Bicep. O Azure não aceita o valor falso nessa propriedade, por isso o Bicep a omite (`null`). Dois testes automáticos conferem o padrão seguro e a exceção.
 - **Papel do operador.** O operador recebe o `Key Vault Secrets Officer` (guardar e ler segredos) só no cofre. Para apenas executar a aplicação, `Key Vault Secrets User` bastaria; o laboratório não o atribui porque a mesma conta guarda o segredo.
 - **Aplicação sem papel no cofre.** A aplicação não lê o cofre: quem lê o segredo é o operador, que o entrega à credencial em memória. O verificador tenta ler o segredo como aplicação e espera "negado".
-- **Tentativas inofensivas.** As tentativas proibidas usam alvos que não existem ou descartam o resultado, para não alterar nada se a permissão estiver errada.
+- **Tentativas na execução histórica.** A tentativa de exclusão usou um índice de nome fixo que não existia naquela execução; as demais tentativas proibidas descartaram o resultado. Isso não garantia a ausência do alvo em outra execução da versão antiga. A mudança está na [correção posterior](#correção-posterior-do-verificador-11-de-outubro-de-2026).
 - **Segredo.** Entra por entrada padrão ou variável de ambiente, nunca por argumento; nunca é impresso nem repetido em mensagens de erro (testes automáticos conferem a saída e as mensagens dos erros).
 - **Escopo da opção `--identidade`.** Está em `perguntar.py` e em `verificar_identidade.py`. `agente_maf.py` e `avaliar_respostas.py` continuam usando a sessão do operador.
 
@@ -279,5 +288,63 @@ Código, testes e texto produzidos com Claude Sonnet 5.5, no GitHub Copilot CLI.
 mantenedor para a documentação, não estava disponível na sessão. O modelo de autoria é independente do modelo
 que o aluno escolhe no Copilot e dos deployments da aplicação (`text-embedding-3-small` e `gpt-5.4-mini`).
 O complemento operacional e a atualização deste registro foram coordenados por GPT-6.1 Sol.
-A lógica de produção permaneceu inalterada; os dois ajustes de testes do fechamento foram feitos
-com Claude Sonnet 5.5.
+Naquele fechamento de 9 de outubro de 2026, a lógica de produção permaneceu inalterada; os dois
+ajustes de testes foram feitos com Claude Sonnet 5.5.
+
+## Correção posterior do verificador (11 de outubro de 2026)
+
+### Problema e mudança
+
+A versão anterior de `verificar_identidade.py` enviava a tentativa de exclusão ao nome fixo
+`vlr-verificacao-inexistente`, sem verificar a ausência. Se um índice com esse nome existisse e a
+identidade tivesse permissão para excluí-lo, o pedido o apagaria. O guia compensava esse risco com
+conferência manual de ausência e exclusividade do serviço. As tabelas e os resultados Azure acima
+descrevem a execução histórica dessa versão e foram preservados.
+
+A correção usa `vlr-verificacao-` seguido de 16 dígitos hexadecimais, gerados por
+`secrets.token_hex(8)` (8 bytes, ou 64 bits, de aleatoriedade). Sorteia um nome novo a cada execução;
+se coincidir com o índice informado em `--indice`, descarta o nome e sorteia de novo.
+O alvo fixo foi retirado do código. A tentativa usa o nome aleatório de um índice que não existe,
+sem criar esse índice nem alterar recursos existentes; continua sendo um pedido de escrita autenticado.
+
+Para a tentativa de exclusão, a classificação não mudou: HTTP 403 indica recusa esperada;
+operação aceita ou HTTP 404 depois da autorização indica "permitido", ou privilégio demais.
+Na execução histórica, o serviço aceitou o pedido sem HTTP 404; isso não foi novamente observado
+com o alvo aleatório.
+
+### Mensagens e alcance
+
+- O cabeçalho passa a ser `Verificação do privilégio mínimo, sem alterar recursos existentes · identidade: <descrição da identidade>`.
+- A terceira tentativa passa a ser "Alterar o serviço de busca (apagar um índice de nome aleatório que não existe)".
+- No código de saída 0, o fechamento informa que as duas operações necessárias funcionaram e as três proibidas foram recusadas, sem afirmar que a identidade não tenha outros acessos; orienta revisar também as atribuições de papel no Azure.
+- No código de saída 3, o fechamento mantém "Privilégio divergente do esperado. Corrija os papéis e repita.", com o alcance limitado descrito abaixo.
+- Nos códigos de saída 0 e 3, o fechamento delimita o resultado às cinco tentativas e explica que nenhum recurso existente foi alterado porque a exclusão usa o nome aleatório de um índice que não existe.
+- O aviso intermediário de `--identidade operador` permanece inalterado.
+
+Os exemplos do [guia](../../desafios/L100/07-identidade-da-aplicacao.md#etapa-4-ver-o-contraste-com-a-sua-conta)
+usam as mensagens atuais como saída esperada, não como nova medição Azure.
+Cinco tentativas não são uma auditoria de todos os acessos nem uma prova geral de privilégio mínimo.
+
+### Verificação local e limite Azure
+
+Foram aprovados **41 testes do módulo `test_identidade`**, com dublês e sem acessar o Azure.
+Os testes novos de `VerificarIdentidadeTests` conferem:
+
+- nome aleatório no formato válido e novo a cada chamada;
+- alvo de exclusão diferente do índice informado;
+- descarte de um nome sorteado igual ao índice informado;
+- inexistência do nome fixo no código;
+- alcance declarado das cinco tentativas, sem promessa de privilégio mínimo geral.
+
+Na conferência documental desta atualização, os testes de `test_repositorio` e o controle de ausência
+de perguntas de teste nos guias, registros e instruções passaram: **11 testes aprovados**.
+Também foram conferidos 61 links e âncoras locais dos dois documentos e os exemplos de saída
+contra dublês; `git diff --check` não apontou problemas.
+
+**Não houve nova execução no Azure:** o mantenedor não autorizou novas operações nesta rodada.
+A tentativa de exclusão com nome aleatório não foi reconferida no serviço, nem com o operador nem
+com a aplicação. Os resultados reais de permissão, recusa e limpeza permanecem os históricos,
+obtidos com o nome fixo; os dublês não substituem essa medição.
+
+Correção do verificador e testes: Claude Sonnet 5.5, em 11 de outubro de 2026.
+Texto desta atualização: GPT-6.1 Sol, por escolha explícita do mantenedor, com Astra indisponível.

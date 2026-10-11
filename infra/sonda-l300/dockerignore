@@ -1,0 +1,40 @@
+# Modelo da lista de permissão do contexto de build da sonda do L300 (o montador a grava como .dockerignore na pasta do contexto).
+# Só o que o Dockerfile copia entra no contexto, tanto no Docker local quanto em um build remoto (az acr build), que envia o contexto
+# ao serviço. Segredos, histórico do Git, sessões e conjuntos de avaliação ficam de fora. Este arquivo NÃO é o .dockerignore da raiz
+# do repositório, que pertence ao chat.
+# Os módulos lab_comum, lab_acesso, lab_indexacao, lab_geracao, lab_politica, lab_chat e lab_orquestracao não são enviados: na imagem
+# eles vêm da base (a imagem do chat).
+**
+!Dockerfile
+!scripts/sonda_l300.py
+!scripts/gerar_carga_l400.py
+!scripts/gerenciar_ingestao_l300.py
+!scripts/gerenciar_ingestao.py
+!scripts/lab_ingestao.py
+!scripts/lab_ingestao_l300.py
+!dados/l100/inventario.json
+!dados/l100/documentos/vareleira-lar-condicoes-gerais-v1.0.md
+!dados/l100/documentos/vareleira-lar-faq-v1.0.md
+!dados/l100/documentos/vareleira-lar-glossario-v1.0.md
+!dados/l300/permissoes-documentais.json
+!dados/l300/documentos/roteiro-interno-atendimento-v1.0.md
+
+# A última regra que combina decide: estas exclusões valem mesmo que uma permissão acima as alcance.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.log
+**/__pycache__
+**/*.pyc
+.git
+.github
+.venv
+venv
+.playwright-mcp
+.copilot
+session-state
+context.md
+data/local
+outputs
