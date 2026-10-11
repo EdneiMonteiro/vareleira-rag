@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "pacote": "vareleira-lar-l100",
+  "conjunto": "teste",
+  "sintetico": true,
+  "descricao": "Perguntas sintéticas para medir, uma única vez, a configuração escolhida com o conjunto de ajuste. Ver as perguntas que falharam e mudar a configuração por causa delas transforma este conjunto em outro conjunto de ajuste. Não fazem parte da base documental: não são enviadas ao Blob Storage nem ao índice.",
+  "perguntas": [
+    {
+      "id": "TE-01",
+      "pergunta": "Em quantos dias a Vareleira paga a indenização depois do acordo sobre o valor?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "prazo de pagamento",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "O pagamento ocorre em até 10 dias corridos depois do acordo sobre o valor" }
+          ]
+        }
+      ],
+      "fatos": ["10 dias"]
+    },
+    {
+      "id": "TE-02",
+      "pergunta": "Qual é a franquia da cobertura de responsabilidade civil familiar?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "franquia de responsabilidade civil",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "R$ 1.000,00 por sinistro" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "responsabilidade civil familiar, R$ 1.000,00 por sinistro" }
+          ]
+        }
+      ],
+      "fatos": ["1.000,00"]
+    },
+    {
+      "id": "TE-03",
+      "pergunta": "A renovação do seguro é automática?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "renovação",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "A renovação não é automática" }
+          ]
+        }
+      ],
+      "fatos": ["automática"]
+    },
+    {
+      "id": "TE-04",
+      "pergunta": "Quem paga as peças quando o encanador da assistência conserta um vazamento?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "materiais e peças da assistência",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "Materiais, peças e o conserto de aparelhos ficam por conta do segurado" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "Materiais, peças e o conserto de aparelhos ficam por conta do segurado" }
+          ]
+        }
+      ],
+      "fatos": ["segurado"]
+    },
+    {
+      "id": "TE-05",
+      "pergunta": "O que é prêmio?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "definição de prêmio",
+          "alternativas": [
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "Valor pago pelo segurado pelo seguro, à vista ou em parcelas" },
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "pode ser pago à vista ou em parcelas" }
+          ]
+        }
+      ],
+      "fatos": ["parcelas"]
+    },
+    {
+      "id": "TE-06",
+      "pergunta": "Qual é a duração da vigência do seguro e com quantos dias de antecedência a Vareleira envia a proposta de renovação?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "duração da vigência",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "é de 12 meses" },
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "12 meses a partir da data indicada na apólice individual" }
+          ]
+        },
+        {
+          "nome": "antecedência da renovação",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "antecedência mínima de 30 dias do fim da vigência" }
+          ]
+        }
+      ],
+      "fatos": ["12 meses", "30 dias"]
+    },
+    {
+      "id": "TE-07",
+      "pergunta": "Mudar de endereço exige endosso e a desocupação do imóvel por mais de 60 dias muda alguma cobertura?",
+      "tipo_esperado": "documentada",
+      "assuntos": [
+        {
+          "nome": "mudança de endereço",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "A mudança de endereço do imóvel segurado exige" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "A mudança de endereço exige endosso prévio" }
+          ]
+        },
+        {
+          "nome": "desocupação",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "A partir do 61º dia de desocupação" },
+            { "documento_id": "VLAR-FAQ-1.0", "texto_contem": "A desocupação por mais de 60 dias consecutivos deve ser comunicada" }
+          ]
+        }
+      ],
+      "fatos": ["endosso", "roubo"]
+    },
+    {
+      "id": "TE-08",
+      "pergunta": "A minha apólice cobre o carro que estava na garagem da minha casa?",
+      "tipo_esperado": "contratacao_individual",
+      "assuntos": [
+        {
+          "nome": "exclusão de veículos",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "veículos, embarcações e aeronaves, e seus acessórios" }
+          ]
+        }
+      ],
+      "fatos": ["veículo"]
+    },
+    {
+      "id": "TE-09",
+      "pergunta": "Minha casa está em reforma estrutural: o meu seguro continua valendo?",
+      "tipo_esperado": "contratacao_individual",
+      "assuntos": [
+        {
+          "nome": "reforma estrutural",
+          "alternativas": [
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "imóvel em construção, em reforma estrutural ou em demolição" },
+            { "documento_id": "VLAR-CG-1.0", "texto_contem": "a reforma estrutural ou a locação por temporada" },
+            { "documento_id": "VLAR-GL-1.0", "texto_contem": "fazer reforma estrutural" }
+          ]
+        }
+      ],
+      "fatos": ["reforma"]
+    },
+    {
+      "id": "TE-10",
+      "pergunta": "Existe desconto para quem paga o prêmio à vista?",
+      "tipo_esperado": "sem_evidencia",
+      "assuntos": [],
+      "fatos": []
+    },
+    {
+      "id": "TE-11",
+      "pergunta": "Como faço um bolo de cenoura?",
+      "tipo_esperado": "fora_de_escopo",
+      "assuntos": [],
+      "fatos": []
+    },
+    {
+      "id": "TE-12",
+      "pergunta": "Isso está incluído?",
+      "tipo_esperado": "ambigua",
+      "assuntos": [],
+      "fatos": []
+    }
+  ]
+}

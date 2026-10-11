@@ -3,8 +3,12 @@
 ## Escopo acompanhado
 
 O acompanhamento se concentra nos arquivos disponíveis na branch `main`.
-Ainda não há aplicação executável ou releases suportadas. A inclusão futura
-de código não implicará compromisso de suporte a versões antigas.
+Há Bicep, scripts Python e dados sintéticos do L100, mas não há aplicação em
+produção nem releases suportadas. São bem-vindos relatos de falhas de segurança
+nos padrões do Bicep (acesso público, chaves, TLS), nos scripts (vazamento de
+credenciais ou de segredos, validação de entrada) e nos documentos. São também bem-vindos
+relatos sobre papéis ou identidades que os guias criam com privilégio demais. A inclusão de novos níveis
+não implicará compromisso de suporte a versões antigas.
 
 ## Relato privado
 

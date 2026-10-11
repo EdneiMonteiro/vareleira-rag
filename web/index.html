@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Assistente do Vareleira Lar</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body data-modo="{{MODO}}" data-limite-pergunta="{{LIMITE_PERGUNTA}}">
+  <a class="pular" href="#pergunta">Ir para o campo da pergunta</a>
+
+  <header class="topo">
+    <h1>Assistente do Vareleira Lar</h1>
+    <p>Piloto interno com documentos sintéticos de um seguro residencial fictício. As respostas explicam as regras
+      gerais do produto e não confirmam a cobertura de uma apólice individual.</p>
+  </header>
+
+  <p id="aviso-do-modo" class="faixa" role="status" hidden></p>
+
+  <main class="conteudo">
+    <p class="nota">Cada pergunta é enviada sozinha: o assistente não lembra das anteriores. A conversa fica só nesta
+      página e some quando você a recarrega.</p>
+
+    <section id="conversa" class="conversa" aria-label="Conversa" aria-live="polite" tabindex="-1"></section>
+
+    <form id="formulario" class="formulario" novalidate>
+      <label for="pergunta">Sua pergunta</label>
+      <textarea id="pergunta" name="pergunta" rows="3" maxlength="1000" autocomplete="off" required
+        aria-describedby="dica contador"></textarea>
+      <p id="dica" class="dica">Enter envia; Shift+Enter quebra a linha. Não escreva dados pessoais reais.</p>
+      <div class="acoes">
+        <span id="contador" class="contador">0 / 1000</span>
+        <button type="button" id="nova-conversa" class="secundario">Nova conversa</button>
+        <button type="submit" id="enviar">Perguntar</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

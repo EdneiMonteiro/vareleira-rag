@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "verificado_em": "2026-10-10T12:59:04.8887865Z",
+  "grupo_exclusivo_ausente": true,
+  "aplicacao_removida": true,
+  "objetos_l200_removidos": 4,
+  "indice_l100_conferido_antes_de_excluir_grupo": true,
+  "credencial_login_removida": true,
+  "registro_login_ausente": true,
+  "principal_login_ausente": true,
+  "atribuicoes_proprias_remanescentes": 0,
+  "recurso_modelos_expurgado": true,
+  "outros_recursos_excluidos_preservados": true,
+  "grupos_preexistentes_preservados": 7,
+  "papeis_operador_preservados": 8,
+  "tempo_remocao_grupo_s": 1641.5,
+  "custo_total_confirmado": false,
+  "consulta_custo": "HTTP 200 sem linhas disponíveis no período",
+  "resultado_teste_final": "11/18; reprovado para o contrato completo, sem repetição ou ajuste",
+  "codigo_avaliado": "e57c5959cc8608309ccde8e8d4c9f33749f980b4"
+}

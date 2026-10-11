@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "nome": "Chat L200 - casos sintéticos de desenvolvimento v2",
+  "origem": "Casos de desenvolvimento construídos a partir dos documentos sintéticos, separados dos conjuntos finais. Podem ser repetidos para investigar e selecionar a configuração; não são avaliação independente.",
+  "configuracao_avaliada": "comparar explicitamente configurações de desenvolvimento antes de congelar a candidata",
+  "casos": [
+    {
+      "id": "DEV-01",
+      "categoria": "assistencia",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Como o produto separa assistência emergencial e indenização por sinistro?",
+      "justificativa": "As fontes distinguem o serviço de emergência da cobertura de seguro.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-02",
+      "categoria": "contratacao",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Qual documento registra as coberturas adicionais contratadas?",
+      "justificativa": "As cláusulas 1.3 e 3.1 indicam a apólice individual como fonte dessa informação.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-03",
+      "categoria": "vendaval",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Quais partes do imóvel devem sofrer dano antes de indenizar seu conteúdo por vendaval ou granizo?",
+      "justificativa": "A condição de dano anterior ao telhado, paredes, janelas ou portas está na cláusula 3.3.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-04",
+      "categoria": "analise",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Quando se inicia o prazo de análise de um sinistro?",
+      "justificativa": "A cláusula 9.5 define a entrega do último documento exigido como início do prazo.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-05",
+      "categoria": "franquias",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Quais percentuais de franquia são previstos para danos elétricos e roubo?",
+      "justificativa": "A tabela da cláusula 6.3 e as perguntas frequentes descrevem ambos os percentuais.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-06",
+      "categoria": "agravamento",
+      "tipo_esperado": "documentada",
+      "situacao_esperada": "respondida",
+      "pergunta": "Qual é o aviso exigido antes de mudar o uso residencial do imóvel para comercial?",
+      "justificativa": "A cláusula 8.3 exige comunicar o agravamento antes da mudança.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-07",
+      "categoria": "individual_eletrico",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Meu aparelho parou depois de uma oscilação de tensão. A minha contratação garante indenização?",
+      "justificativa": "A contratação e aceitação de um sinistro individual dependem de documentos próprios, fora da base geral.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-08",
+      "categoria": "individual_desocupacao",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "Minha casa fica vazia por vários meses. O meu seguro de roubo continua ativo?",
+      "justificativa": "A fonte informa a regra geral de desocupação, sem comprovar o estado da contratação individual.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-09",
+      "categoria": "individual_terceiro",
+      "tipo_esperado": "contratacao_individual",
+      "situacao_esperada": "respondida",
+      "pergunta": "A minha apólice paga um dano involuntário que um morador causou a um visitante?",
+      "justificativa": "A responsabilidade civil tem condições gerais, mas a fonte não decide indenização individual.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-10",
+      "categoria": "ambigua_limite",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "pergunta": "Como esse limite é aplicado?",
+      "justificativa": "O limite não foi identificado; pode referir-se a cobertura, sublimite ou assistência.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-11",
+      "categoria": "ambigua_condicao",
+      "tipo_esperado": "ambigua",
+      "situacao_esperada": "esclarecimento",
+      "pergunta": "No Vareleira Lar, qual condição devo cumprir?",
+      "justificativa": "A atividade ou cobertura não foi indicada, e diferentes condições se aplicam a situações distintas.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-12",
+      "categoria": "sem_endereco_aplicativo",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "pergunta": "Qual é o endereço do aplicativo móvel que recebe os avisos de sinistro?",
+      "justificativa": "Os documentos não fornecem endereço de aplicativo móvel.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-13",
+      "categoria": "sem_desconto",
+      "tipo_esperado": "sem_evidencia",
+      "situacao_esperada": "recusada",
+      "pergunta": "Há desconto comercial para quem renovar pelo site?",
+      "justificativa": "A regra geral de renovação não informa descontos por canal.",
+      "evidencias_referencia": []
+    },
+    {
+      "id": "DEV-14",
+      "categoria": "fora_astronomia",
+      "tipo_esperado": "fora_de_escopo",
+      "situacao_esperada": "recusada",
+      "pergunta": "Como calcular a órbita de um satélite?",
+      "justificativa": "O assunto não trata de seguro residencial ou Vareleira Lar.",
+      "evidencias_referencia": []
+    }
+  ]
+}

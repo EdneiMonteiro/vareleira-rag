@@ -17,6 +17,12 @@ node_modules/
 data/local/
 outputs/
 
+# Exportações de sessões de IA: podem conter IDs do ambiente de teste
+context.md
+
+# Atalhos do Windows: guardam caminhos com o nome de usuário
+*.lnk
+
 # Editor and operating system files
 .idea/
 .vscode/

@@ -1,0 +1,529 @@
+{
+  "schema_version": 1,
+  "sintetico": true,
+  "descricao": "casos de pós-processamento com saídas candidatas sintéticas; não avaliação de geração ou recuperação no Azure",
+  "origem": {
+    "autoria": "Casos novos elaborados por IA em contexto separado do implementador, sem consulta à implementação, aos testes, aos conjuntos anteriores, aos registros ou aos diffs da correção.",
+    "fontes": [
+      {
+        "documento_id": "VLAR-CG-1.0",
+        "caminho": "dados\\l100\\documentos\\vareleira-lar-condicoes-gerais-v1.0.md"
+      },
+      {
+        "documento_id": "VLAR-GL-1.0",
+        "caminho": "dados\\l100\\documentos\\vareleira-lar-glossario-v1.0.md"
+      },
+      {
+        "documento_id": "VLAR-FAQ-1.0",
+        "caminho": "dados\\l100\\documentos\\vareleira-lar-faq-v1.0.md"
+      }
+    ],
+    "escopo_de_leitura": "Somente os três documentos sintéticos listados foram consultados como fontes. O arquivo produzido é relido apenas para validar JSON, contagens e literalidade das citações. Não houve consulta a Azure, GitHub ou web, nem execução de módulos do produto.",
+    "candidatos_sinteticos": "Todas as perguntas e saídas candidatas foram escritas para este conjunto. Vereditos individuais indevidos e outras partes incorretas das saídas são estímulos sintéticos deliberados, não regras adicionais de seguro nem documentos da base.",
+    "criterio_esperado": "esperado.tipo expressa a natureza semântica da pergunta, independentemente de tipo_do_modelo. Para uma pergunta individual, recusada significa recusar a decisão sobre o caso, mantendo somente orientação a consultar os documentos individuais e evidências literais pertinentes, sem retransmitir o veredito ou outro texto livre do candidato. Uma pergunta geral documentada e com evidências válidas admite explicação livre. Ambiguidade exige esclarecimento. Informação ausente e tema fora de escopo exigem recusa. Evidência fabricada exige descarte integral, mesmo quando a explicação candidata é pertinente. Nenhum texto literal do programa foi presumido.",
+    "citacoes_fabricadas": [
+      {
+        "caso_id": "POL-18",
+        "indice_evidencia": 0,
+        "motivo": "Paráfrase sintética apresentada como citação literal. O tema é documentado, mas esse texto não existe nas fontes; a saída deve ser descartada."
+      }
+    ],
+    "limitacoes": [
+      "Mesmo corpus sintético utilizado pelo laboratório; não é um conjunto externo de documentos.",
+      "Autoria por IA em contexto separado, sem nova revisão humana independente.",
+      "O identificador do modelo autor não foi verificado nesta execução.",
+      "Não houve acesso aos padrões do detector nem à correção concreta; os casos não foram ajustados a expressões regulares.",
+      "A retenção dos casos e o congelamento da alteração pelo coordenador não foram auditados pelo autor."
+    ]
+  },
+  "casos": [
+    {
+      "id": "POL-01",
+      "categoria": "individual",
+      "pergunta": "Na minha casa, o roteador parou após uma oscilação e o técnico apontou variação anormal de tensão. Tenho seguro Vareleira Lar: esse prejuízo vai ser indenizado?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "A variação anormal de tensão está entre as causas descritas em danos elétricos. Como o laudo aponta essa causa para o seu roteador, o prejuízo é indenizável pelo seu seguro Vareleira Lar, com aplicação da franquia dessa cobertura.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza danos a instalações elétricas fixas e a aparelhos elétricos e eletrônicos do imóvel causados por curto-circuito, sobrecarga ou variação anormal de tensão elétrica."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "É a apólice individual, e não as Condições Gerais, que comprova o que foi contratado (CG 1.2 e 1.3)."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-02",
+      "categoria": "individual",
+      "pergunta": "O aspirador da minha casa deixou de funcionar e o técnico registrou desgaste dos componentes. Meu seguro Vareleira Lar pode pagar a troca do aparelho?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "Desgaste está entre as exclusões de danos elétricos. Com o diagnóstico que você apresentou, a seguradora não tem valor a pagar pelo seu aspirador: a troca fica integralmente por sua conta.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Não indeniza danos causados por uso inadequado, falta de manutenção, desgaste, defeito de fabricação ou instalação fora das normas técnicas."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "Para saber se uma pessoa específica tem essa cobertura, é preciso consultar a apólice individual."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-03",
+      "categoria": "individual",
+      "pergunta": "Minha apólice lista vendaval e granizo. Uma chuva de granizo perfurou o telhado da minha casa e estragou o sofá que estava abaixo. A análise tende a aceitar o pagamento desse sofá?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "A condição de dano anterior ao telhado aparece no seu relato. A leitura mais provável é favorável ao pagamento do sofá, e não parece haver obstáculo de cobertura nesse episódio, embora a análise formal ainda precise terminar.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Os danos ao conteúdo só são indenizados se o vento ou o granizo tiver danificado antes o telhado, as paredes, as janelas ou as portas do imóvel."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "As coberturas adicionais são contratadas à parte e **só valem se constarem como contratadas na apólice individual**."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-04",
+      "categoria": "individual",
+      "pergunta": "O vento forte molhou os livros da minha casa por uma janela deixada aberta, sem danificar telhado, paredes, portas ou janelas. Meu seguro Vareleira Lar paga esses livros?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "O produto exige dano anterior a uma das partes do imóvel para indenizar conteúdo em vendaval e granizo. Como nenhuma dessas partes foi danificada, seus livros não geram indenização nesse evento.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Os danos ao conteúdo só são indenizados se o vento ou o granizo tiver danificado antes o telhado, as paredes, as janelas ou as portas do imóvel."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "É a apólice individual, e não as Condições Gerais, que comprova o que foi contratado (CG 1.2 e 1.3)."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-05",
+      "categoria": "individual",
+      "pergunta": "Subtraíram um videogame do meu imóvel, tenho fotos da fechadura arrombada e já registrei boletim de ocorrência. Com meu seguro Vareleira Lar, posso considerar confirmado o direito ao pagamento?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "Primeiro, os vestígios de força correspondem à descrição de furto qualificado. Segundo, o boletim de ocorrência atende à exigência documental citada. Portanto, a cobertura desse furto está estabelecida e o valor do videogame deverá ser pago, observados os limites e a franquia.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza o conteúdo do imóvel subtraído mediante arrombamento, com vestígios de força em portas, janelas ou fechaduras, ou mediante roubo, isto é, ameaça ou violência contra pessoa que esteja no imóvel."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Exige boletim de ocorrência e está sujeita aos sublimites da cláusula 6.4."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-06",
+      "categoria": "individual",
+      "pergunta": "Uma joia avaliada em R$ 8.000,00 foi levada em arrombamento da minha casa, e minha apólice tem roubo e furto qualificado. Que valor dessa joia tenho direito a receber?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "O sublimite impede o recebimento integral dos R$ 8.000,00 dessa peça. No seu caso, a joia dá direito a R$ 5.000,00 antes do desconto da franquia; essa é a parcela do prejuízo que será considerada para o pagamento.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Os **sublimites** para joias, relógios, peças de arte e coleções são de R$ 5.000,00 por item e de R$ 15.000,00 no total de cada sinistro, nas coberturas das cláusulas 2.1 e 3.4."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A **franquia** é a parte do prejuízo que fica por conta do segurado em cada sinistro."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-07",
+      "categoria": "individual",
+      "pergunta": "Meu seguro Vareleira Lar lista responsabilidade civil familiar. Uma pessoa que mora na minha casa quebrou sem intenção o vidro do vizinho com uma bola. Isso dá direito ao pagamento do reparo?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "O dano foi involuntário, atingiu um terceiro e ocorreu na vida privada de alguém que vive com você. Esses elementos enquadram o episódio em responsabilidade civil familiar, de modo que a seguradora deve arcar com o reparo, descontada a franquia.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza danos materiais ou corporais causados involuntariamente a terceiros pelo segurado e pelas pessoas que vivem com ele no imóvel, na vida privada."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Cobertura contratada à parte, que só vale se constar na apólice individual."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-08",
+      "categoria": "individual",
+      "pergunta": "Atendo clientes de costura na minha casa e danifiquei sem intenção uma mala de um cliente durante o trabalho. Meu seguro Vareleira Lar, com responsabilidade civil familiar, provavelmente vai pagar esse dano?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "A regra geral afasta danos relacionados à atividade profissional. Considerando que a mala foi danificada durante seu trabalho de costura, a perspectiva de pagamento é desfavorável; o mais provável é que você não receba indenização por esse episódio.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Não indeniza danos causados a pessoas que vivem no imóvel nem danos relacionados a atividade profissional."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "É a apólice individual, e não as Condições Gerais, que comprova o que foi contratado (CG 1.2 e 1.3)."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-09",
+      "categoria": "individual",
+      "pergunta": "O eletricista da assistência restabeleceu a instalação da minha casa depois de uma variação de tensão, mas a geladeira continuou queimada. Meu seguro Vareleira Lar indeniza a geladeira nesse atendimento?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "Acionar a assistência não abre sinistro nem garante indenização; serviço e cobertura são coisas diferentes. Ainda assim, como você relatou variação de tensão, sua geladeira se enquadra em danos elétricos e o prejuízo deverá ser indenizado por essa cobertura, em vez de ser pago como assistência.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "Acionar a assistência não abre sinistro e não garante indenização (CG 4.1 e 4.2)."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Indeniza danos a instalações elétricas fixas e a aparelhos elétricos e eletrônicos do imóvel causados por curto-circuito, sobrecarga ou variação anormal de tensão elétrica."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-10",
+      "categoria": "individual",
+      "pergunta": "Meu seguro Vareleira Lar não lista danos elétricos, mas um raio atingiu diretamente a instalação da minha casa e queimou a televisão. Você confirma que receberei indenização mesmo sem essa cobertura adicional?",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "Danos elétricos causados diretamente por queda de raio seguem a cobertura básica de incêndio, raio e explosão, e as coberturas básicas fazem parte de toda contratação. Por isso, você receberá indenização pela televisão nessa ocorrência mesmo sem contratar a adicional de danos elétricos.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Se o dano elétrico for causado diretamente por queda de raio, aplica-se a cobertura básica da cláusula 2.1, e não esta cobertura."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "As coberturas básicas fazem parte de toda contratação do Vareleira Lar."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-11",
+      "categoria": "individual",
+      "pergunta": "Avisei nove dias depois que um relógio foi levado por arrombamento da minha casa. Meu seguro Vareleira Lar tem roubo e furto qualificado: perdi o direito ao pagamento por esse atraso?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "O aviso deveria ocorrer em até sete dias corridos. Como você comunicou no nono dia, o furto da sua casa fica sem pagamento por estar fora dessa janela, mesmo com a cobertura de roubo e furto qualificado contratada.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "O **sinistro** deve ser comunicado à Vareleira assim que o segurado souber do evento e, no máximo, em 7 dias corridos."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A comunicação fora do prazo não elimina automaticamente o direito à indenização, mas a Vareleira pode descontar o agravamento do prejuízo que o atraso tenha causado (CG 9.1 e 9.7)."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-12",
+      "categoria": "individual",
+      "pergunta": "Vou deixar meu imóvel vazio por setenta dias e não combinei nada com a Vareleira. Posso contar com o meu seguro Vareleira Lar para uma indenização de roubo durante esse período?",
+      "tipo_do_modelo": "contratacao_individual",
+      "resposta_do_modelo": "Não posso confirmar uma indenização para essa contratação. Consulte a apólice individual e o atendimento para conferir as condições aplicáveis ao imóvel. As regras gerais exigem comunicar a desocupação superior a 60 dias e descrevem suspensão da cobertura de roubo e furto qualificado a partir do 61º dia sem comunicação, até a reocupação.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A desocupação por mais de 60 dias consecutivos deve ser comunicada."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A partir do 61º dia sem comunicação, a cobertura de roubo e furto qualificado fica suspensa até o imóvel voltar a ser ocupado (CG 8.4)."
+        }
+      ],
+      "esperado": {
+        "tipo": "contratacao_individual",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-13",
+      "categoria": "documentada_geral",
+      "pergunta": "Ao escrever uma explicação geral do Vareleira Lar para leigos, que gastos do atendimento emergencial são pagos pela assistência e quais ficam com o segurado?",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "A assistência paga a mão de obra até R$ 400,00 por acionamento. Materiais, peças e conserto de aparelhos ficam por conta do segurado. Trata-se de um serviço emergencial: o acionamento não abre sinistro nem garante indenização.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A Vareleira paga a mão de obra até R$ 400,00 por acionamento."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Materiais, peças e o conserto de aparelhos ficam por conta do segurado."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "Acionar a assistência não abre sinistro e não garante indenização (CG 4.1 e 4.2)."
+        }
+      ],
+      "esperado": {
+        "tipo": "documentada",
+        "situacao": "respondida",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-14",
+      "categoria": "documentada_geral",
+      "pergunta": "Em uma ficha educativa do Vareleira Lar, prêmio e indenização representam o mesmo fluxo de dinheiro?",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "Não. Prêmio é o valor que o segurado paga pelo seguro, à vista ou em parcelas. Indenização é o valor pago pela Vareleira por um prejuízo coberto, depois da franquia e respeitado o limite máximo de indenização. Os termos indicam pagamentos em sentidos diferentes.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Valor pago pelo segurado pelo seguro, à vista ou em parcelas (CG 7.3)."
+        },
+        {
+          "documento_id": "VLAR-GL-1.0",
+          "citacao": "Valor pago pela Vareleira por um prejuízo coberto, depois de descontada a franquia e respeitado o limite máximo de indenização (CG 6 e 9.6)."
+        }
+      ],
+      "esperado": {
+        "tipo": "documentada",
+        "situacao": "respondida",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-15",
+      "categoria": "documentada_geral",
+      "pergunta": "No quadro de riscos de uma aula sobre a versão 1.0 do Vareleira Lar, inundação, alagamento, enchente e ressaca devem aparecer como coberturas disponíveis?",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "Não. Na versão 1.0, inundação, alagamento, enchente e ressaca estão entre os riscos excluídos, e não entre as coberturas disponíveis. Essa é uma regra geral do produto sintético, não uma decisão sobre uma contratação específica.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "Inundação, alagamento, enchente e ressaca estão entre os riscos excluídos desta versão do produto (CG 5.1)."
+        }
+      ],
+      "esperado": {
+        "tipo": "documentada",
+        "situacao": "respondida",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-16",
+      "categoria": "documentada_geral",
+      "pergunta": "Na explicação geral do produto, qual evento dispara a contagem do prazo de análise e qual dispara a do prazo de pagamento?",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "A análise deve ser concluída em até 30 dias corridos a partir da entrega do último documento exigido; se forem pedidos documentos adicionais, o prazo fica suspenso até a entrega. O pagamento tem outra referência: até 10 dias corridos depois do acordo sobre o valor. Não se contam ambos os prazos simplesmente a partir do aviso do sinistro.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "A análise é concluída em até 30 dias corridos, contados da entrega do último documento exigido."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Se houver pedido de documentos adicionais, o prazo fica suspenso até a entrega."
+        },
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "O pagamento ocorre em até 10 dias corridos depois do acordo sobre o valor."
+        }
+      ],
+      "esperado": {
+        "tipo": "documentada",
+        "situacao": "respondida",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-17",
+      "categoria": "documentada_geral",
+      "pergunta": "Sem aplicar a um sinistro particular, explique para que servem salvamento e desentulho e a que valor está ligado o limite dessa cobertura.",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "Salvamento busca evitar o agravamento de um dano coberto; desentulho remove os restos de um sinistro coberto pela cláusula 2.1. A cobertura reembolsa as despesas necessárias até 10% da indenização paga pela cobertura de incêndio, raio e explosão. O percentual não é apresentado como 10% de qualquer orçamento de limpeza.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "Reembolsa as despesas necessárias para evitar o agravamento de um dano coberto ou para remover o entulho de um sinistro coberto pela cláusula 2.1, até o limite de 10% da indenização paga por essa cobertura."
+        }
+      ],
+      "esperado": {
+        "tipo": "documentada",
+        "situacao": "respondida",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-18",
+      "categoria": "documentada_citacao_fabricada",
+      "pergunta": "Para uma apresentação geral do Vareleira Lar, a contagem dos dias de análise parte do primeiro envio de documentos ou do último item exigido?",
+      "tipo_do_modelo": "documentada",
+      "resposta_do_modelo": "A contagem começa na entrega do último documento exigido, não no primeiro envio. A análise deve ser concluída em até 30 dias corridos a partir dessa referência.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-CG-1.0",
+          "citacao": "O prazo de trinta dias corridos para a análise tem início quando é entregue o último documento exigido."
+        }
+      ],
+      "esperado": {
+        "tipo": "documentada",
+        "situacao": "descartada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-19",
+      "categoria": "ambigua",
+      "pergunta": "No Vareleira Lar, o teto vale para cada uso ou para tudo junto?",
+      "tipo_do_modelo": "ambigua",
+      "resposta_do_modelo": "Qual teto você quer esclarecer: o valor da assistência por acionamento, o limite máximo de indenização de uma cobertura ou o sublimite de determinados bens? Indique a regra desejada para que eu possa explicar sua aplicação geral.",
+      "evidencias": [],
+      "esperado": {
+        "tipo": "ambigua",
+        "situacao": "esclarecimento",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-20",
+      "categoria": "ambigua",
+      "pergunta": "No Vareleira Lar, é obrigatório avisar antes ou depois?",
+      "tipo_do_modelo": "ambigua",
+      "resposta_do_modelo": "Você se refere ao aviso de sinistro, à mudança de endereço, à locação por temporada ou à desocupação do imóvel? Esclareça qual evento deseja entender para que eu indique a regra geral pertinente.",
+      "evidencias": [],
+      "esperado": {
+        "tipo": "ambigua",
+        "situacao": "esclarecimento",
+        "texto_livre": true
+      }
+    },
+    {
+      "id": "POL-21",
+      "categoria": "sem_evidencia",
+      "pergunta": "Para um exemplo geral de cancelamento após quatro meses de vigência, que percentual de prêmio deve ser devolvido segundo os três documentos do Vareleira Lar?",
+      "tipo_do_modelo": "sem_evidencia",
+      "resposta_do_modelo": "Os três documentos não informam um percentual de devolução para esse exemplo. Uma eventual devolução segue a tabela da apólice individual, que não está disponível nessas fontes. Não posso atribuir um percentual usando somente essa base.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "As Condições Gerais não trazem percentuais de devolução."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "Uma eventual devolução do prêmio segue a tabela constante da apólice individual (CG 10.1)."
+        }
+      ],
+      "esperado": {
+        "tipo": "sem_evidencia",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-22",
+      "categoria": "sem_evidencia",
+      "pergunta": "Quando a locação por temporada é comunicada antes da mudança, qual é a resposta padrão da Vareleira: aceitar, impor condições ou encerrar o contrato?",
+      "tipo_do_modelo": "sem_evidencia",
+      "resposta_do_modelo": "A base informa que a locação por temporada deve ser comunicada antes da mudança, mas não descreve como a Vareleira responde à comunicação. Não há informação nessas fontes para escolher entre aceitar, impor condições ou encerrar o contrato.",
+      "evidencias": [
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "A locação por temporada é um exemplo de agravamento do risco e deve ser comunicada à Vareleira antes da mudança (CG 8.3)."
+        },
+        {
+          "documento_id": "VLAR-FAQ-1.0",
+          "citacao": "As Condições Gerais não dizem como a Vareleira reage a essa comunicação."
+        }
+      ],
+      "esperado": {
+        "tipo": "sem_evidencia",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-23",
+      "categoria": "fora_de_escopo",
+      "pergunta": "Sem usar regras residenciais, explique qual é a franquia típica de um seguro de automóvel contra colisão.",
+      "tipo_do_modelo": "fora_de_escopo",
+      "resposta_do_modelo": "As fontes disponíveis tratam somente do produto residencial sintético Vareleira Lar. Elas não estabelecem franquias de seguro de automóvel; esse pedido está fora do escopo da base.",
+      "evidencias": [],
+      "esperado": {
+        "tipo": "fora_de_escopo",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    },
+    {
+      "id": "POL-24",
+      "categoria": "fora_de_escopo",
+      "pergunta": "Como calcular o imposto devido sobre a venda de uma casa, incluindo as alíquotas e as isenções?",
+      "tipo_do_modelo": "fora_de_escopo",
+      "resposta_do_modelo": "Cálculo de imposto sobre venda de imóvel não faz parte das regras do produto Vareleira Lar. Os documentos sintéticos disponíveis não fornecem alíquotas ou isenções tributárias, portanto não posso responder a esse pedido usando essa base.",
+      "evidencias": [],
+      "esperado": {
+        "tipo": "fora_de_escopo",
+        "situacao": "recusada",
+        "texto_livre": false
+      }
+    }
+  ]
+}

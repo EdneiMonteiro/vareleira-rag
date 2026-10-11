@@ -1,7 +1,7 @@
 # Vareleira RAG
 
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0006--0765--4201-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0006-0765-4201)
-[![Status: em preparação](https://img.shields.io/badge/status-em_prepara%C3%A7%C3%A3o-yellow)](#estado-do-laboratório)
+[![Status: em desenvolvimento](https://img.shields.io/badge/status-em_desenvolvimento-yellow)](#estado-do-laboratório)
 [![Código: MIT](https://img.shields.io/badge/C%C3%B3digo-MIT-yellow.svg)](LICENSES/MIT.txt)
 [![Conteúdo: CC BY 4.0](https://img.shields.io/badge/Conte%C3%BAdo-CC%20BY%204.0-lightgrey.svg)](LICENSES/CC-BY-4.0.txt)
 [![Último commit](https://img.shields.io/github/last-commit/EdneiMonteiro/vareleira-rag)](https://github.com/EdneiMonteiro/vareleira-rag/commits/main)
@@ -12,9 +12,135 @@ recuperação (RAG, do inglês Retrieval-Augmented Generation)** da
 O objetivo é aprender a consultar condições gerais sintéticas de seguro
 residencial, recuperar evidências e responder com fontes verificáveis.
 
-**Este repositório está em preparação. Ainda não há aplicação executável,
-base de apólices ou ambiente para provisionar.** A tecnologia será definida
-durante a implementação; não há dependência de um provedor de nuvem ou modelo.
+**L100 e L200:** fundamentos em console e evolução para ingestão gerenciada e chat.
+O L100 usa Python, Microsoft Agent Framework (MAF) e infraestrutura Azure em Bicep; seus sete desafios
+foram executados no Azure e aprovados pelo mantenedor. O L200 reutiliza a base e a política, acrescenta
+Text Split, comparação dos índices e chat FastAPI em Azure Container Apps com identidade gerenciada
+e autenticação obrigatória. Os recursos de validação foram removidos, as identidades temporárias
+foram retiradas e os recursos preexistentes foram preservados.
+O novo teste do chat teve 16 de 18 casos conformes, sem descartes, após uma correção de referências.
+A rodada original com 11 de 18 foi preservada. A entrega continua experimental, com duas divergências
+de classificação e sem homologação do atendimento completo.
+
+No L100 e L200, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
+`gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` em 9 e 10 de outubro de 2026.
+O modelo usado pelo aluno no Copilot e os modelos de autoria e revisão da documentação são escolhas
+separadas. Modelos dos próximos níveis dependem de disponibilidade, cota e avaliação.
+
+## Comece pelo primeiro desafio
+
+Leia o [L100 — Desafio 01: preparar o ambiente e organizar a base documental](desafios/L100/01-preparar-ambiente.md).
+Ele é **executável** e foi validado de ponta a ponta no Azure em 9 de outubro
+de 2026, em Windows com PowerShell; a
+[situação da validação](desafios/L100/01-preparar-ambiente.md#situação-da-validação)
+lista o que foi e o que não foi conferido, e o
+[registro de trabalho](docs/validacao/l100-01-preparar-ambiente.md) guarda a matriz
+completa. Os documentos de seguro são sintéticos e novos. O mantenedor confirmou
+**a aprovação do material do L100 em 9 de outubro de 2026**.
+
+Depois, siga para o [L100 — Desafio 02: dividir, vetorizar e indexar os documentos](desafios/L100/02-indexar-documentos.md),
+também executável e validado no Azure em 9 de outubro de 2026
+([situação da validação](desafios/L100/02-indexar-documentos.md#situação-da-validação);
+[registro de trabalho](docs/validacao/l100-02-indexar-documentos.md)). Ele continua o
+primeiro: reaproveita os documentos do Blob Storage e acrescenta um serviço de busca, cobrado por hora
+enquanto existir, e um deployment (instância nomeada de modelo) de embeddings, cobrado por tokens usados.
+
+Continue pelos desafios abaixo. Os Desafios 03 a 06 são sequenciais; o 07 reutiliza a infraestrutura
+e o programa do 03.
+
+| Desafio | Tema | Situação da validação e registro |
+| --- | --- | --- |
+| [03: responder com fontes](desafios/L100/03-responder-com-fontes.md) | Geração e conferência dos identificadores citados | [Validação do D03](desafios/L100/03-responder-com-fontes.md#situação-da-validação); [registro do D03](docs/validacao/l100-03-responder-com-fontes.md) |
+| [04: recusar sem evidência](desafios/L100/04-recusar-sem-evidencia.md) | Tipos de pergunta, citações literais e recusas | [Validação do D04](desafios/L100/04-recusar-sem-evidencia.md#situação-da-validação); [registro do D04](docs/validacao/l100-04-recusar-sem-evidencia.md) |
+| [05: agente com MAF](desafios/L100/05-agente-com-maf.md) | Decisão de busca, limites e rastro | [Validação do D05](desafios/L100/05-agente-com-maf.md#situação-da-validação); [registro do D05](docs/validacao/l100-05-agente-com-maf.md) |
+| [06: medir a recuperação e as respostas](desafios/L100/06-avaliar-respostas.md) | Conjuntos separados; acerto@k (cobertura dos assuntos) e MRR (média do inverso da posição) | [Validação do D06](desafios/L100/06-avaliar-respostas.md#situação-da-validação); [registro do D06](docs/validacao/l100-06-avaliar-respostas.md) |
+| [07: identidade da aplicação](desafios/L100/07-identidade-da-aplicacao.md) | Key Vault e identidade de aplicação (*service principal*) com permissões delimitadas | [Validação do D07](desafios/L100/07-identidade-da-aplicacao.md#situação-da-validação); [registro do D07](docs/validacao/l100-07-identidade-da-aplicacao.md) |
+
+Os Desafios 03 a 07 foram validados no Azure em 9 de outubro de 2026. Após autorização do mantenedor,
+o D07 confirmou a consulta ao índice, o uso dos modelos e três recusas HTTP 403 com a identidade da
+aplicação. A credencial, os papéis e a identidade foram removidos; o cofre e o recurso de modelos foram
+expurgados, e os recursos preexistentes foram preservados.
+O detector original do D04 foi substituído por texto fixo para casos classificados como individuais,
+com citações e aviso. A comparação local foi seguida de uma rodada Azure com 24 perguntas novas:
+22 de 23 casos comparáveis seguiram o contrato, e os 12 individuais tiveram texto fixo e aviso.
+Uma pergunta esperada como ambígua foi recusada como sem evidência; a classificação ainda pode falhar.
+O teste histórico do D06 teve duas falsas recusas em 12 e ficou abaixo da meta. Esses limites estão
+documentados nos guias. O mantenedor confirmou a aprovação do texto, do código, dos documentos
+sintéticos e dos conjuntos de perguntas em 9 de outubro de 2026.
+Essa aprovação não altera as medições nem elimina as limitações registradas.
+
+O curso atende pessoas de negócio, arquitetura, operações e desenvolvimento.
+Cada desafio combina cenário da Vareleira, explicações das tecnologias,
+artefatos, prática orientada, glossário, boas práticas e prompts de GitHub
+Copilot no Visual Studio Code (VS Code). Use os arquivos fornecidos ou peça mudanças ao Copilot;
+revise o que será executado e confira o resultado.
+
+**Pré-requisito:** acesso a uma assinatura Azure ativa, com permissões adequadas
+às atividades. O uso assistido também exige acesso ao GitHub Copilot.
+Cobranças do Azure e consumo do Copilot são independentes. Executar o desafio
+cria recursos reais e pode gerar custo; permissões, custos e limpeza estão
+descritos no próprio guia.
+
+## Estrutura do repositório
+
+| Pasta | Conteúdo |
+| --- | --- |
+| `desafios` | Guias dos desafios, organizados por nível |
+| `infra` | Bicep e parâmetros por nível |
+| `scripts` | Scripts Python de carga, indexação, consulta, geração de respostas, agente, avaliação e identidade |
+| `dados` | Documentos sintéticos e inventários |
+| `requirements` | Dependências Python por nível |
+| `tests` | Testes automáticos, sem acesso ao Azure |
+| `docs` | Padrão de autoria dos desafios e registros de validação (`docs/validacao`) |
+| `web` | Página do chat, interação JavaScript e estilos |
+| `.github` | Instruções do Copilot, modelos de issue e de pull request |
+
+Para verificar o projeto localmente, sem Azure, use Python 3.12 ou superior:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements\l200.txt
+python -m unittest discover -s tests
+```
+
+Para uma cópia somente do L100, use `requirements\l100.txt`.
+
+### Evolução planejada
+
+| Nível | Objetivo | Continuidade |
+| --- | --- | --- |
+| L100 | Entender ingestão por código e consulta RAG em console | Preparar a base compartilhada |
+| L200 | Comparar ingestão gerenciada e publicar o chat em Azure Container Apps | Reutilizar documentos, busca e modelos |
+| L300 | Automatizar, controlar acesso e operar com dependências privadas | Evoluir identidade, rede e observabilidade |
+| L400 | Medir coordenação de agentes, resiliência e uso de múltiplos deployments | Comparar com a solução anterior e testar migrações |
+
+O L100 contém sete desafios incrementais. Os próximos níveis também terão sequência e procedimentos
+de migração para mudanças de rede, índice ou identidade, com verificação e recuperação.
+Remova recursos temporários de comparação quando terminar a atividade.
+
+### Continue pelo L200
+
+O [roteiro L200](docs/roteiro-l200.md) explica decisões, reaproveitamento e limites. Comece pela
+reconstrução da base: os recursos das validações anteriores foram removidos, e a continuidade depende
+dos arquivos versionados, não da existência de um ambiente do instrutor.
+
+| Desafio | Prática e registro |
+| --- | --- |
+| [01: reconstruir a base](desafios/L200/01-reconstruir-base.md) | Versão, destino, documentos e índice Python; [registro](docs/validacao/l200-01-reconstruir-base.md) |
+| [02: ingestão gerenciada](desafios/L200/02-ingestao-gerenciada.md) | Identidade da busca e pipeline separado; [registro](docs/validacao/l200-02-ingestao-gerenciada.md) |
+| [03: comparar ingestão](desafios/L200/03-comparar-ingestao.md) | 54 e 21 trechos, três modos e recuperação documental; [registro](docs/validacao/l200-03-comparar-ingestao.md) |
+| [04: chat local](desafios/L200/04-chat-local.md) | Interface, fontes, isolamento e falhas; [registro](docs/validacao/l200-04-chat-local.md) |
+| [05: hospedar o chat](desafios/L200/05-hospedar-chat.md) | Imagem, identidade gerenciada e autenticação na borda; [registro](docs/validacao/l200-05-hospedar-chat.md) |
+| [06: avaliar o chat](desafios/L200/06-avaliar-chat.md) | Avaliador HTTP e conjunto próprio, separado das consultas de fumaça; [registro](docs/validacao/l200-06-avaliar-chat.md) |
+| [07: operar, recuperar e limpar](desafios/L200/07-operar-recuperar-limpar.md) | Revisões, custos e remoções com alvo explícito; [registro](docs/validacao/l200-07-operar-recuperar-limpar.md) |
+
+A ingestão gerenciada recuperou os assuntos das seis consultas de fumaça nos dois índices e três
+modos; isso não é um benchmark independente. O chat teve respostas reais e também descartes HTTP 503.
+A borda recusou pedidos anônimos e um cabeçalho artificial com 401. A identidade gerenciada recebeu
+três recusas 403 fora de seus papéis. A autenticação testada usou identidade temporária, não login
+interativo de uma pessoa; autorização por documento e público restrito a pessoas específicas ficam
+fora desta implementação.
 
 ## O caso do laboratório
 
@@ -37,40 +163,64 @@ e as [atribuições](NOTICE.md).
 
 ## Objetivos e limites
 
-O laboratório deverá exercitar:
+O L100 exercita:
 
 - Preparação de documentos sintéticos com produto, versão, vigência fictícia
   e autoridade da fonte.
-- Recuperação de trechos pertinentes e identificação de documentos
-  desatualizados ou de outra versão.
+- Recuperação de trechos e localização da fonte, com documento e versão.
 - Respostas sustentadas por referências localizáveis nos documentos.
 - Tratamento de perguntas ambíguas, fora de escopo ou sem evidência suficiente.
-- Avaliação reproduzível da recuperação e da fidelidade das respostas às fontes.
+- Medição da recuperação, dos tipos de resposta, das situações e das frases esperadas.
+
+Comparação entre versões documentais e avaliação mais ampla da fidelidade estão previstas para a
+evolução do laboratório.
 
 Por exemplo, **“O meu seguro cobre danos elétricos?”** não pode ser respondida
 como confirmação de cobertura individual apenas com condições gerais.
-O assistente deverá distinguir a explicação do produto da análise de uma
-contratação e encaminhar o que estiver fora de seu escopo.
-As coberturas, exclusões e franquias fictícias ainda serão definidas.
+A análise de uma contratação depende dos documentos individuais. A política do protótipo aplica
+recusas e, no caminho individual, introdução fixa, citações e aviso. Confira também erros de
+classificação e a interpretação das fontes antes de usar o resultado.
+As coberturas, exclusões e franquias fictícias estão nas
+[Condições Gerais sintéticas](dados/l100/documentos/vareleira-lar-condicoes-gerais-v1.0.md)
+do L100: conteúdo sintético novo, aprovado pelo mantenedor para o exercício.
 
 **Fora do escopo:** dados pessoais reais; decisões de cobertura individual,
 indenização ou elegibilidade; emissão ou alteração de contratos; execução de
 ações em sistemas; uso em produção sem avaliação própria.
-O site institucional não substitui a futura base documental de seguros.
+O site institucional fornece o contexto narrativo; as regras do exercício estão nos documentos
+sintéticos do repositório.
 
 ## Estado do laboratório
 
 | Entrega | Situação |
 | --- | --- |
 | Escopo, contexto narrativo, licenças e políticas do repositório | Disponíveis |
-| Condições gerais sintéticas e metadados documentais | Planejados |
-| Implementação da ingestão, recuperação e geração com fontes | Planejada |
-| Perguntas, critérios e execução da avaliação | Planejados |
-| Roteiro de execução, pré-requisitos e orientações de custos | Planejados |
+| Padrão de autoria e instruções do Copilot para o projeto | Disponíveis |
+| L100, Desafio 01: Bicep, carga e conferência de documentos no Blob Storage | Disponível e validado no Azure, com as ressalvas do registro de validação |
+| L100, Desafio 02: divisão em trechos, embeddings, índice no Azure AI Search e consulta sem resposta gerada | Disponível e validado no Azure, com as ressalvas do registro de validação |
+| L100, Desafio 03: deployment de geração e respostas com fontes | Disponível e validado no Azure, com as ressalvas do registro de validação |
+| L100, Desafio 04: política de resposta com citações literais e recusa sem evidência | Disponível e validado no Azure, com as ressalvas do registro de validação |
+| L100, Desafio 05: agente do Microsoft Agent Framework com ferramenta de busca limitada | Disponível e validado no Azure, com as ressalvas do registro de validação |
+| L100, Desafio 06: conjuntos de ajuste e de teste, métricas de recuperação e de respostas | Disponível e validado no Azure; o conjunto de teste foi medido uma vez e a meta de escolha não foi atingida nele |
+| L100, Desafio 07: Key Vault, service principal e privilégio mínimo | Disponível e validado no Azure: identidade temporária, dois papéis, cinco operações, pergunta como aplicação e limpeza conferidos |
+| Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
+| Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
+| L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
+| Níveis L300 e L400 | Planejados |
 
-Ainda não existe uma release do laboratório. A versão 0.1.0 citada acima é
-**do contexto Vareleira**, não deste código. Não há comandos de instalação
-ou execução nesta etapa.
+O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
+no commit `d4a93cc`; a [pré-release `v0.1.1-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.1-l100)
+sincroniza aprovação e avaliação posterior, sem incorporar o L200. As medições permanecem separadas no
+[registro do D04](docs/validacao/l100-04-recusar-sem-evidencia.md).
+O L200 está na [pré-release experimental `v0.2.0-l200`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.2.0-l200),
+no commit `5b70b37`, com o teste reprovado e a limpeza concluída registrados.
+A [pré-release corrigida `v0.2.1-l200`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.2.1-l200)
+preserva essa história e acrescenta referências restritas, novo teste de 16 de 18 sem descartes
+e o encerramento da rodada de correção. O [PR #1](https://github.com/EdneiMonteiro/vareleira-rag/pull/1)
+disponibiliza a entrega para revisão; a branch principal não foi mesclada automaticamente.
+A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
+Azure quando você executa os comandos deles; permissões, custos e limpeza estão
+descritos em cada guia.
 
 ## Participação e suporte
 

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "congelado_em": "2026-10-10T13:45:46.1310990Z",
+  "commit": "2c39a21e9437e6f7a4f2edf7c9ca4b1fdbb729f1",
+  "imagem_digest": "sha256:fe6f1f959ff40d9f34eb4bf51c167e31bd69008b8a4c68f681edc08f9f3403f1",
+  "run": "cq1",
+  "casos_sha256_bytes_brutos": "41e06b32049c955d3f9f71016221a495aa77c4c4f348f86b67dcf69615d89999",
+  "casos_sha256_normalizado_lf": "1b30ee43f6df56797c05d02b0ffd5f09f386ff25f2d747464c3c82b0aadd0508",
+  "configuracao": {
+    "VARELEIRA_INDICE": "vareleira-lar-l200",
+    "VARELEIRA_ESFORCO": "low",
+    "VARELEIRA_MODO_BUSCA": "hibrida",
+    "VARELEIRA_K": "3",
+    "VARELEIRA_DIMENSOES": "1536",
+    "VARELEIRA_EXIGIR_AUTENTICACAO": "true"
+  },
+  "modo_revisao": "Single",
+  "referencias": "T1..Tn restritas ao contexto; citações montadas do conteúdo do índice",
+  "identidade": "temporária de teste, não login humano",
+  "rodadas_finais": 1,
+  "historico_v1_preservado": true
+}
