@@ -18,6 +18,14 @@ O L200 acrescenta sete guias, começando por
 Suas validações distinguem ingestão, testes de fumaça, interface, identidade e avaliação HTTP.
 A aprovação anterior do L100 não representa aprovação automática de novos materiais.
 
+O L300 acrescenta sete guias de classificação, acesso por identidade, rede e operação, começando em
+[reproduzir a base](../desafios/L300/01-reproduzir-base.md) e terminando em
+[recuperar e limpar](../desafios/L300/07-recuperar-limpar.md). Os registros distinguem o
+[fechamento local](validacao/l300-validacao-local.md) da
+[rodada Azure autorizada](validacao/l300-azure-validacao.md).
+Clientes temporários, conexões privadas, ingestão, isolamento e recuperação foram conferidos.
+Login humano e implantação Actions não foram executados; a limpeza registra somente efeitos observados.
+
 ## Público e linguagem
 
 Escreva em português do Brasil para pessoas de negócio, arquitetura, operações
@@ -141,6 +149,9 @@ do ambiente de teste, credenciais, saídas brutas ou preços sem contexto.
 Logs e matrizes de validação ficam em `docs/validacao`, separados do guia do
 aluno, e seguem a mesma regra sobre IDs e credenciais.
 Quando faltar implementação, publique apenas o rascunho identificado como tal.
+Em definições de workflow, confira também o que o runner imprime antes de executar um passo:
+configuração privada em `env` ou `with` pode aparecer antes de uma máscara criada pelo script.
+Use configuração protegida e testes apropriados, sem tratar parsing de YAML como execução Actions.
 
 ## Revisão editorial
 

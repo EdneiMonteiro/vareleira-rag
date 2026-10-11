@@ -56,7 +56,9 @@ Ao concluir este desafio, você terá:
 - executado o assistente como aplicação, com o segredo lido do cofre, e conferido que as operações proibidas são negadas;
 - removido a identidade, o segredo e o cofre.
 
-**Próximos desafios:** este é o último desafio do nível L100. O próximo nível parte do assistente deste nível.
+**Próximos desafios:** este é o último desafio do nível L100. O
+[L200, Desafio 01](../L200/01-reconstruir-base.md) reconstrói ou reaproveita a base conforme seu estado;
+a hospedagem posterior usa identidade gerenciada, não a credencial temporária deste exercício.
 
 > **Para guardar na memória: C-V-M.** Para dar uma identidade a uma aplicação, **C**ofre para o segredo, **V**alidade curta e **M**ínimo de papéis. Mnemônico criado para este curso.
 
@@ -88,7 +90,7 @@ Ao concluir este desafio, você terá:
 | Azure Key Vault | Cofre de segredos, chaves e certificados; usa controle de acesso por papéis (RBAC, *Role-Based Access Control*) [4][5] | A leitura exige um papel de dados. O nome do cofre excluído fica reservado durante a retenção, salvo expurgo permitido [6] |
 | Papéis usados | `Key Vault Secrets Officer` (guardar e ler segredos, para o operador), `Search Index Data Reader` (só consultar documentos) e `Cognitive Services OpenAI User` (usar os deployments, sem administrá-los) [7][8] | Cada papel vale em um escopo: o cofre, o serviço de busca ou o recurso de modelos |
 | `ClientSecretCredential` | Classe do SDK (*Software Development Kit*, conjunto de bibliotecas de programação) do Azure que autentica o service principal com o ID do tenant, o ID da aplicação e o segredo [9] | O segredo fica na memória do programa: nunca o imprima |
-| `verificar_identidade.py` | Tenta 2 operações que a identidade precisa fazer e 3 que ela não deve poder fazer | As tentativas proibidas usam alvos inofensivos; "permitido" nelas é privilégio demais |
+| `verificar_identidade.py` | Tenta 2 operações que a identidade precisa fazer e 3 que ela não deve poder fazer | Uma tentativa envia exclusão ao índice fixo `vlr-verificacao-inexistente`; só não altera conteúdo se esse índice realmente não existir |
 
 **Conceitos necessários:** três identidades, segredo e cofre, privilégio mínimo e conferência de operações.
 
@@ -134,13 +136,21 @@ O processo recebe o valor em memória; a cópia guardada permanece no cofre. Sem
 usam a sessão do operador, como nos desafios anteriores. A opção aplica-se a `perguntar.py` e
 `verificar_identidade.py`; o agente e a avaliação dos Desafios 05 e 06 mantêm a identidade do operador.
 
-**5. Como conferir as operações proibidas.** O verificador tenta excluir um índice que não existe,
-ler um segredo descartando o valor e listar um item do Blob Storage. Esses alvos permitem detectar
-permissões excedentes sem alterar o conteúdo do laboratório. A recusa de acesso é esperada com
+**5. Como conferir as operações proibidas.** O verificador tenta excluir o índice
+`vlr-verificacao-inexistente`, ler um segredo descartando o valor e listar um item do Blob Storage.
+O código não verifica se esse índice existe antes da exclusão. Se ele existir e a identidade tiver
+permissão, será apagado: a mensagem do script "somente leitura" não garante ausência de efeitos.
+A recusa de acesso é esperada com
 HTTP 403 (*Hypertext Transfer Protocol*, protocolo da web; *Forbidden*, proibido).
 Uma operação proibida aceita indica privilégio demais; uma operação necessária recusada indica
 privilégio de menos. O resultado cobre as cinco operações testadas, não todas as ações possíveis da
 identidade.
+
+> **Atenção — condição para as Etapas 4 e 7:** o responsável pelo serviço exclusivo do laboratório
+> precisa conferir a ausência de `vlr-verificacao-inexistente` na lista completa de índices e garantir
+> que ninguém o crie durante a conferência. Se não puder garantir isso, omita o verificador e registre
+> a pendência; não o execute em serviço compartilhado. Essas etapas enviam uma tentativa de exclusão
+> e exigem autorização correspondente, mesmo que a intenção seja receber uma recusa.
 
 ## Reaproveitamento e acréscimos
 
@@ -175,7 +185,7 @@ Em um terminal novo, defina as variáveis de novo. Substitua `<ID-DA-SUA-ASSINAT
 
 ```powershell
 $assinatura = "<ID-DA-SUA-ASSINATURA>"
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $busca = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeBusca.value --output tsv
 $modelos = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeModelos.value --output tsv
 $conta = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100 --query properties.outputs.nomeConta.value --output tsv
@@ -245,6 +255,10 @@ no cofre. O [módulo de cofre](../../infra/modules/cofre.bicep) cria o recurso.
 O [arquivo principal](../../infra/main.bicep) chama esse módulo quando `implantarCofre` é verdadeiro, e
 os [parâmetros do Desafio 07](../../infra/levels/l100-desafio07.bicepparam) habilitam o cofre e mantêm
 as escolhas anteriores.
+
+Repita no `what-if` e na implantação todos os nomes, regiões, camadas e capacidades personalizados
+nos desafios anteriores: este arquivo não recupera essas escolhas sozinho. Se os recursos já foram
+isolados pelo L300/L400, siga o roteiro daquele nível; reaplicar o L100 pode reabrir acesso público.
 
 ### Decisões de configuração do Bicep
 
@@ -348,13 +362,17 @@ evidência. A comparação de leitura e gravação feita no ambiente testado est
 ## Etapa 4: ver o contraste com a sua conta
 
 **Objetivo:** comparar as permissões do operador com as operações necessárias à aplicação.
-As tentativas mantêm o conteúdo dos recursos; a geração de embeddings consome tokens.
+**[altera o Azure]** se o índice de teste existir: cumpra a condição de ausência e exclusividade
+descrita em Tecnologias e conceitos antes de executar. A geração de embeddings consome tokens.
 
 ```powershell
 python scripts\verificar_identidade.py --busca $busca --modelos $modelos --conta $conta --cofre $cofre --nome-do-segredo segredo-de-teste --identidade operador
 ```
 
-O programa tenta cinco operações com a identidade escolhida. Duas são necessárias ao assistente (consultar o índice e gerar embeddings), e três não devem ser permitidas a ele. As três tentativas proibidas não causam dano: apagar um índice que não existe, ler o segredo e descartar o valor, e pedir o primeiro item da lista de documentos.
+O programa tenta cinco operações com a identidade escolhida. Duas são necessárias ao assistente
+(consultar o índice e gerar embeddings), e três não devem ser permitidas a ele: apagar o índice
+de teste, ler o segredo e descartar o valor, e pedir o primeiro item da lista de documentos.
+A ausência de alteração depende da condição anterior, não apenas do nome escolhido pelo script.
 
 **Exemplo de saída com os papéis dos Desafios 01 a 03 e da Etapa 2.** As permissões da sua conta
 determinam o resultado; nesta configuração, o código 3 indica operações excedentes para a aplicação:
@@ -388,6 +406,13 @@ Se houver outras atribuições na sua conta, examine o papel e o escopo de cada 
 > consulte o administrador. Registre as saídas sem identificadores ou valores de segredo.
 
 **Objetivo:** registrar a aplicação, criar o service principal dela e guardar a credencial no cofre, com validade de 7 dias.
+
+Os comandos `az ad` não têm `what-if` neste roteiro. Antes de executá-los, revise com o administrador
+o plano: uma aplicação nova, um service principal e uma credencial temporária, no tenant confirmado.
+Registre os identificadores privadamente a cada sucesso e pare se um comando falhar. Repetir
+`az ad app create` cria outra aplicação com o mesmo nome de exibição; `credential reset --append`
+acrescenta outra credencial, e `guardar_segredo.py` cria outra versão no cofre. Na retomada,
+reutilize somente os objetos próprios já conferidos, sem repetir cegamente a sequência.
 
 ```powershell
 $aplicacao = az ad app create --display-name "sp-vlr-assistente-l100" --sign-in-audience AzureADMyOrg --query appId --output tsv
@@ -450,7 +475,8 @@ Um papel novo pode levar alguns minutos para valer.
 > Registre os resultados da sua execução, inclusive as três recusas esperadas.
 
 **Objetivo:** executar as cinco tentativas como aplicação e fazer uma pergunta com essa identidade.
-As operações mantêm os recursos; embeddings e geração consomem tokens.
+**[altera o Azure]** se o índice de teste existir e houver permissão excedente: cumpra a mesma
+condição das Etapas 4 e Tecnologias e conceitos. Embeddings e geração consomem tokens.
 
 ```powershell
 python scripts\verificar_identidade.py --busca $busca --modelos $modelos --conta $conta --cofre $cofre --id-da-aplicacao $aplicacao --tenant-id $tenant
@@ -468,6 +494,9 @@ Alvos: busca 'srch-vlr-...', modelos 'ais-vlr-...', conta 'stvlrag...', cofre 'k
 [OK   ] Listar os documentos da conta 'stvlrag...': negado, como esperado (HTTP 403)
 Privilégio mínimo confirmado: a identidade faz o que precisa e nada além. Nada foi alterado por este script.
 ```
+
+A frase final é a mensagem histórica do programa; interprete-a somente no alcance das cinco
+operações e da condição de ausência do índice de teste, não como auditoria de todas as permissões.
 
 Se uma das duas primeiras linhas informar "PRIVILÉGIO DE MENOS", confira os papéis e os escopos.
 Logo após a Etapa 6, aguarde a propagação das atribuições antes de repetir.
@@ -507,25 +536,37 @@ A expiração da credencial no Entra ID (`AADSTS7000222`) continua coberta apena
 > **Atenção:** execute esta sequência somente para a identidade e os papéis criados na Etapa 5
 > e na Etapa 6, após conferir seus identificadores. Preserve aplicações e atribuições preexistentes.
 
+Na listagem de atribuições de cada recurso, confira o principal, o papel e o **escopo exato** contra
+seu registro da Etapa 6. Copie somente os dois IDs de atribuição próprios para os marcadores abaixo.
+Não revogue por nome de aplicação nem por uma listagem que inclua papéis herdados. A remoção por IDs
+abaixo é um ajuste documental desta revisão; não foi novamente executada no Azure.
+
 ```powershell
 $idBusca = az search service show --subscription $assinatura --resource-group $grupo --name $busca --query id --output tsv
 $idModelos = az cognitiveservices account show --subscription $assinatura --resource-group $grupo --name $modelos --query id --output tsv
-az role assignment delete --subscription $assinatura --assignee $idObjetoAplicacao --scope $idBusca
-az role assignment delete --subscription $assinatura --assignee $idObjetoAplicacao --scope $idModelos
+az role assignment delete --subscription $assinatura --ids "<ID-DA-ATRIBUICAO-DE-LEITURA-CRIADA-NA-ETAPA-6>"
+az role assignment delete --subscription $assinatura --ids "<ID-DA-ATRIBUICAO-DE-MODELOS-CRIADA-NA-ETAPA-6>"
 az ad app delete --id $aplicacao
 ```
 
-Os dois primeiros comandos obtêm os IDs dos recursos onde os papéis foram concedidos, os dois seguintes removem os papéis da aplicação, e o último exclui o registro da aplicação, o service principal e as credenciais. Sem remover os papéis antes, eles ficam no painel como "identidade não encontrada" até a exclusão do grupo de recursos.
+Os dois primeiros comandos obtêm os escopos para a conferência, os dois seguintes removem somente
+as atribuições identificadas, e o último exclui o registro da aplicação, o service principal e as
+credenciais. Confira depois a ausência dos objetos ativos e das atribuições próprias, preservando
+as anteriores. Sem remover os papéis antes, eles ficam no painel como "identidade não encontrada"
+até a exclusão do grupo de recursos.
 
 ### 8.2 Excluir e expurgar o cofre
 
+Consulte a região do próprio cofre, que pode diferir da região do grupo. Essa consulta ajustada
+foi conferida documentalmente nesta revisão, sem nova execução Azure.
+
 ```powershell
-$regiao = az group show --subscription $assinatura --name $grupo --query location --output tsv
+$regiao = az keyvault show --subscription $assinatura --resource-group $grupo --name $cofre --query location --output tsv
 az keyvault delete --subscription $assinatura --resource-group $grupo --name $cofre
 az keyvault purge --subscription $assinatura --name $cofre --location $regiao
 ```
 
-O primeiro comando obtém a região do grupo, o segundo exclui o cofre, que passa ao estado "excluído" por 7 dias, e o terceiro o expurga, o que libera o nome e apaga os segredos de vez [6]. O expurgo só é possível porque a proteção contra expurgo está desligada no arquivo de parâmetros do laboratório (Etapa 2): com ela ligada, o cofre excluído só pode ser expurgado depois do fim da retenção [6].
+O primeiro comando obtém a região do cofre, o segundo exclui o cofre, que passa ao estado "excluído" por 7 dias, e o terceiro o expurga, o que libera o nome e apaga os segredos de vez [6]. O expurgo só é possível porque a proteção contra expurgo está desligada no arquivo de parâmetros do laboratório (Etapa 2): com ela ligada, o cofre excluído só pode ser expurgado depois do fim da retenção [6].
 
 **Resultado esperado:** `az keyvault delete` mostra o aviso sobre a reserva do nome; `az keyvault purge`
 termina sem saída. Confira com `az keyvault list-deleted --subscription $assinatura --query "[].name" --output tsv`:
@@ -551,7 +592,7 @@ a tentativa de ler o segredo continua só descartando o valor; as mensagens de p
 não altere os papéis do Bicep nem as tentativas.
 Escreva testes com unittest e dublês, sem acessar o Azure.
 Use o Python do ambiente virtual, .\.venv\Scripts\python.exe, e execute apenas:
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_identidade.py"
 Não instale pacotes, não acesse o Azure, não crie identidades nem credenciais e não altere recursos.
 ```
 
@@ -646,6 +687,12 @@ Sonnet 5.5 no GitHub Copilot CLI; o Astra estava indisponível. Revisão editori
 9 de outubro de 2026. Os modelos de autoria e revisão são independentes do modelo escolhido no Copilot
 e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini`).
 
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
+autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
+A tentativa de exclusão com nome fixo continua no código; as condições de execução estão explicitadas
+acima, e a correção do verificador exige uma atividade de código separada.
+
 ## Glossário
 
 | Termo | Significado no exercício |
@@ -671,7 +718,7 @@ e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini
 | Pipe (`|`) | Encadeamento da saída de um comando na entrada de outro, sem passar por arquivo ou argumento |
 | HTTP 403 | Resposta do serviço quando a identidade existe, mas não tem permissão para a operação |
 | `ClientSecretCredential` | Classe do SDK do Azure que autentica um service principal com tenant, ID da aplicação e segredo |
-| Tentativa inofensiva | Operação proibida escolhida de modo que nada seja alterado, mesmo se a permissão estiver errada |
+| Tentativa de exclusão | Pedido de escrita ao índice de teste; só não remove conteúdo quando esse índice realmente está ausente ou a autorização é negada |
 
 ## Referências
 

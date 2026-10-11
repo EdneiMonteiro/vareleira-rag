@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
+import lab_acesso
 import lab_comum
 from lab_comum import Documento, ErroLab, Verificacao
 
@@ -644,7 +645,8 @@ class IndiceBusca:
 
     CAMPOS_DO_RESULTADO = ["id", "documento_id", "titulo_documento", "secao", "clausulas", "conteudo", "fonte", "versao"]
 
-    def __init__(self, busca: str, indice: str, tenant_id: str | None = None, credencial: Any = None):
+    def __init__(self, busca: str, indice: str, tenant_id: str | None = None, credencial: Any = None,
+                 exigir_filtro: bool = False):
         try:
             from azure.identity import AzureCliCredential
             from azure.search.documents import SearchClient
@@ -655,6 +657,7 @@ class IndiceBusca:
                 "python -m pip install -r requirements/l100.txt"
             ) from None
         self.nome = indice
+        self.exigir_filtro = exigir_filtro  # L300: consulta sem o filtro de acesso é erro, nunca consulta sem filtro
         endereco = f"https://{busca}.{SUFIXO_BUSCA}"
         if credencial is None:
             credencial = AzureCliCredential(tenant_id=tenant_id, process_timeout=30)
@@ -703,17 +706,31 @@ class IndiceBusca:
     def contar(self) -> int:
         return self._documentos.get_document_count()
 
-    def consultar(self, texto: str, vetor: Sequence[float] | None, k: int) -> list[dict[str, Any]]:
-        """Busca por palavras (texto), por vetor ou pelos dois (híbrida), conforme o que for informado."""
+    def consultar(self, texto: str, vetor: Sequence[float] | None, k: int, filtro: str | None = None) -> list[dict[str, Any]]:
+        """Busca por palavras (texto), por vetor ou pelos dois (híbrida), conforme o que for informado.
+
+        Com `filtro` (L300), só o filtro de acesso gerado por `lab_acesso.construir_filtro` é aceito. Ele vale nos três modos e,
+        com vetor, age antes da escolha dos vizinhos (preFilter). O resultado traz também a classe de acesso de cada trecho,
+        para a conferência final de quem chama. Sem `filtro`, a consulta é a do L100, a menos que o índice exija o filtro.
+        """
         from azure.search.documents.models import VectorizedQuery
+        if filtro is None and self.exigir_filtro:
+            raise lab_acesso.ErroAcesso("Consulta sem filtro de acesso recusada: este índice só é consultado com filtro.",
+                                        "filtro_ausente")
         opcoes: dict[str, Any] = {"select": self.CAMPOS_DO_RESULTADO, "top": k}
+        if filtro is not None:
+            opcoes["filter"] = lab_acesso.validar_filtro(filtro)
+            opcoes["select"] = [*self.CAMPOS_DO_RESULTADO, lab_acesso.CAMPO_ACESSO]
         if vetor is not None:
             opcoes["vector_queries"] = [VectorizedQuery(vector=list(vetor), k_nearest_neighbors=k, fields=CAMPO_VETOR)]
+            if filtro is not None:
+                opcoes["vector_filter_mode"] = lab_acesso.MODO_PRE_FILTRO
         return [dict(item) for item in self._documentos.search(search_text=texto or None, **opcoes)]
 
 
-def abrir_indice(busca: str, indice: str, tenant_id: str | None = None, credencial: Any = None) -> IndiceBusca:
-    return IndiceBusca(busca, indice, tenant_id, credencial)
+def abrir_indice(busca: str, indice: str, tenant_id: str | None = None, credencial: Any = None,
+                 exigir_filtro: bool = False) -> IndiceBusca:
+    return IndiceBusca(busca, indice, tenant_id, credencial, exigir_filtro)
 
 
 # --------------------------------------------------------------------------------------

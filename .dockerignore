@@ -4,6 +4,7 @@
 !requirements/l100.txt
 !requirements/l200.txt
 !scripts/lab_comum.py
+!scripts/lab_acesso.py
 !scripts/lab_indexacao.py
 !scripts/lab_geracao.py
 !scripts/lab_politica.py

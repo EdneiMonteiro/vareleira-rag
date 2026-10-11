@@ -1,0 +1,4 @@
+# Dependências do L300 (Python 3.12 ou superior): as do L200, que incluem as do L100 e a interface HTTP do chat.
+# O L300 ainda não acrescenta pacotes diretos. A operação protegida (scripts/operar_l300.py) usa só a biblioteca padrão.
+# Instalação: python -m pip install -r requirements/l300.txt
+-r l200.txt

@@ -90,7 +90,7 @@ Ao concluir este desafio, você terá:
 
 **1. Geração com recuperação.** A **geração aumentada por recuperação** (RAG, do inglês *Retrieval-Augmented Generation*) separa dois trabalhos: o programa busca os trechos nos documentos e o modelo escreve a resposta com base neles. O modelo não consulta o índice: ele só enxerga o que o programa coloca no pedido.
 
-**2. Pedido ao modelo.** O pedido tem três partes: as **instruções** (as regras do trabalho), o **contexto** (os trechos recuperados, cada um com seu id) e a **pergunta**. O script marca cada trecho com `<trecho>` e trata o conteúdo como dado: uma frase de um documento que mande "ignorar as regras" não é uma ordem. Instruções escondidas em documentos são um tipo de ataque indireto, e essa marcação reduz o risco, mas não o elimina [6].
+**2. Pedido ao modelo.** O pedido tem três partes: as **instruções** (as regras do trabalho), o **contexto** (os trechos recuperados, cada um com seu identificador, ou ID) e a **pergunta**. O script marca cada trecho com `<trecho>` e trata o conteúdo como dado: uma frase de um documento que mande "ignorar as regras" não é uma ordem. Instruções escondidas em documentos são um tipo de ataque indireto, e essa marcação reduz o risco, mas não o elimina [6].
 
 > **Para guardar na memória: o dossiê do estagiário.** O pedido é um dossiê entregue a um estagiário: a folha de regras, as páginas recortadas dos documentos e a pergunta do cliente. O estagiário só pode usar as páginas do dossiê e precisa dizer de qual página tirou cada informação. Analogia criada para este curso.
 
@@ -132,7 +132,7 @@ Em um terminal novo, defina as variáveis de novo. Substitua `<ID-DA-SUA-ASSINAT
 
 ```powershell
 $assinatura = "<ID-DA-SUA-ASSINATURA>"
-$grupo = "rg-vareleira-rag-l100"
+$grupo = "<NOME-DO-GRUPO-EXCLUSIVO-AUTORIZADO>"
 $busca = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeBusca.value --output tsv
 $modelos = az deployment group show --subscription $assinatura --resource-group $grupo --name vareleira-rag-l100-d02 --query properties.outputs.nomeModelos.value --output tsv
 $busca
@@ -143,15 +143,17 @@ $modelos
 
 ### Conferir região, modelo e cota (somente leitura)
 
-O deployment de geração fica na região do recurso de modelos. Os três comandos abaixo mostram a região do grupo, se o modelo existe nela e quanta cota o modelo já usa [8]:
+O deployment de geração fica na região do recurso de modelos, que pode diferir da região do grupo.
+Os comandos abaixo consultam a região efetiva desse recurso, o catálogo e a cota [8].
+A consulta ajustada da região foi conferida documentalmente nesta revisão, sem nova execução Azure:
 
 ```powershell
-$regiao = az group show --subscription $assinatura --name $grupo --query location --output tsv
+$regiao = az cognitiveservices account show --subscription $assinatura --resource-group $grupo --name $modelos --query location --output tsv
 (az cognitiveservices model list --subscription $assinatura --location $regiao --output json | ConvertFrom-Json) | Where-Object { $_.model.name -eq "gpt-5.4-mini" } | Select-Object -First 1 | ForEach-Object { "$($_.model.name) versao $($_.model.version) ($($_.model.lifecycleStatus)): $(($_.model.skus | ForEach-Object { $_.name }) -join ', ')" }
 (az cognitiveservices usage list --subscription $assinatura --location $regiao --output json | ConvertFrom-Json) | Where-Object { $_.name.value -eq "OpenAI.GlobalStandard.gpt-5.4-mini" } | ForEach-Object { "usado $($_.currentValue) de $($_.limit)" }
 ```
 
-**Resultado esperado** (em `brazilsouth`): `gpt-5.4-mini versao 2026-03-17 (GenerallyAvailable): GlobalStandard, GlobalProvisionedManaged, GlobalBatch` e `usado <N> de <limite>`. A cota livre é o limite menos o valor em uso, e ela precisa cobrir a capacidade do Bicep (50). No Windows PowerShell 5.1, os números aparecem com casa decimal (`1000.0`). Se o modelo não aparecer ou a cota livre for menor que 50, escolha outra região ou reduza `capacidadeGeracao` no comando da Etapa 2.
+**Resultado esperado** (em `brazilsouth`): `gpt-5.4-mini versao 2026-03-17 (GenerallyAvailable): GlobalStandard, GlobalProvisionedManaged, GlobalBatch` e `usado <N> de <limite>`. A cota livre é o limite menos o valor em uso, e ela precisa cobrir a capacidade do Bicep (50). No Windows PowerShell 5.1, os números aparecem com casa decimal (`1000.0`). Se a cota livre for menor que 50, avalie reduzir `capacidadeGeracao` no `what-if` e na implantação da Etapa 2. Se o modelo não aparecer ou outra região for necessária, interrompa e planeje uma migração autorizada, preservando o recurso existente.
 
 O catálogo de modelos muda. O `gpt-5.4-mini` versão `2026-03-17` tem aposentadoria prevista para 21 de setembro de 2027 [9]. Depois dessa data o deployment deixa de funcionar, e a troca de modelo exige repetir as conferências da Etapa 4.
 
@@ -227,6 +229,12 @@ O [módulo de geração](../../infra/modules/geracao.bicep) referencia o recurso
 O [arquivo principal](../../infra/main.bicep) chama esse módulo quando `implantarGeracao` é verdadeiro, e
 os [parâmetros do Desafio 03](../../infra/levels/l100-desafio03.bicepparam) habilitam o deployment e
 mantêm as escolhas anteriores. [10]
+
+Se você personalizou nomes, regiões, camada ou capacidade no Desafio 02, informe os mesmos valores
+no `what-if` e na implantação deste desafio. O arquivo de parâmetros não lê as escolhas anteriores.
+Não mude a região de um recurso existente para resolver falta de cota: interrompa e planeje uma
+migração autorizada. Tampouco reaplique o L100 sobre recursos isolados pelo L300/L400, pois isso
+pode reabrir seu acesso público.
 
 ### Decisões de configuração do Bicep
 
@@ -471,7 +479,7 @@ Cuidados obrigatórios: não inclua nos dados o nome do serviço de busca, o do 
 reaproveite lab_geracao; mensagens em pt-BR; mantenha o comportamento atual quando a opção não for usada.
 Escreva testes com unittest e dublês, sem acessar o Azure.
 Use o Python do ambiente virtual, .\.venv\Scripts\python.exe, e execute apenas:
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_geracao.py"
 Não instale pacotes, não acesse o Azure e não altere o índice.
 ```
 
@@ -516,7 +524,7 @@ indica falha de autenticação; 403, recusa de acesso; e 429, excesso de requisi
 
 | Sintoma | O que conferir | O que evitar |
 | --- | --- | --- |
-| `InsufficientQuota` ao criar o deployment | A cota regional do modelo acabou: reduza `capacidadeGeracao`, exclua deployments sem uso ou escolha outra região | Pedir aumento de cota sem necessidade |
+| `InsufficientQuota` ao criar o deployment | Confira a cota; reduza `capacidadeGeracao` no plano e na implantação, se viável. Excluir deployments próprios ou migrar para outra região exige autorização e plano separados | Excluir deployments preexistentes ou tentar mudar a região do recurso existente para contornar |
 | `InvalidResourceProperties` ou `DeploymentModelNotSupported` | O modelo, a versão ou o tipo de deployment não existem na região: refaça "Conferir região, modelo e cota" e ajuste os parâmetros | Escolher um modelo qualquer sem ver a lista da região |
 | `[ERRO]` "O deployment de geração ... não foi encontrado" (código 2) | O nome do **deployment** (`$deploymentGeracao`), não o do modelo, e o nome do recurso | Criar outro deployment só para o erro desaparecer |
 | `[ERRO]` "O Azure respondeu 404 ('Subdomain does not map to a resource')" (código 2) | O nome em `$modelos`. Com o nome certo, o serviço de modelos às vezes responde assim de forma intermitente: aguarde alguns minutos e repita (veja também o [Desafio 02](02-indexar-documentos.md#solução-de-problemas)) | Recriar o recurso ou o deployment só para o erro desaparecer |
@@ -594,6 +602,10 @@ Data de referência: 9 de outubro de 2026. O registro detalhado, com a matriz de
 Sonnet 5.5 no GitHub Copilot CLI; o Astra estava indisponível. Revisão editorial por GPT-6.1 Sol, em
 9 de outubro de 2026. Os modelos de autoria e revisão são independentes do modelo escolhido no Copilot
 e dos deployments da aplicação Azure (`text-embedding-3-small` e `gpt-5.4-mini`).
+
+Revisão editorial e técnica por **gpt-6-astra (Astra)**, em 11 de outubro de 2026: leitura integral,
+conferência de referências locais e confronto com a implementação. Não houve nova execução Azure;
+autoria, revisões anteriores, aprovação histórica e limites das medições permanecem preservados.
 
 ## Glossário
 

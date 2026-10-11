@@ -14,8 +14,8 @@ WORKDIR /app
 COPY requirements/l100.txt requirements/l200.txt ./requirements/
 RUN python -m pip install -r requirements/l200.txt
 
-# Só os módulos que o chat importa (lab_comum, lab_indexacao, lab_geracao e lab_politica) e a interface.
-COPY scripts/lab_comum.py scripts/lab_indexacao.py scripts/lab_geracao.py scripts/lab_politica.py scripts/lab_chat.py scripts/chat_web.py ./scripts/
+# Só os módulos que o chat importa (lab_comum, lab_acesso, lab_indexacao, lab_geracao e lab_politica) e a interface.
+COPY scripts/lab_comum.py scripts/lab_acesso.py scripts/lab_indexacao.py scripts/lab_geracao.py scripts/lab_politica.py scripts/lab_chat.py scripts/chat_web.py ./scripts/
 COPY web/index.html web/app.js web/style.css ./web/
 
 RUN groupadd --system --gid 10001 vareleira \

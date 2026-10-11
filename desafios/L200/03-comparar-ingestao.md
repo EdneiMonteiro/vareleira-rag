@@ -7,7 +7,7 @@
 | Situação | Exercício executável. A comparação e a recuperação de um documento foram conferidas no Azure em 10 de outubro de 2026. |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento. |
 | Resultado | Diferenças entre os dois índices explicadas e recuperação comparada, sem exigir trechos ou identificadores iguais. |
-| Custo | Embeddings das perguntas vetoriais e híbridas; serviços existentes continuam cobrados. Reprocessar documentos calcula novos embeddings. |
+| Custo | Embeddings, vetores numéricos das perguntas vetoriais e híbridas; serviços existentes continuam cobrados. Reprocessar documentos calcula novos embeddings. |
 
 ## Conteúdo
 
@@ -58,7 +58,9 @@ comparar o conteúdo recuperado, não apenas contar documentos.
 ## Tecnologias e conceitos
 
 **Sobreposição** repete uma parte do fim de um trecho no próximo, para reduzir perda de contexto
-na fronteira. O skillset usa até 1.200 caracteres por parte, com sobreposição de 100. Essas escolhas
+na fronteira. O skillset, conjunto de habilidades de processamento, usa até 1.200 caracteres
+por parte, com sobreposição de 100, definidos em
+[lab_ingestao.py](../../scripts/lab_ingestao.py). Essas escolhas
 são parâmetros do laboratório, não valores universais para documentos de seguro.
 
 **Vetorização integrada** calcula embeddings durante a ingestão [2]. Na consulta deste exercício,
@@ -81,6 +83,8 @@ PowerShell 7 do VS Code.
 As consultas exigem `Search Index Data Reader` na busca e uso do modelo para os modos vetorial e
 híbrido. A etapa de recuperação exige permissão de carga no contêiner e execução do indexador.
 Autorize separadamente uma exclusão reversível, incluindo o blob exato e o plano de reposição.
+Confirme assinatura ativa e destino. Em cada comando externo, confira `$LASTEXITCODE` antes de
+prosseguir; somente a ausência intencional descrita na Etapa 3 admite a divergência prevista.
 
 ## Etapa 1: explicar as diferenças dos índices
 
@@ -137,6 +141,8 @@ python scripts\gerenciar_ingestao.py --etapa comparar --busca $busca --modelos $
 **Resultado conferido:** 6 de 6 consultas recuperaram os assuntos esperados entre os três primeiros
 resultados, nos dois índices e nos três modos. O tamanho da base e o conjunto conhecido limitam essa
 medição. Ela não mede fidelidade de uma resposta gerada nem demonstra superioridade de um caminho.
+O resultado pertence à [rodada registrada](../../docs/validacao/l200-03-comparar-ingestao.md);
+uma nova conferência deve registrar seu próprio resultado, inclusive falhas.
 
 Para inspecionar uma pergunta sem gerar resposta:
 
@@ -169,6 +175,10 @@ cópia Azure criada para a validação, preservando os arquivos locais e o índi
 2. Exclua esse blob, execute o indexador e observe a ausência intencional.
 3. Reenvie a versão aprovada pelo script de carga.
 4. Execute novamente o indexador e confira a recuperação.
+
+O comando `az storage blob delete` abaixo não oferece simulação neste roteiro. Antes dele,
+revise manualmente conta, contêiner, nome exato, retenção e reposição; não cole o bloco inteiro
+como se a aprovação já estivesse concedida.
 
 ```powershell
 python scripts\verificar_documentos.py --conta $conta --tenant-id $tenant
@@ -241,6 +251,7 @@ Esses resultados são operacionais e de fumaça, não uma avaliação independen
 | Text Split | Habilidade de divisão de texto por tamanho |
 | Sobreposição | Parte repetida entre trechos consecutivos |
 | Vetorização integrada | Cálculo de embeddings incorporado à ingestão |
+| Embedding e skillset | Vetor numérico do texto e conjunto de habilidades de processamento |
 | `k` | Quantidade de resultados recuperados |
 | Busca híbrida | Combinação da busca textual e vetorial |
 | ID opaco | Identificador que não descreve semanticamente seu conteúdo |
@@ -256,3 +267,6 @@ Esses resultados são operacionais e de fumaça, não uma avaliação independen
 
 Texto e revisão: GPT-6.1 Sol. Código e testes: Claude Sonnet 5.5.
 O Astra não estava disponível; autoria, Copilot do aluno e deployments Azure são escolhas separadas.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure.

@@ -7,7 +7,7 @@
 | Situação | Exercício executável. A reconstrução foi conferida no Azure em 10 de outubro de 2026, em Windows com PowerShell. Veja [Situação da validação](#situação-da-validação). |
 | Público | Pessoas de Atendimento, operações, arquitetura e desenvolvimento que concluíram o L100. |
 | Resultado | Três documentos sintéticos conferidos no armazenamento e o índice Python do L100 disponível como referência para a migração. |
-| Custo | Armazenamento, serviço de busca Basic cobrado enquanto existir e tokens de embeddings. O deployment de geração fica disponível para os próximos desafios. |
+| Custo | Armazenamento, serviço de busca Basic cobrado enquanto existir e tokens, unidades de texto cobradas pelos modelos. Embeddings são vetores numéricos do texto; o deployment, instância nomeada do modelo, de geração fica disponível para os próximos desafios. |
 
 ## Conteúdo
 
@@ -156,6 +156,10 @@ $env:VARELEIRA_ID_OBJETO_CARGA = az ad signed-in-user show --query id --output t
 ```
 
 **Resultado esperado:** assinatura `Enabled`, tenant correto e identidade do operador conhecida.
+O tenant é o diretório de identidades do Microsoft Entra ID. Essa consulta não comprova autorização
+para implantar nem para acessar dados. Execute cada comando separadamente, confira `$LASTEXITCODE`
+imediatamente e pare se houver falha; o PowerShell não interrompe automaticamente uma sequência
+quando um programa externo retorna erro.
 As operações `az ad` usam o tenant da sessão ativa; elas não recebem `--subscription`.
 Confira os papéis e políticas pelo
 [procedimento de acesso do L100](../L100/01-preparar-ambiente.md#24-conferir-permissões-e-políticas).
@@ -168,6 +172,8 @@ az group exists --subscription $assinatura --name $grupo
 ```
 
 Prossiga somente quando o grupo for novo ou sua reutilização tiver sido aprovada após inventário.
+Em um grupo existente, confira também sua região: os parâmetros publicados usam a região do grupo
+para os serviços. A variável `$regiao` usada na criação não migra um grupo ou serviço já existente.
 
 ```powershell
 az group create --subscription $assinatura --name $grupo --location $regiao --tags laboratorio=vareleira-rag dados=sinteticos
@@ -205,7 +211,9 @@ python scripts\verificar_indice.py --busca $busca --modelos $modelos --tenant-id
 ```
 
 **Resultado esperado:** conferência dos três blobs aprovada; `vareleira-lar-l100` com 54 trechos
-para os arquivos e parâmetros desta versão. Cada script deve terminar com código de saída `0`.
+para os arquivos e parâmetros desta versão, conforme o
+[registro da reconstrução](../../docs/validacao/l200-01-reconstruir-base.md).
+Cada script deve terminar com código de saída `0`.
 No PowerShell, confira `$LASTEXITCODE` após cada comando e pare quando houver falha.
 
 O código compara definições e hashes antes de repetir a carga ou indexação. Investigue divergências
@@ -281,3 +289,6 @@ históricos do L100 e registra a limpeza posterior.
 Texto e revisão: GPT-6.1 Sol. Implementação reutilizada e testes: Claude Sonnet 5.5.
 O Astra, preferido para documentação, não estava disponível. A autoria, o modelo escolhido pelo aluno
 no Copilot e os deployments Azure são escolhas independentes.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure.

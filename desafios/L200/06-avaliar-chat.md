@@ -40,10 +40,11 @@ por inteligência artificial ainda exige revisão humana para uma avaliação de
 
 ## Objetivos
 
-1. Registrar configuração, imagem, código e hash dos casos antes da execução.
+1. Registrar configuração, imagem, código e hash, resumo calculado do conteúdo dos casos, antes da execução.
 2. Fazer um pedido por pergunta, sem repetir falhas para substituí-las por acertos.
 3. Comparar tipo e situação literalmente e conferir a apresentação individual fixa.
-4. Separar erro HTTP, contrato, recuperação, consumo conhecido e fidelidade semântica.
+4. Separar erro HTTP (protocolo de comunicação web), contrato, recuperação, consumo conhecido
+   e fidelidade semântica.
 5. Preservar resultados, inclusive quando o avaliador retorna código de divergência.
 
 ## Artefatos e disponibilidade
@@ -100,6 +101,12 @@ chat de destino. Os identificadores e a credencial ficam no terminal, nunca em a
 argumento de comando ou relatório. A identidade de teste não precisa de papéis nos serviços de dados:
 o chat usa sua própria identidade gerenciada.
 
+**Limite da revisão atual:** os comandos com `chat-teste-v2.json` documentam a rodada histórica,
+executada uma única vez. Não os execute novamente para escolher uma resposta ou ajustar o código.
+A autorização atual de avaliar respostas existentes não autoriza repetir essas chamadas.
+Analise os relatórios preservados; uma nova avaliação de geração exige conjunto próprio,
+configuração congelada e autorização de destino e consumo.
+
 ## Etapa 1: congelar casos e configuração
 
 1. Registre commit, imagem por digest, revisão, índice, modo de busca, `k`, esforço e modelos.
@@ -114,7 +121,8 @@ az containerapp revision list --subscription $assinatura --resource-group $grupo
 ```
 
 **Conjunto congelado:** 18 casos, sendo seis documentados, seis individuais, dois ambíguos,
-dois sem evidência e dois fora de escopo. O novo arquivo usa UTF-8, com finais de linha CRLF no
+dois sem evidência e dois fora de escopo. O novo arquivo usa UTF-8, codificação de texto Unicode,
+com finais de linha CRLF (*Carriage Return + Line Feed*) no
 Windows e LF (*Line Feed*) na exportação Git. Hash dos bytes Windows:
 `41e06b32049c955d3f9f71016221a495aa77c4c4f348f86b67dcf69615d89999`.
 Hash normalizado para LF:
@@ -180,6 +188,8 @@ Get-Content -LiteralPath $arquivoRelatorio -Raw | ConvertFrom-Json
 
 **Limites do avaliador:** até 100 casos, uma chamada por caso, 120 s por chamada, 128 KiB por resposta,
 25 minutos para a rodada e interrupção após três falhas de transporte consecutivas.
+KiB significa kibibyte, unidade de 1.024 bytes. Esses limites estão definidos no
+[avaliador](../../scripts/avaliar_chat.py).
 O chat pode ter tentativas internas nos serviços; elas não são contadas como novos casos.
 
 | Código de saída | Como interpretar |
@@ -262,6 +272,8 @@ Os conjuntos diferentes não permitem tratar os dois resultados como um benchmar
 | Identidade de teste | Aplicação temporária que autentica os pedidos da medição |
 | Fidelidade semântica | Correspondência do sentido da resposta com as fontes |
 | Rodada | Execução delimitada de um conjunto com configuração congelada |
+| UTF-8 e CRLF | Codificação de texto Unicode e convenção de quebra de linha com dois caracteres |
+| KiB | Kibibyte, unidade de 1.024 bytes |
 
 ## Referências
 
@@ -270,3 +282,6 @@ Os conjuntos diferentes não permitem tratar os dois resultados como um benchmar
 
 Texto e revisão: GPT-6.1 Sol. Avaliador, testes e autoria independente dos casos: Claude Sonnet 5.5.
 O Astra não estava disponível; a independência é de contexto, não certificação humana do resultado.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure ou repetição das avaliações finais.

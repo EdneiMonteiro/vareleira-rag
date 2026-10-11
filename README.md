@@ -22,10 +22,29 @@ O novo teste do chat teve 16 de 18 casos conformes, sem descartes, após uma cor
 A rodada original com 11 de 18 foi preservada. A entrega continua experimental, com duas divergências
 de classificação e sem homologação do atendimento completo.
 
-No L100 e L200, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
-`gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` em 9 e 10 de outubro de 2026.
+**L300:** autorização por classes de documento, ingestão separada, definições de rede privada e
+automação manual. Código e sete guias foram validados localmente; a regressão posterior aos testes
+Azure tem 859 casos, com 858 aprovados e um ignorado por permissões POSIX,
+próprias de sistemas Unix, no Windows.
+Após autorização posterior, a [validação Azure L300](docs/validacao/l300-azure-validacao.md)
+foi concluída: ingestão privada, fontes por perfil, controles HTTP, bloqueio público dos
+três serviços de dados e retorno de revisão foram exercitados em um grupo temporário exclusivo.
+O grupo e o grupo gerenciado foram removidos; identidades, papéis e expurgos próprios foram
+conferidos, com os recursos anteriores preservados.
+GitHub Actions e confiança federada continuam fora desta execução.
+
+A [revisão Astra para publicação](docs/validacao/revisao-publicacao-l300.md)
+conferiu os 21 guias desta versão. Sondas privadas e limpeza completa exigem
+roteiro administrativo próprio revisado. O verificador L100 D07 não deve ser usado
+em ambiente compartilhado, pois tenta excluir um índice de nome fixo.
+CI e publicação receberam autorização posterior; isso não autoriza implantação
+ou confiança federada.
+
+No L100, L200 e L300, `text-embedding-3-small` calcula os *embeddings* (vetores numéricos dos textos), e
+`gpt-5.4-mini` gera as respostas. Esses modelos foram usados em `brazilsouth` entre 9 e 11 de outubro de 2026.
 O modelo usado pelo aluno no Copilot e os modelos de autoria e revisão da documentação são escolhas
-separadas. Modelos dos próximos níveis dependem de disponibilidade, cota e avaliação.
+separadas. O L300 conservou os modelos e as versões dos deployments anteriores na validação Azure.
+Modelos L400 dependem de disponibilidade, cota e avaliação.
 
 ## Comece pelo primeiro desafio
 
@@ -93,20 +112,22 @@ descritos no próprio guia.
 | `tests` | Testes automáticos, sem acesso ao Azure |
 | `docs` | Padrão de autoria dos desafios e registros de validação (`docs/validacao`) |
 | `web` | Página do chat, interação JavaScript e estilos |
-| `.github` | Instruções do Copilot, modelos de issue e de pull request |
+| `.github` | Instruções do Copilot, modelos de issue/PR e definições de workflows |
 
 Para verificar o projeto localmente, sem Azure, use Python 3.12 ou superior:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements\l200.txt
+python -m pip install -r requirements\l300.txt
 python -m unittest discover -s tests
 ```
 
-Para uma cópia somente do L100, use `requirements\l100.txt`.
+Para uma cópia somente do L100, use `requirements\l100.txt`; para L200, use `requirements\l200.txt`.
+O arquivo L300 reutiliza os requisitos L200. Instale dependências ao preparar uma cópia nova ou
+quando faltarem bibliotecas; uma instalação existente pode ser conferida com `python -m pip check`.
 
-### Evolução planejada
+### Níveis e continuidade
 
 | Nível | Objetivo | Continuidade |
 | --- | --- | --- |
@@ -115,8 +136,8 @@ Para uma cópia somente do L100, use `requirements\l100.txt`.
 | L300 | Automatizar, controlar acesso e operar com dependências privadas | Evoluir identidade, rede e observabilidade |
 | L400 | Medir coordenação de agentes, resiliência e uso de múltiplos deployments | Comparar com a solução anterior e testar migrações |
 
-O L100 contém sete desafios incrementais. Os próximos níveis também terão sequência e procedimentos
-de migração para mudanças de rede, índice ou identidade, com verificação e recuperação.
+L100, L200 e L300 contêm sete desafios incrementais por nível, com procedimentos
+de migração para mudanças de rede, índice ou identidade, verificação e recuperação.
 Remova recursos temporários de comparação quando terminar a atividade.
 
 ### Continue pelo L200
@@ -141,6 +162,49 @@ A borda recusou pedidos anônimos e um cabeçalho artificial com 401. A identida
 três recusas 403 fora de seus papéis. A autenticação testada usou identidade temporária, não login
 interativo de uma pessoa; autorização por documento e público restrito a pessoas específicas ficam
 fora desta implementação.
+
+### Continue pelo L300
+
+O [roteiro L300](docs/roteiro-l300.md) explica classificação, migração por fases, caminhos privados
+de consulta e ingestão e fronteiras da automação. O chat conserva o fluxo fixo L200; o agente
+Microsoft Agent Framework (MAF) do L100 permanece no console.
+
+| Desafio | Prática e alcance nesta rodada |
+| --- | --- |
+| [01: reproduzir a base](desafios/L300/01-reproduzir-base.md) | Inventário e base reconstruída no Azure: 54 trechos L100 e 21 L200 |
+| [02: atualizar a base](desafios/L300/02-atualizar-base.md) | Quatro fontes, hashes e classes; ciclo privado 24 → 21 → 24 |
+| [03: autorizar documentos](desafios/L300/03-filtrar-acesso.md) | Papéis por requisição, filtro nos três modos e recusa antes do modelo |
+| [04: dependências privadas](desafios/L300/04-dependencias-privadas.md) | DNS, endpoints, conexões e isolamento conferidos no Azure, com negativas externas |
+| [05: automatizar a entrega](desafios/L300/05-automatizar-entrega.md) | CI sem credenciais e implantação manual; ambiente e federação não ativados |
+| [06: conferir operação](desafios/L300/06-conferir-operacao.md) | Descritores e resumo de logs reais; limites entre acesso, operação e qualidade |
+| [07: recuperar e limpar](desafios/L300/07-recuperar-limpar.md) | Restauração, retorno, limpeza granular e encerramento dos temporários conferidos |
+
+O sinalizador `VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true` exige autenticação, tenant e índice L300.
+Os papéis `Vareleira.Atendimento` e `Vareleira.Corretor` definem classes estáticas de acesso.
+O padrão desligado conserva L200. A autorização ocorre antes de recuperar o contexto; a busca
+vetorial usa `preFilter` e o servidor recusa trechos incompatíveis antes da geração.
+
+O manifesto rege a carga, enquanto o indexador lê o prefixo inteiro e o chat autoriza classes.
+Controle quem escreve blobs/metadados e quem consulta o índice diretamente. O novo roteiro
+operacional é sintético, sem regras de seguro novas, e foi aprovado pelo mantenedor em
+10 de outubro de 2026. Essa aprovação não autoriza envio de dados ou alterações no Azure.
+As três fontes L100 conservam seus conteúdos e hashes.
+
+Confira o manifesto e o plano sem Azure:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\gerenciar_ingestao_l300.py --etapa validar
+.\.venv\Scripts\python.exe scripts\operar_l300.py --etapa plano --fase rede --validar-bicep
+```
+
+A migração cria ambiente e aplicação Container Apps separados. As fases `rede`, `aplicacao`
+e `isolar` são exclusivas e exigem implantação incremental. O fechamento público dos dados
+depende de consulta, ingestão e manutenção privadas observadas e autorizadas. Os custos de
+endpoints, DNS e recursos gerenciados são adicionais; o registro de imagens Basic continua
+público autenticado. Reaplicar a base L100/L200 pode reabrir dados e exige revisão.
+O [registro local L300](docs/validacao/l300-validacao-local.md) reúne comandos, resultados e
+limites da validação. A imagem deve ser construída da revisão L300; reutilizar uma tag anterior
+não acrescenta os filtros ao contêiner.
 
 ## O caso do laboratório
 
@@ -206,7 +270,8 @@ sintéticos do repositório.
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
 | L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
-| Níveis L300 e L400 | Planejados |
+| L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. Actions/OIDC e login humano não executados |
+| L400 | Planejado |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
 no commit `d4a93cc`; a [pré-release `v0.1.1-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.1-l100)

@@ -24,7 +24,8 @@
 - A direção técnica é Python, Microsoft Agent Framework e Azure, com Bicep
   em `infra`. No L100, os deployments são o `gpt-5.4-mini` (geração) e o
   `text-embedding-3-small` (embeddings). O L200 reutiliza esses deployments e suas versões;
-  os modelos dos demais níveis ainda precisam ser definidos.
+  o L300 conserva esses deployments, dimensões e política. Modelos do L400
+  ainda precisam de definição e avaliação próprias.
 - Diferencie o modelo que auxilia a autoria, o modelo usado pelo aluno no
   Copilot e os deployments de geração e embeddings da aplicação Azure.
 
@@ -56,7 +57,8 @@
   regra, e depois a de todos os desafios do L100 (Desafios 03 a 07), em 9 de outubro de 2026.
   Como o Astra não estava disponível, o Sonnet 5.5 escreveu também a documentação deles, e cada guia
   declara isso na seção "Autoria". O L200 recebeu autorização posterior, descrita abaixo;
-  L300 e L400 permanecem planejados.
+  o L300 recebeu o pedido de implementação posterior, descrito abaixo.
+  L400 permanece planejado.
 - Em 9 de outubro de 2026, o mantenedor pediu uma nova revisão documental do L100 com GPT-6.1 Sol,
   contra seu guia de estilo. Preserve a autoria inicial e identifique o modelo da revisão separadamente.
 - Criar identidades, credenciais ou papéis (Desafio 07) exige autorização explícita de quem administra o
@@ -87,6 +89,46 @@
   selecionados no código, preservando a política L100 e os IDs originais na apresentação.
   O teste v1 ficou em 11/18 e foi preservado; o novo v2 teve 16/18, sem descartes e com duas
   divergências. Conjuntos distintos não são uma comparação controlada; a entrega é experimental.
+- Em 10 de outubro de 2026, o mantenedor pediu avançar para o L300. O escopo desta rodada é
+  implementação e validação local, com GPT-6.1 Sol na documentação e Sonnet 5.5 no código,
+  sem novas operações Azure, atribuições de acesso ou ativação GitHub. Astra continua indisponível.
+  Publicação de workflows, implantação, federação e conexão privada precisam de decisão própria.
+- Após o fechamento local, o mantenedor confirmou a assinatura de testes e `brazilsouth` e
+  autorizou criar somente um grupo exclusivo para o L300. O grupo foi criado e conferido vazio,
+  com os oito grupos então preexistentes preservados. Nome e IDs permanecem no registro privado.
+  Essa autorização não inclui implantação de serviços, carga, identidades, papéis, conexões,
+  publicação ou Actions; continue coletando as decisões uma por vez.
+- Posteriormente, o mantenedor autorizou executar e testar os laboratórios e remover e expurgar
+  os recursos próprios ao final, sem continuar a coleta de perguntas. Use somente o grupo
+  exclusivo, a assinatura privada e `brazilsouth` confirmados, dentro do teto aprovado.
+  Preserve grupos, identidades e papéis anteriores. Essa rodada não ativa Actions, federação
+  ou publicação; registre cada resultado real e a limpeza em `docs/validacao/l300-azure-validacao.md`.
+- A rodada Azure L300 foi encerrada em 11 de outubro de 2026: grupo exclusivo e gerenciado
+  ausentes, objetos Entra e modelos próprios expurgados, papéis temporários retirados e linha
+  de base preservada. Isso não autoriza repetir a execução. Actions/OIDC, login humano e matriz
+  Linux permanecem não executados. Preserve as falhas, retomadas e limitações do registro.
+- O L300 é opt-in: `VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true` exige autenticação, tenant e índice L300.
+  Os papéis de aplicação vêm do principal entregue pela borda EasyAuth obrigatória. A aplicação
+  deriva classes estáticas por requisição, filtra todos os modos de busca antes da geração e usa
+  `preFilter` com vetor. Papel desconhecido recusa antes de embeddings, busca e modelo.
+  O padrão sem essa opção preserva o L200; demonstração e modo sem autenticação não validam L300.
+- O manifesto L300 valida a carga, não é uma ACL propagada automaticamente. O indexador lê
+  o prefixo inteiro e o chat autoriza classes; restrinja quem grava metadados e quem lê o índice
+  diretamente. O roteiro operacional sintético foi apresentado e aprovado pelo mantenedor em
+  10 de outubro de 2026, sem alterar texto, versão, tamanho ou hash. Essa aprovação é somente
+  de conteúdo; Azure, publicação e Actions continuam sujeitos às autorizações próprias.
+- A topologia L300 cria ambiente e aplicação Container Apps separados. Fases `rede`, `aplicacao`
+  e `isolar` são exclusivas e usam implantação incremental. Isolamento depende de evidências,
+  conexões compartilhadas aprovadas e configuração dos serviços preservada. Reaplicar L100/L200
+  pode reabrir acesso público; isso exige revisão e autorização, não é limpeza automática.
+- No encerramento completo autorizado, retire os shared private links próprios antes do serviço
+  de busca e de seus destinos. O destino já ausente pode bloquear a exclusão da busca.
+  Confira ausência real por listagem, não somente retorno de espera; não remova bloqueios nem
+  recrie dependências automaticamente e não manipule o grupo gerenciado Container Apps.
+- Workflows L300 são arquivos não ativados nesta rodada: CI em runners hospedados sem identidade
+  Azure; implantação manual em runner confiável, com ambiente protegido e OIDC. Identidade
+  federada de implantação e registro de login do chat são diferentes; somente o login do chat
+  usa segredo efêmero na fase `aplicacao`. Não publique IDs ou configurações brutas nos logs.
 - O mantenedor indicou uma assinatura de teste fora do repositório para validar
   os laboratórios. Nunca registre o ID dela, de tenants ou de pessoas em arquivos
   versionados; guarde esse tipo de evidência apenas em local privado.
@@ -97,9 +139,14 @@
 
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.
-- Ambiente: Python 3.12 ou superior; L100 usa `requirements/l100.txt`, L200 usa `requirements/l200.txt`.
+- Ambiente: Python 3.12 ou superior; requisitos L100, L200 e L300 ficam em `requirements/`.
+  `l300.txt` reutiliza `l200.txt`; não exige biblioteca extra de autorização.
 - Testes sem Azure: `python -m unittest discover -s tests`.
 - Bicep: `az bicep lint --file infra/main.bicep` e `az bicep build --file infra/main.bicep --stdout`.
 - Bicep L200: os mesmos comandos com `infra/l200.bicep`; parâmetros sem segredos antes de
   `build-params --stdout`. Sintaxe da interface: `node --check web/app.js`.
+- Bicep L300: lint/build com `infra/l300.bicep`, compilador 0.48.1 ou superior.
+  Validação do manifesto, sem rede: `python scripts/gerenciar_ingestao_l300.py --etapa validar`.
+  Plano local e compilação: `python scripts/operar_l300.py --etapa plano --fase rede --validar-bicep`.
+  Não imprima a compilação do arquivo de parâmetros quando houver segredo real na sessão.
 - Instruções por tipo de arquivo ficam em `.github/instructions/`.

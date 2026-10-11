@@ -87,6 +87,10 @@ Tenha a lista dos recursos e papéis existentes **antes** do laboratório.
 Cada remoção exige autorização do alvo e da consequência. Não exclua um grupo compartilhado.
 Confirme quem é proprietário do registro Entra ID e se a credencial foi criada neste exercício.
 Use PowerShell 7 no terminal do projeto no VS Code.
+VS Code significa Visual Studio Code. Confirme assinatura ativa e tenant antes da limpeza.
+Execute cada comando separadamente e confira `$LASTEXITCODE` logo depois: falha de uma remoção
+não autoriza continuar com suas dependências. Os comandos de revisão, ingresso e exclusão Azure CLI
+não têm simulação neste roteiro; a conferência do inventário e do plano de alvos antecede a autorização.
 
 ## Etapa 1: conferir revisão, logs e custo
 
@@ -204,7 +208,13 @@ az ad app credential list --id $idLogin --output table
 ```
 
 Confira cada recurso com o inventário inicial. A remoção completa só é permitida em grupo exclusivo.
+Se o ambiente já evoluiu para L300 ou L400, use o roteiro de encerramento do nível efetivamente
+implantado: este procedimento L200 não trata suas conexões privadas nem consumidores adicionais.
 A aplicação Entra ID não faz parte desse grupo; retire a credencial específica e o registro próprio.
+Compare também as atribuições próprias com a linha de base por principal, papel e escopo.
+Excluir o grupo não é prova de revogação de atribuições feitas fora dele nem de expurgo dos
+objetos do diretório. Se algum desses alvos permanecer, o encerramento fica pendente de remoção
+individual autorizada e nova conferência; não use exclusão ampla por identidade ou nome.
 
 **[altera o Azure]** e o Entra ID, após aprovação:
 
@@ -309,3 +319,6 @@ O exercício não mediu recuperação de dados de produção nem simulou falha d
 
 Texto e revisão: GPT-6.1 Sol. Código e testes: Claude Sonnet 5.5.
 O Astra não estava disponível; as escolhas de modelos do aluno e da aplicação permanecem independentes.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure.

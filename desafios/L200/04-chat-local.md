@@ -42,13 +42,14 @@ histórico anterior. Essa escolha reduz retenção de conversas, mas limita o di
 1. Explorar a interface com respostas explicitamente simuladas.
 2. Consultar o índice L200 com a identidade do operador, apenas no próprio computador.
 3. Conferir fontes, avisos, isolamento entre abas e falhas.
-4. Separar a aplicação Python do transporte HTTP e da apresentação no navegador.
+4. Separar a aplicação Python do transporte HTTP, protocolo de comunicação entre navegador e
+   servidor, e da apresentação no navegador.
 
 ## Artefatos e disponibilidade
 
 | Artefato disponível | Uso |
 | --- | --- |
-| [Servidor](../../scripts/chat_web.py) | Página, arquivos estáticos, API e controle de carga |
+| [Servidor](../../scripts/chat_web.py) | Página, arquivos estáticos, API (interface de programação de aplicações) e controle de carga |
 | [Regras do chat](../../scripts/lab_chat.py) | Configuração, consulta, política e tradução de erros |
 | [Página](../../web/index.html), [interação](../../web/app.js) e [estilos](../../web/style.css) | Interface sem dependências externas de scripts |
 | [Política compartilhada](../../scripts/lab_politica.py) | Tipos, citações, texto fixo e aviso |
@@ -92,6 +93,13 @@ Use Python 3.12, dependências `requirements\l200.txt` instaladas e PowerShell 7
 Abra a pasta completa no VS Code, selecione `.venv` em **Python: Select Interpreter** e consulte este
 guia na prévia Markdown. A demonstração dispensa Azure; a consulta real exige a base do Desafio 03,
 sessão da Azure CLI, interface de linha de comando do Azure, no tenant autorizado e papéis de consulta e modelos.
+O tenant é o diretório de identidades. Confirme a assinatura ativa e recupere `$busca`, `$modelos`
+e `$tenant` pelo Desafio 01 se abriu um terminal novo; variáveis de outro terminal não são herdadas.
+Login bem-sucedido não comprova acesso ao índice nem aos modelos.
+Use um terminal dedicado, sem os sinalizadores de acesso documental ou coordenação dos níveis
+seguintes. A configuração L200 mantém `VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=false` e
+`VARELEIRA_EXIGIR_COORDENACAO=false`, sem `VARELEIRA_DEPLOYMENT_CONTINGENCIA`;
+não desative controles de uma aplicação L300/L400 existente para executar este exercício.
 
 ## Etapa 1: explorar a interface sem Azure
 
@@ -258,6 +266,8 @@ aplicação Azure; autenticação interativa de uma pessoa não foi exercitada.
 | FastAPI e Uvicorn | Biblioteca de rotas e servidor HTTP do chat |
 | Dublê de teste | Objeto que substitui um serviço real para testar comportamento |
 | Código de suporte | Identificador de requisição usado para localizar uma falha sem publicar a pergunta |
+| Tenant | Diretório de identidades autorizado para o acesso |
+| MAF | Microsoft Agent Framework, usado pelo agente de console L100; não escolhe ferramentas no chat L200 |
 
 ## Referências
 
@@ -267,3 +277,6 @@ aplicação Azure; autenticação interativa de uma pessoa não foi exercitada.
 
 Texto e revisão: GPT-6.1 Sol. Código e testes: Claude Sonnet 5.5.
 O Astra não estava disponível; a preferência de autoria não configura o modelo do aluno no editor.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure.

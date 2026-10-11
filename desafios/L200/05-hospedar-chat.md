@@ -52,7 +52,7 @@ Restrição por pessoa e autorização por documento precisam de desenho adicion
 | --- | --- |
 | [Dockerfile](../../Dockerfile) e [.dockerignore](../../.dockerignore) | Imagem e lista dos arquivos enviados ao build |
 | [Infraestrutura L200](../../infra/l200.bicep) e [parâmetros](../../infra/levels/l200.bicepparam) | Base e aplicação implantadas em etapas |
-| [Módulo da aplicação](../../infra/modules/l200-aplicacao.bicep) | Identidade, configuração, escala, probes e autenticação |
+| [Módulo da aplicação](../../infra/modules/l200-aplicacao.bicep) | Identidade, configuração, escala, verificações de saúde e prontidão e autenticação |
 | [Chat](../../scripts/chat_web.py) e [regras](../../scripts/lab_chat.py) | Fluxo fixo de consulta e política |
 | [Testes da infraestrutura](../../tests/test_infra_l200.py) | Contratos e builds locais |
 | [Registro do desafio](../../docs/validacao/l200-05-hospedar-chat.md) | Evidências Azure, autenticação e limitações |
@@ -88,12 +88,16 @@ com autenticação obrigatória.
 
 A identidade gerenciada evita segredo para **dados e modelos** [5]. A configuração do login ainda
 usa uma credencial específica. O template não cria esse registro no Entra ID.
+O Azure Resource Manager (ARM) administra os recursos; o nome de domínio completo (FQDN,
+*Fully Qualified Domain Name*) identifica o endereço da aplicação.
 
 ## Pré-requisitos
 
 Conclua os Desafios 01 a 04. Tenha autorização para a construção remota, implantação, ingresso
 externo, registro de aplicação e credencial temporária. Permissões Azure e administração de aplicações
 no Entra ID são escopos diferentes.
+Exija assinatura Azure ativa e confira `$LASTEXITCODE` imediatamente após cada chamada de `az`
+ou Python. Execute os blocos passo a passo: falha de criação ou atualização impede a etapa seguinte.
 
 Use o tenant conferido, variáveis do destino, ambiente Python e PowerShell 7 no VS Code.
 Confira o custo e as políticas da região. O procedimento demonstrado usa um registro de login novo;
@@ -134,6 +138,9 @@ az acr repository show --subscription $assinatura --name $registro --image "vare
 **Resultado esperado:** execução `Succeeded` e digest presente. Use uma tag nova, preservando a
 imagem anterior. O Dockerfile executa o processo como usuário sem privilégios.
 O contexto exclui documentos, gabaritos, `.venv`, `.git`, arquivos locais e segredos.
+O build remoto não tem simulação de publicação neste roteiro. A revisão do contexto enviado,
+da tag e do custo antecede sua autorização; `--no-logs` reduz a saída, mas não dispensa conferir
+quais arquivos entram no contexto.
 
 Uma falha de exibição dos logs no terminal pode ocorrer depois de o build remoto concluir.
 Confira execução e digest antes de repetir o build, para evitar trabalho e cobrança duplicados.
@@ -351,6 +358,7 @@ de produção e escala ampla permanecem fora do escopo conferido.
 | Principal de serviço | Representação de uma aplicação dentro de um tenant |
 | Audiência do token | Aplicação ou serviço ao qual o token se destina |
 | vCPU e GiB | Núcleo virtual de processamento e unidade de memória |
+| ARM e FQDN | Administração de recursos Azure e nome de domínio completo da aplicação |
 
 ## Referências
 
@@ -363,3 +371,6 @@ de produção e escala ampla permanecem fora do escopo conferido.
 
 Texto e revisão: GPT-6.1 Sol. Código e testes: Claude Sonnet 5.5.
 O Astra não estava disponível; essas escolhas de autoria não configuram os modelos do aluno.
+
+Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
+conferência local dos artefatos; sem nova execução Azure.

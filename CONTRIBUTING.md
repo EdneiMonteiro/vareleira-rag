@@ -45,6 +45,7 @@ python -m unittest discover -s tests
 ```
 
 Use `requirements\l100.txt` para uma cópia que contenha somente o L100.
+Na entrega L300, use `requirements\l300.txt`, que reutiliza o L200.
 Os testes não acessam o Azure. Ao alterar o Bicep, execute também
 `az bicep lint --file infra/main.bicep` (a saída deve ficar vazia: o comando termina
 com código 0 mesmo com avisos) e `az bicep build --file infra/main.bicep --stdout`.
@@ -65,6 +66,16 @@ recuperável. Conserve arquivo, código e configuração após a medição; corr
 precisam de casos de desenvolvimento e novo teste final. Ao alterar a infraestrutura L200,
 execute `az bicep lint --file infra\l200.bicep` e `az bicep build --file infra\l200.bicep --stdout`.
 Para JavaScript da interface, use `node --check web\app.js` e confira o navegador.
+
+No L300, valide o manifesto com `python scripts\gerenciar_ingestao_l300.py --etapa validar`.
+Ao alterar a infraestrutura, execute lint e build com `infra\l300.bicep`, usando Bicep 0.48.1
+ou superior. `python scripts\operar_l300.py --etapa plano --fase rede --validar-bicep` confere
+o plano e o template localmente, sem login. Preserve os defaults L200 e os três documentos L100;
+as fontes novas exigem classificação e revisão correspondentes.
+Testes com dublês e parsing de workflows não substituem login, conectividade ou execução Actions.
+A rodada posterior L300 recebeu autorização específica para executar e limpar os temporários
+Azure; consulte o [registro](docs/validacao/l300-azure-validacao.md).
+Isso não autoriza novas execuções ou destinos. Actions e federação não foram ativados.
 
 Ao introduzir código, inclua instruções reproduzíveis, dependências com versões
 fixas, testes proporcionais ao comportamento e, se houver serviços pagos, custos
