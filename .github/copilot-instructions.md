@@ -173,6 +173,11 @@
 - A análise dos relatórios finais encontrou classificações e contagens, sem textos
   completos das respostas. Não reexecute conjuntos finais para reconstruí-las nem
   confunda reexame dos dois gabaritos L200 com avaliação semântica integral.
+- As pré-releases `v0.3.0-l300` e `v0.4.0-l400` foram publicadas nos commits
+  `0093629` e `429a4ba`, com CI Windows/Linux, Bicep e JavaScript aprovada.
+  Os PRs #2 e #3 dependem, em sequência, do #1; nenhum foi mesclado nesta rodada.
+  Essa CI não executou implantação, OIDC ou login humano. O registro é
+  `docs/validacao/publicacao-l300-l400.md`.
 
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.

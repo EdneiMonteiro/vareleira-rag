@@ -31,7 +31,9 @@ foi concluída: ingestão privada, fontes por perfil, controles HTTP, bloqueio p
 três serviços de dados e retorno de revisão foram exercitados em um grupo temporário exclusivo.
 O grupo e o grupo gerenciado foram removidos; identidades, papéis e expurgos próprios foram
 conferidos, com os recursos anteriores preservados.
-GitHub Actions e confiança federada continuam fora desta execução.
+GitHub Actions e confiança federada não foram executados nessa rodada Azure.
+A CI foi executada posteriormente para publicação, conforme o
+[registro de publicação](docs/validacao/publicacao-l300-l400.md); implantação federada permanece pendente.
 
 **L400:** coordenação limitada com Microsoft Agent Framework, contingência de geração,
 índice candidato e comparação com a referência L300 foram implementados e exercitados.
@@ -308,7 +310,7 @@ sintéticos do repositório.
 | Condições gerais, glossário e perguntas frequentes sintéticos (v1.0) | Disponíveis; aprovação do mantenedor confirmada |
 | Perguntas dos conjuntos de ajuste e de teste (sintéticas) | Disponíveis; aprovação confirmada, com a independência parcial e os resultados registrados |
 | L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
-| L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. Actions/OIDC e login humano não executados |
+| L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. CI Windows/Linux aprovada; implantação Actions/OIDC e login humano não executados |
 | L400: coordenação, comparação, contingência e recuperação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos. Comparação 16/16 em ambas, sem ganho; limites e histórico preservados |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
@@ -321,6 +323,15 @@ A [pré-release corrigida `v0.2.1-l200`](https://github.com/EdneiMonteiro/varele
 preserva essa história e acrescenta referências restritas, novo teste de 16 de 18 sem descartes
 e o encerramento da rodada de correção. O [PR #1](https://github.com/EdneiMonteiro/vareleira-rag/pull/1)
 disponibiliza a entrega para revisão; a branch principal não foi mesclada automaticamente.
+
+As pré-releases [L300 `v0.3.0-l300`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.3.0-l300)
+e [L400 `v0.4.0-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.0-l400)
+publicam árvores distintas nos commits `0093629` e `429a4ba`, com CI Windows/Linux,
+Bicep e JavaScript aprovada. Os [PRs #2](https://github.com/EdneiMonteiro/vareleira-rag/pull/2)
+e [#3](https://github.com/EdneiMonteiro/vareleira-rag/pull/3) seguem a cadeia #1 → #2 → #3,
+sem merge. O [registro de publicação](docs/validacao/publicacao-l300-l400.md) separa essas
+verificações das execuções Azure históricas e da avaliação semântica ainda incompleta.
+
 A versão 0.1.0 do contexto é **do universo Vareleira**, não a versão deste código. Os desafios só criam recursos no
 Azure quando você executa os comandos deles; permissões, custos e limpeza estão
 descritos em cada guia.

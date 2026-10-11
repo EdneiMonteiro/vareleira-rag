@@ -76,7 +76,9 @@ as fontes novas exigem classificação e revisão correspondentes.
 Testes com dublês e parsing de workflows não substituem login, conectividade ou execução Actions.
 A rodada posterior L300 recebeu autorização específica para executar e limpar os temporários
 Azure; consulte o [registro](docs/validacao/l300-azure-validacao.md).
-Isso não autoriza novas execuções ou destinos. Actions e federação não foram ativados.
+Isso não autoriza novas execuções ou destinos. Actions e federação não foram ativados nessa rodada Azure.
+A [publicação posterior](docs/validacao/publicacao-l300-l400.md) executou somente a CI
+em runners hospedados; o workflow de implantação e a confiança federada continuam não executados.
 
 No L400, `python scripts\operar_l400.py --etapa planejar --validar-bicep` confere o plano e
 o template sem rede. Coordenação e contingência preservam acesso documental e política L100;
