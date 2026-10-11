@@ -69,3 +69,10 @@ As releases e os PRs explicitam as limitações: verificador D07 inadequado para
 ambiente compartilhado, sondas/limpeza privadas sem receita pública completa,
 cancelamento L400 por processo e uma réplica, cobrança indisponível e ausência
 de homologação de produção. Publicação e CI não removem essas restrições.
+
+## Atualização de 11 de outubro de 2026
+
+Os PRs #1 → #2 → #3 foram mesclados; a CI passou na principal e as tags originais não mudaram.
+A correção do D07 e as receitas públicas de sonda, encerramento e carga só tiveram testes locais,
+sem validação Azure; a lacuna semântica foi encerrada como texto irrecuperável.
+O [registro consolidado](operacao-publica-l300-l400-2026-10-11.md) detalha a rodada posterior; o texto acima é histórico.

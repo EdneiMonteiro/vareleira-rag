@@ -58,3 +58,10 @@ Além das limitações herdadas da revisão L300, o cancelamento L400 continua p
 processo e com uma réplica. A comparação 16/16 em ambas as estratégias não
 demonstrou ganho de conformidade nem fidelidade semântica. A cobrança permanece
 indisponível; publicação e CI não homologam produção.
+
+## Atualização de 11 de outubro de 2026
+
+Os PRs #1 → #2 → #3 foram mesclados, com CI aprovada na principal; as tags originais não mudaram.
+O D07 foi corrigido e há receitas públicas de implantação, promoção, sonda, encerramento e carga, sem validação Azure.
+A lacuna semântica foi encerrada como texto irrecuperável, sem repetir os conjuntos finais.
+O [registro consolidado](operacao-publica-l300-l400-2026-10-11.md) distingue essas correções locais da revisão histórica.

@@ -61,3 +61,10 @@ essas verificações locais.
 4. O L200 conserva duas divergências em 18 casos. A publicação não transforma
    esse resultado em aprovação completa nem altera perguntas, gabaritos ou código
    para melhorar a contagem.
+
+## Atualização de 11 de outubro de 2026
+
+Os PRs #1 → #2 → #3 foram mesclados; a integração contínua (CI) passou também na principal.
+O D07 usa alvo aleatório; as sondas e o planejador de encerramento agora têm ferramentas e receitas públicas.
+Essas correções só foram testadas localmente, sem validação Azure; as tags originais não as incluem.
+O [registro consolidado](operacao-publica-l300-l400-2026-10-11.md) preserva o alcance e as limitações desta revisão histórica.

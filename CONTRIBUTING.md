@@ -2,7 +2,8 @@
 
 Discuta alterações de escopo, escolha de tecnologia e novos conjuntos de
 documentos em [Discussions](https://github.com/EdneiMonteiro/vareleira-rag/discussions)
-antes de implementá-los. Correções pontuais podem ser enviadas por pull request.
+antes de implementá-los. Correções pontuais podem ser enviadas por pull request
+(PR, proposta de alteração).
 Procure issues e propostas existentes para evitar duplicação.
 
 ## Contexto e conteúdo
@@ -61,7 +62,8 @@ README e deste arquivo; um teste automático confere esses destinos.
 Um teste de saída em `tests\test_avaliacao.py` já contém perguntas do conjunto: a independência
 parcial está registrada na validação do D06. Evite ampliar essa exposição.
 
-No L200, os guias e o avaliador HTTP usam `dados\l200\avaliacao\chat-teste-v1.json`.
+No L200, os guias e o avaliador do protocolo de transferência de hipertexto (HTTP) usam
+`dados\l200\avaliacao\chat-teste-v1.json`.
 Preserve as perguntas finais fora de guias, registros, prompts de desenvolvimento e conteúdo
 recuperável. Conserve arquivo, código e configuração após a medição; correções de comportamento
 precisam de casos de desenvolvimento e novo teste final. Ao alterar a infraestrutura L200,
@@ -77,8 +79,11 @@ Testes com dublês e parsing de workflows não substituem login, conectividade o
 A rodada posterior L300 recebeu autorização específica para executar e limpar os temporários
 Azure; consulte o [registro](docs/validacao/l300-azure-validacao.md).
 Isso não autoriza novas execuções ou destinos. Actions e federação não foram ativados nessa rodada Azure.
-A [publicação posterior](docs/validacao/publicacao-l300-l400.md) executou somente a CI
-em runners hospedados; o workflow de implantação e a confiança federada continuam não executados.
+A [publicação posterior](docs/validacao/publicacao-l300-l400.md) executou a integração contínua (CI)
+em runners hospedados. Após os merges dos PRs #1 → #2 → #3, em 11 de outubro de 2026, a CI passou
+também na principal. O workflow de implantação por GitHub Actions e OpenID Connect (OIDC,
+protocolo de identidade) nunca foi executado; nenhuma confiança federada foi criada.
+O login humano continua não executado. Publicar os arquivos de workflow não autoriza implantá-los.
 
 No L400, `python scripts\operar_l400.py --etapa planejar --validar-bicep` confere o plano e
 o template sem rede. Coordenação e contingência preservam acesso documental e política L100;
@@ -90,8 +95,25 @@ execuções ativas; não trate fechar a conexão como prova de interrupção atr
 O registro atual é por processo, com uma réplica. Preserve a comparação congelada da versão
 que respondeu o teste final; correções operacionais posteriores recebem provas específicas.
 A rodada autorizada L400 foi encerrada com ausência real dos temporários, expurgos e preservação
-da linha de base conferidos. Isso não autoriza reproduzir a implantação, publicar ou ativar Actions.
+da linha de base conferidos. Isso não autoriza reproduzir a implantação, criar federação
+ou executar o workflow de implantação.
 Cobrança ainda indisponível não é custo zero.
+
+As [ferramentas públicas desta rodada](docs/validacao/operacao-publica-l300-l400-2026-10-11.md)
+acrescentam planejamento de encerramento, sondas e carga finita. Os testes usam apenas dublês;
+**nenhuma ferramenta pública nova foi validada no Azure**. Para consultar ajuda e conferir
+a preparação local sem rede, com o ambiente Python preparado, use:
+
+```powershell
+python scripts\planejar_encerramento.py --help
+python scripts\sonda_l300.py --etapa validar
+python scripts\montar_contexto_sonda_l300.py --help
+python scripts\gerar_carga_l400.py --help
+```
+
+O planejador só imprime comandos; não executa a limpeza. A linha de base deve ser capturada
+antes de criar o grupo temporário. Nunca execute etapas que alteram o Azure ou consomem modelos
+sem autorização correspondente, destino explícito, orçamento e limpeza definidos.
 
 Ao introduzir código, inclua instruções reproduzíveis, dependências com versões
 fixas, testes proporcionais ao comportamento e, se houver serviços pagos, custos
