@@ -212,8 +212,8 @@ foi instalado. As ajudas e preparações abaixo não usaram rede.
 | Preparação da sonda | `python scripts\sonda_l300.py --etapa validar` | Código 0; quatro fontes e módulos conferidos, rede bloqueada |
 | Ajuda do montador | `python scripts\montar_contexto_sonda_l300.py --help` | Código 0; lista de 12 arquivos mais os dois modelos conferida |
 | Ajuda do gerador | `python scripts\gerar_carga_l400.py --help` | Código 0; limites, destino e confirmações conferidos |
-| Políticas do repositório | `python -m unittest tests.test_repositorio` | Dez testes aprovados, sem Azure |
-| Perguntas finais fora dos textos públicos | `python -m unittest tests.test_avaliacao.ConjuntosReaisTests.test_as_perguntas_de_teste_nao_aparecem_em_guias_registros_nem_instrucoes` | Um teste aprovado |
+| Políticas do repositório | `python -m unittest discover -s tests -p test_repositorio.py` | Dez testes aprovados, sem Azure |
+| Perguntas finais fora dos textos públicos | `python -m unittest discover -s tests -p test_avaliacao.py -k test_as_perguntas_de_teste_nao_aparecem_em_guias_registros_nem_instrucoes` | Um teste aprovado |
 | Links e âncoras dos sete arquivos deste fechamento | `python -`, com script de conferência em memória | 135 links locais e âncoras, zero problemas |
 | Espaços e alterações | `git --no-pager diff --check` | Sem problemas; os sete arquivos também foram conferidos separadamente |
 | Sintaxe da interface | `node --check web\app.js` | Sem problemas |
@@ -221,7 +221,8 @@ foi instalado. As ajudas e preparações abaixo não usaram rede.
 
 `tests\test_instrucoes.py` não existe nesta árvore e não foi executado.
 O controle de exposição de perguntas finais fica no teste de `test_avaliacao`
-identificado na tabela. A suíte completa não foi reexecutada pelo redator.
+identificado na tabela. A suíte completa não foi reexecutada pelo redator;
+o coordenador a reexecutou depois do fechamento documental (próxima seção).
 O verificador geral sem rede leu 73 arquivos e 1.616 links no texto, sem links
 ou âncoras quebrados. Retornou código 1 somente pelos seis alertas de
 referências não citadas já conhecidos, listados acima.
@@ -232,6 +233,28 @@ referências não citadas já conhecidos, listados acima.
 `python scripts\sonda_negativas_externas_l300.py --help` retornaram código 1,
 com `uso_invalido`, sem acessar a rede. Seus parâmetros estão descritos
 nos guias e no código; esses comandos não são publicados como consulta de ajuda.
+
+### Reexecução final e integração contínua do PR
+
+Depois do fechamento documental, o coordenador reexecutou a suíte e conferiu a CI
+do PR desta rodada, no commit `97b931e`. Todos os números abaixo são de testes com
+dublês e de verificações estáticas; nenhum envolve o Azure.
+
+| O que | Comando ou método | Resultado |
+| --- | --- | --- |
+| Suíte completa, ambiente virtual do projeto | `.\.venv\Scripts\python.exe -m unittest discover -s tests` | 1.308 casos, resultado OK, três ignorados; Windows, Python 3.12.10, cerca de 184 segundos |
+| Dependências instaladas | `.\.venv\Scripts\python.exe -m pip check` | Nenhum requisito quebrado |
+| Comandos offline das ferramentas novas | `python scripts\planejar_encerramento.py --help`, `--etapa modelo`, `python scripts\sonda_l300.py --etapa validar`, `python scripts\montar_contexto_sonda_l300.py --help` e `python scripts\gerar_carga_l400.py --help` | Código de saída 0 nos cinco, sem rede |
+| CI do PR, [execução 38163879531](https://github.com/EdneiMonteiro/vareleira-rag/actions/runs/38163879531), evento `pull_request` | Quatro tarefas do workflow `Validar` | Todas com sucesso: Windows com 1.308 casos, OK, três ignorados; Linux com 1.304 casos, OK, três ignorados; Bicep e JavaScript aprovados |
+
+O Linux conta quatro casos a menos que o Windows porque a classe de testes do Windows
+PowerShell 5.1 se ignora por inteiro quando o `powershell.exe` não existe: esses quatro
+casos só rodam no Windows. Com o Python do sistema, sem os pacotes do projeto, o mesmo
+comando falha por dependências ausentes (`azure`); use o ambiente virtual preparado com
+os requisitos do projeto.
+
+Esta seção cobre o commit `97b931e`, anterior ao commit que a acrescentou. A CI da
+principal depois de um eventual merge deste PR não está registrada aqui.
 
 ## O que não foi validado e limitações
 
