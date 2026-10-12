@@ -9,9 +9,11 @@ import ast
 import contextlib
 import hashlib
 import io
+import os
 import re
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -63,6 +65,16 @@ def modulos_importados(caminho: Path) -> set[str]:
         elif isinstance(no, ast.ImportFrom) and no.module and no.level == 0:
             importados.add(no.module.split(".")[0])
     return importados
+
+
+def bloco_do_comando(saida: str) -> list[str]:
+    """As linhas do comando de build impresso: de `Set-Location` até a linha que termina em ` .` (a origem do build)."""
+    linhas = saida.splitlines()
+    inicio = next((i for i, linha in enumerate(linhas) if linha.startswith("Set-Location")), None)
+    fim = None if inicio is None else next((i for i in range(inicio, len(linhas)) if linhas[i].endswith(" .")), None)
+    if inicio is None or fim is None:
+        raise AssertionError("o comando de build (Set-Location ... az acr build ... .) não está na saída")
+    return linhas[inicio:fim + 1]
 
 
 class BaseDoMontador(unittest.TestCase):
@@ -332,21 +344,58 @@ class ConferenciaDeOrigemTests(BaseDoMontador):
 
 
 class ComandoDeBuildTests(BaseDoMontador):
-    def test_comando_de_referencia_aponta_o_dockerfile_do_contexto_e_a_pasta_como_ultimo_argumento(self):
+    def verificar_a_forma_do_comando(self, comando):
+        """A forma que funcionou no Azure: o az resolve --file a partir do diretório atual, então o build roda de dentro da pasta do contexto."""
+        texto, az = "\n".join(comando), "\n".join(comando[1:])
+        self.assertTrue(comando[0].startswith("Set-Location "), "o diretório atual precisa ser a pasta do contexto")
+        self.assertEqual(comando[1], "az acr build `")
+        self.assertNotIn("--file", texto)
+        self.assertIsNone(re.search(r"\s-f\s", texto))
+        self.assertNotIn("Dockerfile", texto, "sem --file o az usa o Dockerfile da pasta atual, que é a do contexto")
+        self.assertTrue(texto.endswith(" ."), "a origem do build é `.`, a pasta atual")
+        self.assertEqual(texto.split()[-1], ".")
+        self.assertEqual(comando[-1], "    --no-logs .")
+        self.assertIn("    --subscription <assinatura> `", comando)
+        self.assertNotIn(str(self.destino.resolve()), az, "a pasta do contexto não é argumento do az")
+        self.assertEqual(re.findall(r"^\s+(--[a-z-]+)", az, re.MULTILINE),
+                         ["--subscription", "--registry", "--image", "--build-arg", "--no-logs"])  # as opções de `az acr build --help`
+
+    def test_o_comando_de_referencia_entra_na_pasta_do_contexto_e_usa_ponto_como_origem_sem_file(self):
         codigo, saida, _ = executar("--destino", str(self.destino))
-        linhas = saida.splitlines()
-        inicio = linhas.index("az acr build `")
-        comando = linhas[inicio:inicio + 6]
-        self.assertEqual(comando[:5], ["az acr build `", "    --registry <registro> `", "    --image <repositorio-da-sonda>:<tag-nova> `",
-                                       "    --build-arg IMAGEM_CHAT=<registro>.azurecr.io/<repositorio-do-chat>:<tag-do-chat> `",
-                                       "    --file Dockerfile `"])
-        self.assertEqual(comando[5], f"    '{self.destino.resolve()}'", "a pasta do contexto é o ÚLTIMO argumento")
-        self.assertEqual(linhas[inicio + 6], "")
-        opcoes = re.findall(r"^\s+(--[a-z-]+)", "\n".join(comando), re.MULTILINE)
-        self.assertEqual(opcoes, ["--registry", "--image", "--build-arg", "--file"])  # as opções de `az acr build --help`
+        self.assertEqual(codigo, 0)
+        comando = bloco_do_comando(saida)
+        self.verificar_a_forma_do_comando(comando)
+        self.assertEqual(comando, [f"Set-Location -LiteralPath '{self.destino.resolve()}'", "az acr build `",
+                                   "    --subscription <assinatura> `", "    --registry <registro> `",
+                                   "    --image <repositorio-da-sonda>:<tag-nova> `",
+                                   "    --build-arg IMAGEM_CHAT=<registro>.azurecr.io/<repositorio-do-chat>:<tag-do-chat> `", "    --no-logs ."])
+        self.assertEqual(GUID.findall(saida), [], "o comando traz só marcadores < >: nenhum valor real do ambiente")
         self.assertIn("ALTERA o Azure", saida)
         self.assertIn("nunca latest", saida)
-        self.assertNotIn("<registro>.azurecr.io/<repositorio-do-chat>:<tag-do-chat>" + " --", saida)
+        self.assertIn("só a referência da imagem, nunca segredos", saida)
+
+    def test_a_explicacao_diz_por_que_o_build_roda_de_dentro_da_pasta_e_como_ler_o_log_depois(self):
+        _, saida, _ = executar("--destino", str(self.destino), "--registro", "registroteste")
+        linhas = saida.splitlines()
+        depois = linhas[linhas.index("    --no-logs .") + 1:]
+        posicao = depois.index("$env:PYTHONIOENCODING = 'utf-8'")
+        self.assertEqual(depois[posicao:posicao + 2], ["$env:PYTHONIOENCODING = 'utf-8'", "az acr task logs --subscription <assinatura> "
+                                                       "--registry registroteste --run-id <run-id>"])
+        explicacao = " ".join(depois[:posicao])
+        for trecho in ("O az resolve --file a partir do diretório atual, e não do contexto", "roda de dentro da pasta do contexto",
+                       "o --no-logs evita a falha de Unicode do Windows", "az acr task logs --run-id", "o run-id está no JSON final do build"):
+            self.assertIn(trecho, explicacao)
+        for antigo in ("ÚLTIMO argumento", "--file aponta", "aponta o Dockerfile dela"):
+            self.assertNotIn(antigo, saida)
+        for trecho in ("diretório ATUAL", "Set-Location", "`.` como origem", "az acr task logs --run-id"):
+            self.assertIn(trecho, montar.__doc__)
+
+    def test_a_assinatura_nunca_vem_do_ambiente_e_os_marcadores_continuam_no_comando(self):
+        assinatura = str(uuid.uuid4())  # gerado agora: o repositório não guarda GUIDs literais
+        with mock.patch.dict(os.environ, {"AZURE_SUBSCRIPTION_ID": assinatura, "ARM_SUBSCRIPTION_ID": assinatura}):
+            _, saida, _ = executar("--destino", str(self.destino))
+        self.assertNotIn(assinatura, saida)
+        self.assertEqual(saida.count("<assinatura>"), 2, "um no build e outro na leitura do log")
 
     def test_valores_informados_preenchem_o_comando_depois_de_validados(self):
         imagem_do_chat = "registroteste.azurecr.io/vareleira/chat-l300:20261011-1"
@@ -356,6 +405,7 @@ class ComandoDeBuildTests(BaseDoMontador):
         self.assertIn("    --registry registroteste `", saida)
         self.assertIn(f"    --build-arg IMAGEM_CHAT={imagem_do_chat} `", saida)
         self.assertIn("    --image vareleira/sonda-l300:20261011-2 `", saida)
+        self.verificar_a_forma_do_comando(bloco_do_comando(saida))
         digest = "registroteste.azurecr.io/vareleira/chat-l300@sha256:" + "a" * 64
         self.assertEqual(montar.validar_imagem_do_chat(digest), digest)
         for invalido, funcao in (("RegistroMaiusculo", montar.validar_registro), ("curt", montar.validar_registro),
@@ -375,10 +425,12 @@ class ComandoDeBuildTests(BaseDoMontador):
         codigo, _, _ = executar("--destino", str(outro), "--imagem-sonda", "vareleira/sonda-l300:latest")
         self.assertEqual((codigo, outro.exists()), (lab_comum.CODIGO_USO, False))
 
-    def test_a_pasta_com_aspas_e_espacos_vira_um_literal_valido_do_powershell(self):
-        comando = montar.comando_de_build(Path("C:/Users/Ana O'Neil/contexto sonda"), None, None, None)
-        self.assertTrue(comando.endswith("'" + str(Path("C:/Users/Ana O'Neil/contexto sonda")).replace("'", "''") + "'"))
-        self.assertIn("O''Neil", comando)
+    def test_a_pasta_com_aspas_espacos_e_colchetes_vira_um_literal_valido_do_powershell(self):
+        pasta = Path("C:/Users/Ana O'Neil/contexto [sonda]")
+        primeira = montar.comando_de_build(pasta, None, None, None).splitlines()[0]
+        self.assertEqual(primeira, "Set-Location -LiteralPath '" + str(pasta).replace("'", "''") + "'")
+        self.assertIn("O''Neil", primeira)
+        self.assertIn("-LiteralPath", primeira, "colchetes no caminho não podem virar curinga do PowerShell")
 
 
 class DockerfileDaSondaTests(unittest.TestCase):

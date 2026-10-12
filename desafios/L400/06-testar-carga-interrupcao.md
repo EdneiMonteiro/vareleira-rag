@@ -4,7 +4,7 @@
 
 | Campo | Definição |
 | --- | --- |
-| Situação | Carga histórica, progresso e cancelamento exercitados; gerador público testado com dublês e roteiro revisado sem execução Azure |
+| Situação | Histórico de progresso/cancelamento preservado; gerador público exercitado em 11 de outubro de 2026, com falha de host e duas cargas pequenas; não comprova capacidade |
 | Público | Operações, arquitetura, Atendimento e desenvolvimento |
 | Resultado | Planejar e interpretar carga finita, admissão e interrupção, preservando falhas e consumo desconhecido |
 | Custo | Plano local sem Azure; carga, Job e construção de imagem têm custo e exigem orçamento aprovado antes |
@@ -47,7 +47,7 @@ sobrecarga, cancelamento e falha, conservando a autorização de cada requisiç�
 | --- | --- |
 | [Servidor do chat](../../scripts/chat_web.py) | Admissão e HTTP, protocolo de transferência de hipertexto usado pelo chat |
 | [Contrato e erros](../../scripts/lab_chat.py) | Limites, causas e resposta verificada |
-| [Gerador público de carga](../../scripts/gerar_carga_l400.py) | Disponível: plano local por padrão e pedidos concorrentes finitos; execução pública Azure ainda não realizada |
+| [Gerador público de carga](../../scripts/gerar_carga_l400.py) | Disponível: plano local por padrão e pedidos concorrentes finitos; resultado interpretado por execução |
 | [Testes do gerador](../../tests/test_gerar_carga_l400.py) | 101 testes locais com dublês: validação, transporte, classificação, parada e proteção das saídas |
 | [Montador do contexto](../../scripts/montar_contexto_sonda_l300.py) e [imagem da sonda](../../infra/sonda-l300/Dockerfile) | Incluem o gerador; a sonda continua como ponto de entrada da imagem |
 | [Bicep L400](../../infra/l400.bicep) e [módulo de hospedagem](../../infra/modules/l200-aplicacao.bicep) | Ingresso interno por padrão, mínimo de zero e máximo de uma réplica; não definem o limite de admissão |
@@ -117,13 +117,15 @@ do Job ou de consumo.
 
 Os testes locais usam dublês e não têm consumo Azure. A execução de carga real é deliberada,
 finita e autorizada; não use laço sem parada ou tentativas automáticas indefinidas.
+Para os comandos `az containerapp`, confira a CLI de 64 bits e a pasta própria de extensões,
+pela [nota do L300 D04](../L300/04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300).
 
 ## Etapa 1: definir uma carga finita
 
 **Roteiro público revisado de carga finita e concorrente.** Os oito passos abaixo separam
-planejamento local de execução paga. Os exemplos de execução são procedimentos para uma
-futura rodada autorizada: nesta revisão foram conferidos por leitura, ajuda offline e planos
-sintéticos, **sem enviar pedidos e sem executar Azure**.
+planejamento local de execução paga. Cada execução exige autorização própria; os achados
+de encaminhamento de argumentos, endereço interno e leitura de logs abaixo não aprovam
+automaticamente uma carga nem autorizam sua repetição.
 
 | Condição | Resultado a conferir |
 | --- | --- |
@@ -181,7 +183,7 @@ padrão do chat, sem confundir timeout do cliente com HTTP 503 do servidor.
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\gerar_carga_l400.py --help
-$urlExemplo = "https://carga.exemplo.brazilsouth.azurecontainerapps.io"
+$urlExemplo = "https://carga.exemplo.regiao.azurecontainerapps.io"
 .\.venv\Scripts\python.exe scripts\gerar_carga_l400.py --url $urlExemplo `
     --pedidos 6 --concorrencia 3 --tempo-maximo 300 --tempo-por-pedido 120 --falhas-seguidas 3
 if ($LASTEXITCODE -ne 0) { throw "O plano local não foi aprovado." }
@@ -222,10 +224,22 @@ O plano prepara a aprovação, não a substitui. Nenhum temporário precisa ser 
 
 **Objetivo:** executar de onde o chat é alcançável, conservando o ingresso aprovado.
 
-1. Recupere `$urlChat` do inventário privado. URL, Uniform Resource Locator, é o endereço
-   do recurso; aqui, deve identificar o chat real autorizado. A saída pública do
-   Bicep pode estar vazia com ingresso interno; use o endereço oficial da aplicação conferido
-   pelo operador, não o host sintético do plano.
+1. Receba `$assinatura`, `$grupo` e `$aplicacaoL400` do inventário privado e leia o FQDN
+   (*Fully Qualified Domain Name*, nome completo de domínio) **real** no ARM, Azure Resource
+   Manager, serviço de administração. URL, Uniform Resource Locator, é o endereço do recurso.
+   A saída pública do Bicep pode estar vazia com ingresso interno; não use o host do plano:
+
+```powershell
+$fqdnL400 = az containerapp show --subscription $assinatura --resource-group $grupo `
+    --name $aplicacaoL400 --query properties.configuration.ingress.fqdn --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $fqdnL400) { throw "FQDN real do chat L400 não conferido." }
+$urlChat = "https://$fqdnL400"
+```
+
+Com ingresso interno, o valor lido tem `.internal.`: use `https://<FQDN interno>` em
+`$urlChat`. Não monte `https://<app>.<domínio>`; esse host pode responder 404 na borda,
+antes de alcançar a aplicação.
+
 2. Escolha uma origem e registre por que ela alcança esse endereço:
 
 | Origem | Quando usar | Limite |
@@ -282,11 +296,19 @@ Os blocos locais dos passos 4 e 5 retiram o token ao terminar, inclusive se ocor
      Construa uma imagem nova que inclua o gerador; a imagem histórica não é essa entrega.
    - [Job manual](../L300/04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300):
      mesmo ambiente integrado, uma réplica de Job, paralelismo 1, zero tentativas automáticas
-     e prazo de 900 segundos da receita. O prazo deve cobrir token, carga e coleta do resultado.
+     e prazo de 900 segundos da receita. Confira também a nota de CLI/extensão de 64 bits.
+     O prazo deve cobrir token, carga e coleta do resultado.
+
+Antes do primeiro token para o chat, confira a atribuição `Vareleira.Atendimento` à
+identidade gerenciada usada nessa prova pelo
+[roteiro de papéis L300 D03](../L300/03-filtrar-acesso.md#etapa-2-preparar-papéis-de-aplicação).
+Conceder esse papel **[altera o Entra ID]** e exige autorização do administrador.
+Confirme novamente que `$urlChat` usa o FQDN L400 lido do ARM, com `.internal.` para
+ingresso interno; não reutilize a URL do chat L300.
 
 Paralelismo 1 significa um contêiner de Job nesta execução, não um único pedido HTTP;
 os trabalhadores do gerador seguem `--concorrencia` dentro desse contêiner.
-Construir imagem, criar/associar o Job e eventualmente conceder acesso **[altera o Azure]**;
+Construir imagem, criar/associar o Job e conceder papéis Azure **[altera o Azure]**;
 exigem autorizações próprias. Não acrescente papéis administrativos para fazer a carga passar.
 Esses procedimentos ficam no D04; este guia acrescenta somente a troca de comando na execução.
 Não existe agenda nem gatilho automático neste roteiro.
@@ -302,7 +324,7 @@ são somente exemplos de formato, não credenciais válidas para uma execução:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\gerar_carga_l400.py `
-    --url "https://carga.internal.exemplo.brazilsouth.azurecontainerapps.io" `
+    --url "https://carga.internal.exemplo.regiao.azurecontainerapps.io" `
     --pedidos 12 --concorrencia 8 --tempo-maximo 300 --tempo-por-pedido 120 --falhas-seguidas 3 `
     --esperar "ok,ocupado" --identidade-gerenciada `
     --client-id "00000000-0000-0000-0000-000000000000" `
@@ -342,7 +364,8 @@ try {
 
 3. No caminho interno, use o Job e as variáveis preparados no D04: `$assinatura`, `$grupo`,
    `$job`, `$imagemSondaCompleta`, `$variaveisBase`, `$identidadeChat` e `$idLogin`.
-   `$urlChat` agora identifica o chat **L400**. O ponto de entrada, `ENTRYPOINT`, continua
+   `$urlChat` agora identifica o chat **L400 interno**, com `.internal.` no FQDN lido do ARM
+   no passo 2, não um host montado pelo nome. O ponto de entrada, `ENTRYPOINT`, continua
    sendo a sonda; substitua-o somente nesta execução:
 
 ```powershell
@@ -364,6 +387,7 @@ $argumentosCarga = @(
 $argumentosJson = ConvertTo-Json -InputObject $argumentosCarga -Compress
 $argumentosBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($argumentosJson))
 $entradaPython = "-cimport base64,json,runpy,sys; sys.path.insert(0,'scripts'); sys.argv=json.loads(base64.b64decode('$argumentosBase64')); runpy.run_path(sys.argv[0],run_name='__main__')"
+$inicioExecucaoUtc = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
 az containerapp job start --subscription $assinatura --resource-group $grupo --name $job `
     --container-name sonda --image $imagemSondaCompleta --cpu 0.25 --memory 0.5Gi `
     --env-vars @variaveisBase --command python --args=$entradaPython --output json
@@ -379,13 +403,14 @@ A lista é codificada em **Base64**, representação de bytes como texto, e envi
 gerador. Isso evita que a CLI interprete `--url` e as outras opções do gerador como opções
 Azure; a passagem de uma lista plana não passou nessa conferência do parser local.
 Base64 **não é criptografia**: a lista continua sendo configuração privada e não deve
-conter token. O mecanismo de argumento único passou em um plano local sem rede e na
-análise do parser, interpretador de argumentos, da CLI; nenhum Job foi iniciado.
+conter token. O mecanismo de argumento único também funcionou na rodada de validação de 11 de outubro de 2026: o processo
+obteve o token da identidade gerenciada e enviou pedidos. Isso comprova o encaminhamento,
+não o resultado da carga. Registre `$inicioExecucaoUtc`, em tempo universal coordenado (UTC),
+antes de cada início, inclusive ao reconstruir o comando no passo 5.
 
-**Ressalva da CLI, interface de linha de comando:** `az containerapp job start --help`
-confirmou offline `--command`, `--args` e os demais argumentos usados [8]. Isso **não valida
-no Azure a substituição de comando, o encaminhamento dos argumentos nem a combinação das
-variáveis**. Siga a prudência do
+**Ressalva da CLI, interface de linha de comando:** o encaminhamento `--command python`
+com `--args=$entradaPython` foi exercitado no Azure [8]. Não deduza disso a forma de
+combinação de variáveis em todas as versões da CLI. Siga a prudência do
 [início de execução no D04](../L300/04-dependencias-privadas.md#4-iniciar-uma-etapa-por-execução):
 confira a definição efetiva e o resultado da execução certa antes de outra operação.
 Não altere permanentemente o Job para contornar uma divergência.
@@ -479,9 +504,14 @@ $linha = $saidaCarga | Select-Object -Last 1
 2. No Job, use a [leitura de conclusão e logs do D04](../L300/04-dependencias-privadas.md#5-ler-conclusão-e-resultado-separadamente).
    Associe Job, execução, contêiner e janela de tempo privadamente. No console dessa execução,
    procure **`L400_CARGA_RESULTADO=`**, não o prefixo da sonda L300.
-   O procedimento pelo portal é o disponível; a leitura de logs pela CLI continua pendente.
+   A consulta HTTP de Log Analytics publicada no D04 já inclui os dois prefixos: na coleta,
+   troque `$prefixoColeta` para `"L400_CARGA_RESULTADO="`. A resposta traz
+   `tables[0].rows` com `[TimeGenerated, Log_s]`. Espere a ingestão com intervalo e limite,
+   sem reiniciar a carga; não execute o validador de campos da sonda L300 nesse resultado.
    Copie para `$linha` apenas o conteúdo dessa linha, sem metadados privados do log.
-   **`Succeeded` do Job não prova aprovação**; ausência da linha correta mantém a prova pendente.
+   Confira `properties.status` pelo `job execution show` do D04. **`Succeeded` do Job não
+   prova aprovação**; `Failed` indica saída não zero e exige ler a causa. Ausência da linha
+   correta mantém a prova pendente.
 3. Depois do prefixo há JSON em uma linha ASCII, conjunto básico de caracteres. O plano não
    produz essa linha; erros de uso anteriores à execução também podem encerrar sem resultado.
    Confira sua estrutura com comandos locais, sem chamar Azure ou repetir carga:
@@ -736,6 +766,7 @@ isso confere a expectativa escolhida, não capacidade nem qualidade.
 | `falha_de_rede` com causa `dns`, sem HTTP, saída 2 | Use executor no caminho privado; não abra ingresso nem trate como falha do chat |
 | Conexão depende de proxy ou certificado falha | Esta versão exige caminho direto e TLS válido; não desative verificação |
 | HTTP 401/403, saída 2 | Confira audiência, identidade selecionada e papel de aplicação com o administrador; login e papéis de dados não bastam |
+| HTTP 404 em todos os pedidos, latência de dezenas de milissegundos | Host interno errado, como falta de `.internal.`, responde na borda antes do chat; não é falha comprovada da aplicação. Releia `properties.configuration.ingress.fqdn` no ARM antes de autorizar outra execução |
 | `ocupado` com concorrência 3 | Confira limite efetivo e outra carga; não aumente vagas ou réplica automaticamente |
 | Concorrência 8 sem `ocupado` | Registre que a recusa não foi observada; confira sobreposição e regime, sem repetir para escolher resultado |
 | HTTP 503 `indisponivel` | Separe prazo de 90 segundos, limite do modelo e demais causas privadas; não classifique como admissão |
@@ -766,28 +797,51 @@ zero buscas e uso incerto da chamada já enviada. Uma nova consulta funcionou de
 O [registro L400](../../docs/validacao/l400-validacao.md) separa origem e alcance dessas provas,
 sem tratá-las como objetivos de nível de serviço de produção.
 
-**Roteiro público, 11 de outubro de 2026:** gerador testado localmente com dublês, em 101 testes.
-Nesta revisão foram executados `--help`, dois planos diretos e um plano pelo argumento único
+**Revisão local anterior:** gerador testado com dublês, em 101 testes.
+Foram executados `--help`, dois planos diretos e um plano pelo argumento único
 do Python, todos sintéticos e sem `--executar`, com saída 0. A ajuda offline de
 `az containerapp job start` confirmou suas opções; o parser local confirmou o argumento único,
 sem invocar comandos de recursos. Passaram os 11 testes de repositório e de ausência de
 perguntas finais solicitados; links e âncoras foram conferidos e os blocos PowerShell
 analisados sintaticamente em memória, sem executá-los ou criar arquivo temporário.
-A receita foi revisada por leitura; **não houve carga real, acesso à rede ou execução Azure**.
-A ferramenta generaliza e restringe a carga histórica, mas não a reproduz exatamente
-nem reavalia suas respostas.
+A revisão local não enviou pedidos. A ferramenta generaliza e restringe a carga histórica,
+sem reavaliar suas respostas.
+
+**Rodada de validação de 11 de outubro de 2026:** o gerador público executou dentro do Job,
+com token da identidade gerenciada, FQDN interno L400 e limite de admissão efetivo quatro.
+O mecanismo `--command python --args` com um argumento Base64 foi exercitado; estado
+e resultado foram lidos por execução, sem substituir a tentativa que falhou.
+
+| Execução | Resultado observado |
+| --- | --- |
+| Tentativa com host sem `.internal.` | Cinco pedidos enviados, cinco HTTP 404 da borda, latências de 21 a 46 milissegundos; interrompida após três falhas seguidas, código 3, sem consumo de modelos. Falha de operação por host errado, não do chat |
+| Rodada 1: seis pedidos, concorrência três, `--esperar ok` | Seis enviados, seis HTTP 200, zero divergentes, código 0, 41,9 segundos; cinco respostas `documentada` e uma `sem_evidencia` |
+| Latências da rodada 1 | Mínima 4,7 segundos, mediana 6,2 segundos e p95 36,2 segundos; amostra pequena com partida a frio, não percentil de produção |
+| Rodada 2: 12 pedidos, concorrência oito, `--esperar ok,ocupado` | 12 enviados, quatro `ok` com HTTP 200 e oito `ocupado` com 429; zero divergentes, código 0, 6,2 segundos. Admissão observada com limite quatro |
+
+| Uso informado | Embeddings | Entrada de geração | Raciocínio | Saída de geração |
+| --- | --- | --- | --- | --- |
+| Rodada 1 | 115 tokens | 13.030 tokens | 535 tokens | 1.270 tokens |
+| Rodada 2, quatro respostas `ok` | 74 tokens | 10.310 tokens | 410 tokens | 916 tokens |
+
+As oito recusas da segunda rodada não informaram uso; conserve essa ausência, sem
+transformá-la em custo zero. A soma informada é parcial, não fatura.
+Código 0 confere a expectativa da carga; `sem_evidencia` não virou uma resposta documentada.
+As amostras são pequenas e finitas: **não medem capacidade, percentis de produção,
+fidelidade semântica ou homologação**. O progresso e o cancelamento históricos não foram
+repetidos por essas cargas.
 
 | Pendência | Responsável ou decisão necessária |
 | --- | --- |
-| Destino, orçamento, perfil e executor da próxima rodada | Mantenedor e responsáveis pelo ambiente; nova aprovação antes de consumo |
-| Emissão de token e autorização da identidade para o chat | Administrador do tenant; não criar objetos ou conceder papéis por este guia |
-| Build, TLS, DNS e identidade gerenciada reais da ferramenta pública | Operador autorizado; dublês não conferem esses caminhos |
-| Substituição de comando/argumentos e variáveis no início do Job | Operador autorizado; ajuda offline não prova o comportamento Azure |
-| Coleta correlacionada de logs e resultado efetivo | Operador com leitura do workspace; usar o D04 e manter pendente sem linha válida |
-| Custo efetivo, limpeza e preservação | Responsáveis pelo consumo e pelos temporários; uso parcial não comprova teto |
+| Fase `isolar`, repetição pós-isolamento e negativas externas | Não executadas nem cobertas por esta rodada; o caminho privado observado não comprova funcionamento com acesso público dos dados fechado |
+| Ingresso externo, login humano, implantação Actions/OIDC e federação | Não executados; OpenID Connect (OIDC) é o protocolo de identidade da implantação federada |
+| Nova avaliação semântica e matriz Linux local | Não executadas; cargas de operação não substituem a revisão de conteúdo |
+| Custo efetivo | Custo indisponível; estimativa do coordenador de poucos dólares, sem comprovar fatura ou teto estimado de US$ 30. Limpeza final concluída e aprovada |
+| Outra rodada ou destino | Exige decisão própria; estas medições não autorizam repetição |
 
-Os temporários históricos foram removidos. Esta documentação não os recria e não autoriza
-novas execuções, publicação, federação ou produção.
+Os temporários históricos e os próprios desta rodada foram removidos, sem autorizar repetição.
+Falhas, retomadas, resultados e limpeza aprovada estão no
+[registro da rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
 
 ## Glossário e referências
 
@@ -799,6 +853,7 @@ novas execuções, publicação, federação ou produção.
 | `ocupado` | Recusa explícita de admissão do chat, com HTTP 429, sem fila |
 | HTTP e HTTPS | Protocolo de comunicação web e sua forma com conexão protegida |
 | URL | Endereço de um recurso, como o chat autorizado |
+| FQDN e ARM | Nome completo de domínio lido do ingresso e serviço de administração Azure |
 | JSON e ASCII | Formato de dados estruturados e conjunto básico de caracteres usado na linha final |
 | Base64 e parser | Codificação de bytes como texto, não criptografia, e interpretador de argumentos |
 | Latência e p95 | Duração observada e posição de percentil 95; nesta amostra pequena, p95 é o máximo |
@@ -838,3 +893,5 @@ Texto por GPT-6.1 Sol; código por Claude Sonnet 5.5. As ferramentas de autoria 
 Revisão documental por gpt-6-astra (Astra), em 11 de outubro de 2026, sem nova execução Azure.
 
 Roteiro de carga: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026; gerador público por Claude Sonnet 5.5; revisado por leitura; sem execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: redigida por GPT-6.1 Sol com base nos fatos do coordenador; defeitos de código corrigidos com Sonnet 5.5; revisão do coordenador.

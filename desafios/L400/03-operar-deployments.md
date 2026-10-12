@@ -4,7 +4,7 @@
 
 | Campo | Definição |
 | --- | --- |
-| Situação | Contingência e recusas históricas exercitadas; receita pública revisada, sem nova execução Azure |
+| Situação | Histórico preservado; contingência, aplicação e consulta interna exercitadas em 11 de outubro de 2026, com bloqueio do guia e retomada; login humano e ingresso externo não executados |
 | Público | Operações, arquitetura e desenvolvimento |
 | Resultado | Revisar e implantar as fases de contingência e aplicação, conferir seus estados e exercitar falhas dentro dos limites |
 | Custo | Plano e testes locais não chamam modelos; uso dos deployments, aplicação, imagem e dependências têm cobranças próprias |
@@ -54,7 +54,7 @@ Teresa Moura exige que a contingência conserve modelo, fontes, política e auto
 | [Testes L400](../../tests/test_operacao_l400.py) e [sanitização L300](../../tests/test_operacao_l300.py) | Disponíveis: contratos e recusas com dublês, sem Azure |
 | [Construção da imagem L200](../L200/05-hospedar-chat.md#etapa-1-publicar-a-imagem) | Procedimento disponível; use somente a construção da imagem do código atual |
 | [Roteiro L400](../../docs/roteiro-l400.md) e [tratamento do chat](../../scripts/lab_chat.py) | Disponíveis: primário, contingência, limites e códigos públicos |
-| Receita desta página | Revisada com ajuda offline da interface de linha de comando do Azure (Azure CLI) e testes locais; não executada no Azure nesta revisão |
+| Receita desta página | Plano, simulação, aplicação incremental e conferências separados; inclui correções observadas na rodada de validação de 11 de outubro de 2026 |
 
 Na rodada histórica, primário e **standby**, deployment de contingência, usaram o mesmo modelo
 e versão. Standby não é um serviço de outra região. Os recursos daquela rodada foram removidos;
@@ -70,6 +70,7 @@ variáveis; isso não garante resposta idêntica.
 Manager (ARM)**, serviço de administração dos recursos. O **what-if** é a simulação que o ARM
 calcula comparando o Bicep com o destino atual [4]. A **sanitização** reduz essa saída a contagens,
 tipos e caminhos de propriedades, sem os valores privados.
+**HTTP** (*Hypertext Transfer Protocol*) é o protocolo web; **HTTPS** protege sua conexão.
 
 **Para guardar na memória:** o plano local é a lista de peças de um palco; o what-if é o ensaio
 nesse palco, que revela o que já está montado e o que muda. Conferir a lista não ensaia a montagem.
@@ -105,6 +106,8 @@ papéis nem transforma uma resposta sem fontes em sucesso.
 
 Os testes locais dispensam Azure. A autorização histórica não autoriza nova execução, outro
 destino, publicação ou federação. O L400 conserva o fechamento dos serviços de dados.
+Antes dos comandos `az containerapp`, confira a CLI de 64 bits e a pasta própria de extensões
+pela [nota do L300 D04](../L300/04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300).
 
 ## Etapa 1: distinguir modelo e deployment
 
@@ -134,10 +137,10 @@ avisos. Esse comando compila o template, não o arquivo de parâmetros nem o des
 
 ## Receita pública: implantar por fases
 
-Esta é uma **receita revisada**, com comandos verificados por ajuda offline e pelos testes locais
-das ferramentas existentes; **não executada nesta rodada de revisão**. As execuções históricas
-estão no [registro L400](../../docs/validacao/l400-validacao.md) e usaram helpers privados diferentes.
-Os blocos que consultam o Azure são instruções para uma futura sessão autorizada do aluno.
+Esta receita separa os testes locais das operações Azure e incorpora os achados de implantação
+e ingresso descritos abaixo. As execuções históricas estão no
+[registro L400](../../docs/validacao/l400-validacao.md) e usaram helpers privados diferentes.
+Os blocos que consultam o Azure exigem uma sessão autorizada do aluno.
 Execute um bloco por vez e confira `$LASTEXITCODE` imediatamente: falha impede o próximo bloco.
 
 ### 1. Preparar o destino e a sessão
@@ -223,13 +226,19 @@ não inferidos pelo plano local.
 Este passo **consulta o Azure**, mas não aplica o template. Use-o primeiro para `contingencia`
 e repita-o para `aplicacao` depois do passo 5 [4].
 
-1. Escolha um nome novo de implantação ARM, curto e com letras, números e hífens.
+1. Escolha um nome novo de implantação ARM, curto e com letras, números e hífens. Use prefixo
+   próprio, por exemplo `vareleira-rag-l400-<fase>-<sufixo-novo>`: o nome da implantação raiz
+   não pode coincidir com um módulo aninhado, como `l400-contingencia`, `l400-aplicacao`
+   ou `l400-guardas`. Coincidência pode bloquear a implantação.
 2. Gere arquivos novos na pasta privada. Não filtre tipos de mudança da simulação.
 3. Sanitize o JSON (*JavaScript Object Notation*, formato de dados estruturados) bruto.
 4. Revise alvos, tipos, valores e número de alterações antes de autorizar a aplicação.
 
 ```powershell
 $implantacao = Read-Host "Nome novo da implantação ARM desta fase"
+if ($implantacao -in @("l400-contingencia", "l400-aplicacao", "l400-guardas")) {
+    throw "Nome da implantação raiz coincide com um módulo; use prefixo próprio."
+}
 $arquivoWhatIf = Join-Path $pastaPrivada "$implantacao-whatif.json"
 $novoRelatorio = Join-Path $pastaPrivada "$implantacao-resumo.json"
 $erroWhatIf = Join-Path $pastaPrivada "$implantacao-whatif-erros.txt"
@@ -417,6 +426,7 @@ if ($LASTEXITCODE -ne 0) { throw "Plano local da aplicação falhou." }
 
 ```powershell
 $alvosApp = @($planoArm.changes | Where-Object {
+    $_.changeType -in @("Create", "Modify") -and
     $_.resourceId -match "/providers/Microsoft.App/containerApps/[^/]+$"
 })
 if ($alvosApp.Count -ne 1) { throw "Plano não identifica uma única aplicação L400." }
@@ -425,11 +435,42 @@ if ($aplicacaoL400 -eq $aplicacaoL300) { throw "Alvo é a referência L300; não
 $dominioAmbiente = az containerapp env show --subscription $assinatura --resource-group $grupo `
     --name $ambiente --query properties.defaultDomain --output tsv
 if ($LASTEXITCODE -ne 0 -or -not $dominioAmbiente) { throw "Domínio do ambiente não conferido." }
-$urlRetornoLogin = "https://$aplicacaoL400.$dominioAmbiente/.auth/login/aad/callback"
+$hostRetornoPrevisto = if ($env:VARELEIRA_L400_INGRESSO_EXTERNO -eq "true") {
+    "$aplicacaoL400.$dominioAmbiente"
+} else {
+    "$aplicacaoL400.internal.$dominioAmbiente"
+}
+$urlRetornoLogin = "https://$hostRetornoPrevisto/.auth/login/aad/callback"
 ```
 
+O what-if pode mostrar `Create` da aplicação L400 **e** `Ignore` da referência L300:
+`Ignore` é o recurso existente apenas referenciado. A seleção acima considera somente
+criações/alterações, sem retirar a referência da revisão do plano completo.
+O retorno `https://<app>.<domínio>/.auth/login/aad/callback` vale para ingresso externo;
+interno usa `https://<app>.internal.<domínio>/.auth/login/aad/callback`. Esse cálculo é
+uma previsão; confira o FQDN (*Fully Qualified Domain Name*, nome completo de domínio)
+real no ARM depois da implantação.
+
 5. O administrador confere esse endereço no registro de login autorizado, sem copiar seus
-   identificadores para o repositório. Alterá-lo no Entra ID exige autorização própria.
+   identificadores para o repositório. **[altera o Entra ID]** ao atualizar a lista de retornos,
+   com autorização própria. `--web-redirect-uris` **substitui a lista inteira**: conserve os
+   retornos L300 e L400 juntos, além dos demais retornos preexistentes autorizados:
+
+```powershell
+$fqdnL300 = az containerapp show --subscription $assinatura --resource-group $grupo `
+    --name $aplicacaoL300 --query properties.configuration.ingress.fqdn --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $fqdnL300) { throw "Host de retorno L300 não conferido." }
+$urlRetornoL300 = "https://$fqdnL300/.auth/login/aad/callback"
+$retornosJson = az ad app show --id $env:VARELEIRA_ID_APLICACAO_LOGIN `
+    --query web.redirectUris --output json
+if ($LASTEXITCODE -ne 0) { throw "Retornos atuais não conferidos." }
+$retornosAtuais = @($retornosJson | ConvertFrom-Json)
+$retornosAutorizados = @($retornosAtuais + @($urlRetornoL300, $urlRetornoLogin) | Sort-Object -Unique)
+az ad app update --id $env:VARELEIRA_ID_APLICACAO_LOGIN `
+    --web-redirect-uris @retornosAutorizados --output none
+if ($LASTEXITCODE -ne 0) { throw "Lista de retornos não atualizada; preserve o ingresso fechado." }
+```
+
    Se o retorno não está preparado, preserve o ingresso fechado e interrompa a implantação.
 6. Após revisar todos os efeitos, execute [aplicação da fase revisada](#3-aplicar-a-fase-revisada)
    **[altera o Azure]** para `aplicacao`.
@@ -475,6 +516,19 @@ if (-not $auth.platform.enabled -or -not $auth.httpSettings.requireHttps -or
     $auth.globalValidation.unauthenticatedClientAction -ne $env:VARELEIRA_ACAO_SEM_LOGIN -or
     -not $aad.enabled -or $aad.registration.clientId -ne $env:VARELEIRA_ID_APLICACAO_LOGIN) {
     throw "Autenticação integrada obrigatória não conferida."
+}
+```
+
+Leia o FQDN efetivo em
+`properties.configuration.ingress.fqdn`. Para provas HTTP, use **esse valor**, com
+`.internal.` quando o ingresso é interno, em vez de reconstruir o host pelo nome do aplicativo:
+
+```powershell
+$fqdnL400 = $p.configuration.ingress.fqdn
+if (-not $fqdnL400) { throw "FQDN real da aplicação L400 não conferido." }
+$urlChat = "https://$fqdnL400"
+if ("$urlChat/.auth/login/aad/callback" -ne $urlRetornoLogin) {
+    throw "Retorno previsto diverge do host real; revise a lista com o administrador."
 }
 ```
 
@@ -574,7 +628,11 @@ Uma resposta final continua passando pela política e pelas referências da requ
 | Resumo aprovado, mas alvo ou tipo inesperado | Interrompa: o helper não comprova grupo, propriedade ou autorização da mudança |
 | `create --no-wait` retorna zero, mas a espera falha | Leia `deployment group show`; prazo esgotado não cancela nem comprova conclusão |
 | Aplicação presente, revisão ainda não pronta | Confira estado, imagem e identidade; preserve a falha e não declare fluxo funcional |
+| What-if lista duas aplicações | Na seleção do alvo L400, considere só `Create`/`Modify`; a referência pode aparecer como `Ignore` e deve continuar preservada |
+| Implantação raiz tem nome de módulo aninhado | Use nome novo com prefixo `vareleira-rag-l400-<fase>` e gere outro what-if antes de aplicar |
+| HTTP interno recebe 404 imediato | Confira o FQDN real no ARM, inclusive `.internal.`; host externo previsto não identifica o ingresso interno |
 | Login falha ou credencial ausente ao reaplicar | Reconfira retorno, tenant e credencial vigente com o administrador; não peça o segredo ao serviço |
+| L300 perde seu retorno depois de atualizar o login | `--web-redirect-uris` substitui todos os retornos; revise a lista completa L300/L400 com o administrador |
 | Exclusão aceita, recurso ainda listado | Registre remoção pendente e repita apenas leituras no prazo aprovado |
 
 ## Custos, pausa e limpeza
@@ -659,12 +717,37 @@ e concluiu com fonte documentada; uma falha 403 parou após uma tentativa, sem t
 Não houve interrupção regional real nem comprovação de cota adicional.
 O [registro L400](../../docs/validacao/l400-validacao.md) preserva uso incerto e origem das falhas.
 
-Em **11 de outubro de 2026**, esta receita foi revisada por leitura dos artefatos, ajuda offline
+Na revisão local anterior à execução, esta receita foi conferida por leitura dos artefatos, ajuda offline
 da Azure CLI 2.89.0, planos dos nove passos, compilação Bicep 0.48.1 e testes locais de operação,
 sanitização e repositório. Blocos PowerShell e links foram conferidos localmente.
-**Nenhuma consulta, implantação, construção de imagem, login ou limpeza Azure foi executada
-nesta revisão.** Execução desta sequência no destino do aluno, prontidão real, consulta
-autenticada e limpeza ficam pendentes de autorização e validação do operador.
+Essas verificações locais não foram tratadas como prova remota.
+
+**Rodada de validação de 11 de outubro de 2026:**
+
+| Fase ou conferência | Resultado observado |
+| --- | --- |
+| `contingencia` | What-if com um `Create`; aplicação em 50 segundos. Deployments `embeddings`, `geracao` e `geracao-contingencia` em `Succeeded`, com capacidades lidas de 30, 50 e dez, respectivamente; geração e contingência conservaram `gpt-5.4-mini`, versão `2026-03-17` |
+| Plano de `aplicacao` | Dois `Create`, 28 `Ignore` e zero `Modify`. A primeira tentativa do guia foi bloqueada: o filtro encontrou dois aplicativos, criação L400 e referência L300 como `Ignore`. A seleção corrigida por `Create`/`Modify` permitiu retomar |
+| Aplicação após a correção | Concluída em 77 segundos; ingresso interno, EasyAuth, coordenação habilitada e contingência configurada. A referência L300 manteve a mesma revisão e ingresso interno |
+| Destino da consulta | O FQDN interno foi lido do ARM, com `.internal.`; o host montado sem esse trecho respondia 404 na borda |
+| `http-interno` L400 | Saúde, prontidão e consulta autenticada com 200 e resposta documentada; anônimo e principal forjado com 401 |
+| Login configurado | Retornos L300 e L400 registrados no formato externo; a lista completa foi preservada, pois `--web-redirect-uris` a substitui. Não houve login humano nem teste do redirecionamento com pessoa |
+
+O nome da implantação raiz deve continuar distinto dos módulos aninhados.
+As credenciais de login foram recriadas a cada aplicação nesta execução e se acumularam;
+não trate isso como reaplicação sem efeitos. Seu encerramento e o expurgo do aplicativo
+pertenceram à limpeza própria, concluída e aprovada no registro da rodada.
+
+O retorno interno previsto pela receita não foi validado por login humano. A autenticação
+da identidade gerenciada na consulta não demonstra funcionamento do redirecionamento de
+uma pessoa. Ingresso externo, implantação por GitHub Actions/OpenID Connect (OIDC, protocolo de identidade),
+federação, fase `isolar`, provas pós-isolamento, negativas externas e avaliação semântica nova
+não foram executados. Os serviços de dados ainda tinham acesso público habilitado.
+
+Custo efetivo indisponível; estimativa do coordenador de poucos dólares, não fatura nem
+comprovação do teto estimado de US$ 30 para a rodada inteira.
+Os resultados e a limpeza aprovada estão no
+[registro da rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
 
 ## Glossário e referências
 
@@ -684,6 +767,7 @@ autenticada e limpeza ficam pendentes de autorização e validação do operador
 | Tag e digest | Nome de versão da imagem e resumo criptográfico de seu conteúdo |
 | Tenant, token e audiência | Diretório de identidades, comprovante de autenticação e seu destinatário |
 | EasyAuth e HTTPS | Autenticação integrada na borda e protocolo web protegido |
+| FQDN | Nome completo de domínio lido do ingresso; interno inclui `.internal.` |
 | Diff | Comparação das alterações de arquivos antes de aceitá-las |
 
 1. [Gestão de cotas dos modelos](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/quota).
@@ -709,3 +793,5 @@ Revisão documental por gpt-6-astra (Astra), em 11 de outubro de 2026, sem nova 
 
 Receita de implantação e promoção: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026;
 comandos verificados por ajuda offline; sem nova execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: redigida por GPT-6.1 Sol com base nos fatos do coordenador; defeitos de código corrigidos com Sonnet 5.5; revisão do coordenador.

@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Filtros e borda autenticada conferidos no Azure com clientes temporários; login humano não executado |
+| Situação | Histórico de filtros preservado; papéis, exigência de atribuição e consulta interna de Atendimento exercitados em 11 de outubro de 2026; login humano não executado |
 | Público | Atendimento, operações, arquitetura e desenvolvimento, com apoio do administrador de identidades |
 | Resultado | Cada pedido recupera somente classes documentais permitidas ao principal autenticado |
 | Custo | Testes com dublês não usam Azure. Uma execução real cobra busca e modelos; papéis são concedidos somente após autorização |
@@ -135,20 +135,118 @@ Texto da pergunta não entra na expressão de permissão.
 ## Etapa 2: preparar papéis de aplicação
 
 Este é um roteiro administrativo de referência, não uma etapa dos testes locais.
-A rodada Azure definiu papéis e usou clientes de aplicação temporários autorizados;
+A rodada histórica L300 definiu papéis e usou clientes de aplicação temporários autorizados;
 não atribuiu acesso a pessoas nem executou login humano.
-**[altera o Azure]**, no diretório Entra ID, ao definir ou atribuir papéis e exigir atribuição.
+**[altera o Entra ID]** ao definir ou atribuir papéis e exigir atribuição. Esses comandos exigem
+autorização de quem administra o tenant; permissões de dados Azure não os autorizam.
 
-1. No registro da aplicação L300, defina papéis com valores exatos `Vareleira.Atendimento`
-   e `Vareleira.Corretor`.
-2. Escolha tipos de membros conforme o público autorizado, sem acrescentar aplicações de teste
-   ou pessoas por conveniência.
-3. No aplicativo empresarial, confira a exigência de atribuição e os usuários ou grupos autorizados.
-4. Atribua o papel correspondente e obtenha uma sessão nova para verificar as claims emitidas.
+1. Receba do inventário privado `$idLogin`, o ID de aplicativo (*appId*) do registro de login,
+   e `$assinatura`, `$grupo` e `$nomeIdentidade`, que identificam a identidade gerenciada
+   **do chat**, não a de manutenção. Escolha `$pastaIdentidade` como pasta privada existente.
+   Primeiro, só leia os papéis atuais:
+
+```powershell
+$papeisAtuaisJson = az ad app show --id $idLogin --query appRoles --output json
+if ($LASTEXITCODE -ne 0) { throw "Papéis atuais do registro de login não conferidos." }
+$papeisAtuais = @($papeisAtuaisJson | ConvertFrom-Json)
+if ($papeisAtuais.Count -gt 0) {
+    throw "Há papéis preexistentes. Preserve-os e revise a lista completa com o administrador."
+}
+```
+
+2. Para um registro próprio sem papéis, prepare **localmente** a lista autorizada. Cada
+   definição recebe um GUID, identificador globalmente único, gerado na hora. `User` permite
+   atribuição a pessoas/grupos; `Application` permite atribuição a principais de serviço [1].
+   Permitir esses tipos na definição não concede acesso a nenhum membro:
+
+```powershell
+$arquivoPapeis = Join-Path $pastaIdentidade "papeis-login.json"
+$papeis = @(
+    @{
+        allowedMemberTypes = @("User", "Application")
+        description = "Consultar fontes compartilhadas e de Atendimento do laboratório."
+        displayName = "Vareleira.Atendimento"
+        id = [guid]::NewGuid().ToString()
+        isEnabled = $true
+        value = "Vareleira.Atendimento"
+    }
+    @{
+        allowedMemberTypes = @("User", "Application")
+        description = "Consultar fontes compartilhadas e de Corretor do laboratório."
+        displayName = "Vareleira.Corretor"
+        id = [guid]::NewGuid().ToString()
+        isEnabled = $true
+        value = "Vareleira.Corretor"
+    }
+)
+ConvertTo-Json -InputObject $papeis -Depth 5 |
+    Out-File -LiteralPath $arquivoPapeis -Encoding utf8 -NoClobber -ErrorAction Stop
+```
+
+Revise o arquivo privado. **[altera o Entra ID]**: publique a lista somente com autorização:
+
+```powershell
+az ad app update --id $idLogin --app-roles "@$arquivoPapeis" --output none
+if ($LASTEXITCODE -ne 0) { throw "Definição dos papéis não concluída." }
+```
+
+`--app-roles` substitui a lista. Para um registro que já tenha papéis, o administrador precisa
+conservar os IDs e as definições anteriores numa lista completa revisada; não execute o bloco
+de criação acima nem gere IDs novos para papéis existentes.
+
+3. **Opcional, [altera o Entra ID]:** se a exigência de atribuição foi autorizada para esse
+   aplicativo empresarial, ative-a [5]. Preserve a configuração de um registro compartilhado:
+
+```powershell
+az ad sp update --id $idLogin --set appRoleAssignmentRequired=true --output none
+if ($LASTEXITCODE -ne 0) { throw "Exigência de atribuição não conferida." }
+```
+
+4. A etapa `http-interno` do [Desafio 04](04-dependencias-privadas.md#4-iniciar-uma-etapa-por-execução)
+   usa a identidade gerenciada do chat com perfil Atendimento. **Antes de obter seu primeiro
+   token**, leia os IDs de objeto do principal dessa identidade e do principal de serviço
+   do login. O *appId* do login e o ID de objeto do seu principal não são intercambiáveis:
+
+```powershell
+$principalChat = az identity show --subscription $assinatura --resource-group $grupo `
+    --name $nomeIdentidade --query principalId --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $principalChat) { throw "Principal do chat não conferido." }
+$principalLogin = az ad sp show --id $idLogin --query id --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $principalLogin) { throw "Principal do login não conferido." }
+$papelAtendimento = @($papeis | Where-Object value -eq "Vareleira.Atendimento")
+if ($papelAtendimento.Count -ne 1) { throw "Definição única do papel não conferida." }
+$arquivoAtribuicao = Join-Path $pastaIdentidade "atribuicao-chat.json"
+@{
+    principalId = $principalChat
+    resourceId = $principalLogin
+    appRoleId = $papelAtendimento[0].id
+} | ConvertTo-Json |
+    Out-File -LiteralPath $arquivoAtribuicao -Encoding utf8 -NoClobber -ErrorAction Stop
+```
+
+Para papéis preexistentes, use a definição lida e conferida do registro, com seu ID original,
+em vez de `$papeis` gerado no passo 2. Confira também as atribuições existentes; não duplique
+uma atribuição. **[altera o Entra ID]**: com o corpo revisado e a concessão nova autorizada:
+
+```powershell
+$idAtribuicao = az rest --method post `
+    --url "https://graph.microsoft.com/v1.0/servicePrincipals/$principalChat/appRoleAssignments" `
+    --headers "Content-Type=application/json" --body "@$arquivoAtribuicao" --query id --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $idAtribuicao) { throw "Atribuição de Atendimento não concluída." }
+```
+
+Registre o ID criado apenas no inventário privado. Depois da concessão, obtenha token novo e
+confira as claims; um token anterior não ganha o papel retroativamente. A definição e a
+atribuição foram exercitadas na rodada de validação de 11 de outubro de 2026,
+sem login humano ou concessão a pessoas.
+Associar a identidade ao Job, tarefa finita do Container Apps, não concede esse papel.
 
 Conserve um registro de login do chat separado da identidade federada de implantação.
-Cadastre seu endereço de retorno a partir de `urlRetornoLogin`, saída da fase `rede` do Bicep L300,
-antes da fase `aplicacao`. O segredo desse registro é usado somente pelo provedor de login;
+Cadastre o endereço de retorno autorizado antes da fase `aplicacao`. A saída `urlRetornoLogin`
+prevê o host externo; com ingresso interno, o host inclui `.internal.`. Após implantar,
+confira `properties.configuration.ingress.fqdn` no ARM, Azure Resource Manager, serviço de
+administração, e preserve a lista de retornos já usada por outras aplicações. O segredo
+desse registro é usado somente pelo provedor de login;
 as consultas de dados e modelos continuam com identidade gerenciada.
 
 O procedimento oficial explica a criação e atribuição [1][5]. Desabilitar a definição de um papel
@@ -195,7 +293,7 @@ Execute os testes locais relacionados:
 | Duas identidades em paralelo | Permissões limitadas à requisição, sem mistura de contexto |
 | Falta o campo de acesso no índice | Erro explícito, sem repetir consulta sem filtro |
 
-Esses resultados com dublês provam o caminho da aplicação. A rodada Azure também conferiu
+Esses resultados com dublês provam o caminho da aplicação. A rodada histórica L300 também conferiu
 a borda EasyAuth e os perfis Atendimento, Corretor, ambos e sem papel reconhecido.
 O [registro Azure](../../docs/validacao/l300-azure-validacao.md) distingue clientes de aplicação
 de login humano, que não foi realizado.
@@ -236,11 +334,29 @@ preexistentes. A revogação precisa ser conferida com sessão nova e os limites
 ## Situação da validação
 
 A integração local verifica filtro e ordem de chamadas com dublês.
-No Azure, Atendimento e ambos recuperaram o roteiro; Corretor não recebeu seu conteúdo;
+Na rodada histórica L300, Atendimento e ambos recuperaram o roteiro; Corretor não recebeu seu conteúdo;
 sem papel reconhecido recebeu 403. Pedidos anônimos e principal artificial receberam 401.
 Busca textual, vetorial e híbrida respeitaram os filtros e a pré-filtragem vetorial.
 Não houve atribuição a pessoas nem login humano. O [registro local L300](../../docs/validacao/l300-validacao-local.md)
 e o [registro Azure](../../docs/validacao/l300-azure-validacao.md) detalham os alcances separados.
+
+**Rodada de validação de 11 de outubro de 2026:** foram definidos os papéis
+`Vareleira.Atendimento` e `Vareleira.Corretor`, ativada a exigência
+`appRoleAssignmentRequired=true` e atribuído Atendimento à identidade gerenciada do chat,
+antes de obter seu primeiro token. Não houve atribuição a pessoas nem login humano.
+
+A etapa `http-interno` observou consulta autenticada de Atendimento com HTTP 200 e resposta
+documentada com marcador operacional; saúde e prontidão também deram 200. Pedido anônimo
+e principal forjado receberam 401. Esses resultados não representam uma nova medição de
+todos os perfis por cliente externo.
+
+A fase `isolar`, as provas pós-isolamento e as negativas externas não foram executadas.
+Os serviços de dados ainda tinham acesso público habilitado; o caminho privado observado
+não comprova funcionamento com esse acesso fechado. Ingresso externo, login humano,
+implantação GitHub Actions e OpenID Connect (OIDC, protocolo de identidade), federação
+e avaliação semântica nova continuam não executados.
+Os resultados e a limpeza aprovada estão no
+[registro da rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
 
 ## Glossário
 
@@ -268,3 +384,5 @@ As escolhas de autoria não configuram os modelos do aluno ou os deployments Azu
 
 Revisão documental: gpt-6-astra (Astra), em 11 de outubro de 2026, por leitura integral e
 conferência local dos artefatos; sem nova execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: redigida por GPT-6.1 Sol com base nos fatos do coordenador; defeitos de código corrigidos com Sonnet 5.5; revisão do coordenador.

@@ -1253,7 +1253,8 @@ def montar_plano(inv: Inventario, linha_de_base_conferida: bool,
         adicionar(PASSO_AMBIENTE, f"Excluir o ambiente do Container Apps ({numero} de {len(ambientes)})",
                   f"az containerapp env delete --ids {_aspas(recurso.id)} --yes --no-wait",
                   _verificar_por_listagem(listagem_do_grupo("az containerapp env list"), recurso.id),
-                  "A exclusão é assíncrona e pode levar vários minutos: repita a verificação até 'ausente'. O grupo gerenciado "
+                  "A exclusão é assíncrona: em um ambiente de consumo vazio levou cerca de 30 minutos na validação Azure de 11 de outubro de "
+                  "2026. Repita a verificação, com intervalo e prazo definidos, até 'ausente'. O grupo gerenciado "
                   "pela plataforma some com o ambiente; não o edite nem exclua seus componentes.")
 
     # 7. Grupo exclusivo

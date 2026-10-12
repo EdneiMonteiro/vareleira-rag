@@ -56,13 +56,21 @@ A [revisão Astra dos 28 guias](docs/validacao/revisao-publicacao-l400.md) perma
 histórico. A [rodada de operação pública](docs/validacao/operacao-publica-l300-l400-2026-10-11.md)
 corrige o verificador L100 D07, que agora usa um nome de índice descartável aleatório, diferente
 do índice informado. Ela acrescenta ferramentas e receitas públicas de sonda, encerramento e carga.
-O verificador corrigido e as ferramentas públicas novas só foram testados localmente:
-**não foram validados no Azure**. As correções foram mescladas pelo pull request
+Na entrega inicial, o verificador corrigido e as ferramentas públicas novas tinham apenas
+testes locais. As correções foram mescladas pelo pull request
 (PR, proposta de alteração) [#4](https://github.com/EdneiMonteiro/vareleira-rag/pull/4) e publicadas na
 [pré-release `v0.4.1-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.1-l400),
 em 11 de outubro de 2026, por ordem expressa do mantenedor.
-Uma rodada Azure de validação foi autorizada. Seus resultados e a limpeza serão documentados
-em um registro próprio em `docs/validacao`, criado quando a rodada terminar.
+Depois, a [rodada Azure das ferramentas públicas](docs/validacao/operacao-publica-azure-validacao-2026-10-11.md)
+exercitou planejador, sonda interna, carga e migração, preservando falhas e retomadas.
+As duas conferências de encerramento foram aprovadas, com 13 e 28 passos.
+O [PR #5](https://github.com/EdneiMonteiro/vareleira-rag/pull/5) foi mesclado com a correção
+de herdadas; o [PR #6](https://github.com/EdneiMonteiro/vareleira-rag/pull/6) foi mesclado por
+delegação, com os achados e o registro, publicados em
+[`v0.4.2-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.2-l400).
+**A prova é parcial:** dados ainda públicos, sem fase `isolar` ou provas pós-isolamento.
+Não comprova isolamento nem homologação; login humano e implantação Actions/OIDC não foram
+executados. O verificador L100 D07 corrigido e os helpers externos continuam sem nova prova Azure.
 A [análise de respostas](docs/validacao/avaliacao-semantica-2026-10-11.md) preserva as duas
 divergências L200 e encerra a lacuna histórica como texto irrecuperável no alcance da busca.
 Não localizar as respostas não comprova sua inexistência; o conteúdo continua sem avaliação
@@ -204,10 +212,10 @@ Microsoft Agent Framework (MAF) do L100 permanece no console.
 | [01: reproduzir a base](desafios/L300/01-reproduzir-base.md) | Inventário e base reconstruída no Azure: 54 trechos L100 e 21 L200 |
 | [02: atualizar a base](desafios/L300/02-atualizar-base.md) | Quatro fontes, hashes e classes; ciclo privado 24 → 21 → 24 |
 | [03: autorizar documentos](desafios/L300/03-filtrar-acesso.md) | Papéis por requisição, filtro nos três modos e recusa antes do modelo |
-| [04: dependências privadas](desafios/L300/04-dependencias-privadas.md) | Rede e negativas Azure históricas; receita pública de sonda testada apenas localmente |
+| [04: dependências privadas](desafios/L300/04-dependencias-privadas.md) | Receita pública exercitada em rede privada, com falhas e retomadas; sem isolamento nesta rodada |
 | [05: automatizar a entrega](desafios/L300/05-automatizar-entrega.md) | CI na principal; implantação manual com runner próprio e federação não executada |
-| [06: conferir operação](desafios/L300/06-conferir-operacao.md) | Operação Azure histórica; sondas públicas e contratos testados apenas localmente |
-| [07: recuperar e limpar](desafios/L300/07-recuperar-limpar.md) | Restauração e limpeza históricas; planejador público de encerramento offline, sem validação Azure |
+| [06: conferir operação](desafios/L300/06-conferir-operacao.md) | Logs do Job e consulta interna observados; descritor e helpers externos sem nova medição |
+| [07: recuperar e limpar](desafios/L300/07-recuperar-limpar.md) | Planejador offline orientou dois encerramentos Azure aprovados; herdadas ignoradas e contadas |
 
 O sinalizador `VARELEIRA_EXIGIR_ACESSO_DOCUMENTAL=true` exige autenticação, tenant e índice L300.
 Os papéis `Vareleira.Atendimento` e `Vareleira.Corretor` definem classes estáticas de acesso.
@@ -247,11 +255,11 @@ não comprova interrupção do workflow.
 | --- | --- |
 | [01: delimitar a coordenação](desafios/L400/01-delimitar-coordenacao.md) | Referência, fontes, identidade, limites e plano local |
 | [02: coordenar especialistas](desafios/L400/02-coordenar-especialistas.md) | Planejamento e redação MAF, recuperação filtrada e política original |
-| [03: operar deployments](desafios/L400/03-operar-deployments.md) | Contingência histórica; receita pública de implantação por fases, não validada no Azure |
-| [04: evoluir o índice](desafios/L400/04-evoluir-indice.md) | Candidato de 768 dimensões; receita pública de promoção e retorno, não validada no Azure |
+| [03: operar deployments](desafios/L400/03-operar-deployments.md) | Contingência e aplicação internas exercitadas; falha da trava e retomada registradas |
+| [04: evoluir o índice](desafios/L400/04-evoluir-indice.md) | Candidato de 768 dimensões, promoção/retorno e qualificação humana dos deltas exercitados |
 | [05: comparar estratégias](desafios/L400/05-comparar-estrategias.md) | Conjunto novo congelado, falhas no denominador e relatório preservado |
-| [06: testar carga e interrupção](desafios/L400/06-testar-carga-interrupcao.md) | Carga e cancelamento históricos; gerador público finito testado apenas com dublês |
-| [07: recuperar e limpar](desafios/L400/07-recuperar-limpar.md) | Encerramento histórico; planejador público offline, sem nova validação Azure |
+| [06: testar carga e interrupção](desafios/L400/06-testar-carga-interrupcao.md) | Gerador público exercitado com falha de host, seis 200 e quatro 200/oito ocupado; carga pequena |
+| [07: recuperar e limpar](desafios/L400/07-recuperar-limpar.md) | Encerramento público de 28 passos aprovado, com espera assíncrona e linha de base preservada |
 
 Consulte o [registro L400](docs/validacao/l400-validacao.md) para as provas de limpeza e os limites.
 O registro de cancelamento é local ao processo e exige uma réplica; sua evolução para múltiplas
@@ -323,7 +331,7 @@ sintéticos do repositório.
 | L200: ingestão, comparação, chat e hospedagem | Implementados e exercitados; nova rodada 16 de 18, sem descartes, com duas divergências de classificação; histórico preservado |
 | L300: autorização, ingestão, rede e automação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos, histórico preservado. CI Windows/Linux aprovada também na principal; implantação Actions/OIDC e login humano não executados |
 | L400: coordenação, comparação, contingência e recuperação | Implementado e exercitado no Azure autorizado; testes e limpeza concluídos. Comparação 16/16 em ambas, sem ganho; CI aprovada também na principal; limites e histórico preservados |
-| [Operação pública L300/L400, 11 de outubro de 2026](docs/validacao/operacao-publica-l300-l400-2026-10-11.md): encerramento, sonda, carga e correção do D07 | Implementados e testados localmente: 1.308 casos, suíte OK com três ignorados; não validados no Azure. Mesclados pelo PR #4; pré-release `v0.4.1-l400`; rodada Azure autorizada, pendente de execução |
+| [Operação pública L300/L400, 11 de outubro de 2026](docs/validacao/operacao-publica-l300-l400-2026-10-11.md): encerramento, sonda, carga e correção do D07 | Entrega inicial PR #4/`v0.4.1-l400`: 1.308 casos locais, OK com três ignorados. PRs #5/#6 e `v0.4.2-l400`: correções e prova Azure parcial, encerrada e registrada; D07 L100 corrigido continua apenas local |
 
 O L100 foi publicado na [pré-release `v0.1.0-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.0-l100),
 no commit `d4a93cc`; a [pré-release `v0.1.1-l100`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.1.1-l100)
@@ -350,6 +358,14 @@ As correções foram mescladas pelo [PR #4](https://github.com/EdneiMonteiro/var
 em 11 de outubro de 2026, por ordem expressa do mantenedor, com commit de merge e branch preservada.
 Foi publicada a [pré-release `v0.4.1-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.1-l400),
 com tag anotada nesse commit de merge. Ela contém L100 a L400 com as correções e os registros.
+Os [PRs #5](https://github.com/EdneiMonteiro/vareleira-rag/pull/5)
+e [#6](https://github.com/EdneiMonteiro/vareleira-rag/pull/6) foram mesclados; foi publicada
+[`v0.4.2-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.2-l400)
+por delegação final do mantenedor, com os achados e o
+[registro Azure](docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
+`v0.4.1-l400` e as versões anteriores permanecem intactas, sem essa evidência.
+O encerramento completo preservou oito grupos, 46 recursos e a listagem de 20 atribuições;
+17 foram comparadas, três herdadas ignoradas e contadas. Custo efetivo indisponível não é zero.
 Não foram publicadas `v0.3.1-l300` nem `v0.1.2-l100`. Os guias L300 corrigidos e a imagem da sonda
 dependem da árvore L400: o montador inclui `scripts\gerar_carga_l400.py`, e o L300 D04 aponta
 para o L400 D06. Uma entrega separada exige reconstrução da árvore e novas verificações.

@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Encerramento Azure histórico; roteiro de IDs e sessão revisado por leitura; ferramenta testada localmente, sem nova execução Azure |
+| Situação | Histórico preservado; planejador público exercitado em dois encerramentos Azure em 11 de outubro de 2026, com conferências aprovadas e espera assíncrona registrada |
 | Público | Operações, arquitetura e desenvolvimento, com autorização dos responsáveis pelos alvos |
 | Resultado | IDs de objeto conferidos antes das remoções, blocos revisados na mesma sessão e encerramento próprio comparado com a linha de base |
 | Custo | Coexistência de ambientes, rede, busca, registro e logs tem custo; escala a zero não encerra todas as cobranças |
@@ -130,6 +130,9 @@ O **DNS**, sistema de nomes de domínio, mantém a resolução dos serviços na 
 Qualquer execução externa exige assinatura Azure ativa e autorização dos alvos. Separe remoção
 de objetos de busca, blobs, recursos Azure e configurações Entra ID/GitHub.
 Confirme dependências compartilhadas antes de iniciar a limpeza.
+Para os comandos de Container Apps impressos pelo plano, confira também a CLI de 64 bits
+e a pasta própria de extensões pela
+[nota do Desafio 04](04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300).
 Para o encerramento completo, obtenha autorização escrita de quem responde pela assinatura e,
 para os objetos do Entra ID, de quem administra esses alvos no tenant. A autorização deve cobrir
 exclusões permanentes e expurgos, não apenas leitura. As permissões precisam permitir as leituras
@@ -289,9 +292,11 @@ ela não confirma autorização, não descobre todos os consumidores e não mede
 inclusive execução no PowerShell 7 e recusa no Windows PowerShell 5.1 com uma CLI falsa [10].
 Os encerramentos históricos usaram outro procedimento privado; seus conflitos e retomadas
 continuam no [registro Azure L300][11].
-Nenhuma execução deste novo roteiro no Azure foi realizada nesta rodada. Os formatos reais das
-respostas, a projeção `id:id` de `--query`, a conclusão da exclusão de links e o alcance real da
-listagem de papéis por escopo continuam pendentes de qualificação em um destino autorizado.
+O planejador público foi exercitado na
+[rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
+A prova cobre os alvos daquela execução; encerramento após `isolar` e recuperação de
+`LockedSPLResourceFound` não foram exercitados com esse roteiro. Outra execução exige
+destino, inventário e autorização próprios.
 
 ### 1. Preparar o inventário privado desde o início
 
@@ -491,6 +496,12 @@ passo 8.
 | 6. Ambientes Container Apps | Aplicações e Jobs já retirados; ambiente próprio removido pelo serviço, não por seus componentes | **[altera o Azure]**; exclusão irreversível, autorizada para o ambiente próprio | Ambiente ausente por leitura; aguardar a plataforma, sem tocar o grupo gerenciado. Demais serviços continuam cobrando |
 | 7. Grupo exclusivo | Todo recurso ainda presente consta no inventário e não é compartilhado. A guarda faz nova leitura antes da exclusão | **[altera o Azure]**; exclusão irreversível do grupo e dos recursos sem passo próprio, somente com autorização de encerramento completo | Grupo ausente; busca, armazenamento, registro, modelos e rede próprios saem com ele. Cobrança acumulada não é apagada |
 | 8. Expurgos | Conta de modelos por nome, região e grupo; cofre de chaves com `vaultId`, identificador de origem, no grupo exclusivo | **[altera o Azure]**; expurgos permanentes, explicitamente autorizados. Proteção contra expurgo pode impedir a ação | Objetos ausentes das listas de excluídos; custo final permanece sujeito à consulta |
+
+**Atenção à fase 6:** um ambiente Container Apps de consumo já vazio pode permanecer
+em `ScheduledForDelete`, exclusão agendada, por **cerca de 30 minutos**, como observado
+na rodada Azure. Defina intervalo e prazo de espera aprovados e confira ausência por
+`az containerapp env list`; ao atingir o prazo, registre a pendência e repita somente
+leituras autorizadas. Não repita a exclusão nem apague o grupo gerenciado manualmente.
 
 **Resultado esperado:** plano privado sem aviso de prévia, com propriedade, dependências,
 efeitos irreversíveis e permissões revisados por uma pessoa. Recursos de outros grupos são
@@ -804,7 +815,7 @@ indisponível, inclusive depois de uma conferência aprovada; aprovação não c
 ## Situação da validação
 
 A integração local confere as guardas de plano, versão e propriedade.
-No Azure, a restauração devolveu o índice de 21 para 24 trechos. A troca para uma revisão
+Na rodada histórica L300, a restauração devolveu o índice de 21 para 24 trechos. A troca para uma revisão
 temporária da mesma imagem e o retorno à origem preservaram 200/200/401 nas rotas conferidas;
 a revisão temporária foi desativada e a origem ficou com 100% do tráfego.
 Isso não mede recuperação de incidente nem retorno a uma versão anterior com código diferente.
@@ -826,10 +837,34 @@ dublês, inclusive execução no PowerShell 7 e recusa no Windows PowerShell 5.1
 isso não valida respostas de serviços reais. As guardas de função dos GUIDs, identidade e sessão
 foram incorporadas ao roteiro por leitura e geração de planos e capturas sintéticos.
 O encerramento histórico acima não foi repetido nem atribuído à nova ferramenta.
-Ficam pendentes a execução autorizada da nova sequência, a projeção `id:id` de `--query`,
-os formatos reais das respostas, a conclusão dos links e a semântica da listagem de papéis
-por escopo. Os administradores decidem destino, permissões, orçamento e expurgos antes
-dessa qualificação.
+
+**Rodada de validação de 11 de outubro de 2026:** o planejador público orientou dois
+encerramentos reais. A ferramenta continuou offline; o coordenador executou os comandos
+impressos e conservou prova de ausência de cada passo.
+
+| Execução | Resultado observado |
+| --- | --- |
+| Grupo mínimo | 13 passos; conferência prévia com nove presentes e quatro expurgos ausentes. Conferência final aprovada: 12 atendidos, zero reprovados, zero pendentes e um não aplicável |
+| Encerramento completo L300/L400 | 28 passos: dois aplicativos Container Apps, Job, dois shared private links, seis credenciais, principal de serviço e aplicativo Entra com expurgos, oito atribuições por ID exato, workspace, dois ambientes, grupo e expurgo da conta de modelos |
+| Presença e conferência final completas | Sete ausentes na captura nova; aprovado, 12 atendidos, zero reprovados, zero pendentes e um não aplicável, o cofre ausente do inventário |
+| Preservação | Oito grupos e 46 recursos; 17 atribuições comparadas. Três herdadas ignoradas e contadas antes/depois; listagem direta final com 20 atribuições |
+
+A primeira captura revelou três herdadas entre 20 atribuições e foi recusada pelo validador
+antigo, código 1. A correção aceitou, ignorou e contou esses itens sem editar os arquivos.
+Mudanças nessas herdadas continuam fora da comparação da ferramenta.
+
+No grupo mínimo, o ambiente levou cerca de 30 minutos para desaparecer. Na limpeza completa,
+a verificação do passo 25 ainda respondeu `presente`, parada esperada após exclusão assíncrona.
+O passo 26 foi iniciado em paralelo e as leituras repetidas a cada aproximadamente 90 segundos;
+os dois ambientes ficaram ausentes após cerca de 23 minutos. Nenhuma exclusão falhou,
+nenhum bloqueio foi removido e o grupo gerenciado não foi manipulado.
+
+**Limites:** não foi executado encerramento depois de `isolar`, nem recuperação do conflito
+`LockedSPLResourceFound` com o planejador público. O cofre foi exercitado no grupo mínimo,
+não na segunda execução. Custo efetivo indisponível não é zero; prova de ausência não
+homologa produção nem concede autorização para repetir.
+O [registro completo da rodada](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md)
+separa falhas, retomadas, alcance e fechamento.
 
 ## Glossário
 
@@ -896,3 +931,5 @@ conferência local; sem execução Azure.
 
 Nota sobre atribuições herdadas: redigida por GPT-6.1 Sol em 11 de outubro de 2026
 e revisada pelo coordenador.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: GPT-6.1 Sol com base nos fatos e revisão do coordenador; código e testes corrigidos com Claude Sonnet 5.5; autoria anterior preservada.
