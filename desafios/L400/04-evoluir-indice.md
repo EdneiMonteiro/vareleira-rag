@@ -4,7 +4,7 @@
 
 | Campo | Definição |
 | --- | --- |
-| Situação | Promoção e retorno históricos observados; receita pública revisada, sem nova execução Azure |
+| Situação | Histórico preservado; candidato, promoção e retorno exercitados em 11 de outubro de 2026, com bloqueios do sanitizador e revisão humana; não é avaliação semântica |
 | Público | Operações, arquitetura e desenvolvimento |
 | Resultado | Reindexar em paralelo, registrar observações e promover/retornar pela fase aplicacao revisada |
 | Custo | Reindexação recalcula embeddings; índices e serviços mantidos têm custos próprios |
@@ -51,7 +51,7 @@ precisa de um retorno que não dependa de reconstruir a referência durante uma 
 | [Operação L400](../../scripts/operar_l400.py) e [exemplos de testes](../../tests/test_operacao_l400.py) | Disponíveis: nomes exatos dos campos do descritor e dez conferências locais, sem coleta de observações |
 | [Bicep L400](../../infra/l400.bicep) e [parâmetros](../../infra/levels/l400.bicepparam) | Disponíveis: perfil `referencia`/`candidato` na fase `aplicacao`, com as dimensões correspondentes |
 | [Receita do Desafio 03](03-operar-deployments.md#receita-pública-implantar-por-fases) | Disponível: sessão, what-if, revisão, aplicação incremental e conferências |
-| Receita desta página | Revisada com ajuda offline da interface de linha de comando do Azure (Azure CLI) e testes locais; promoção, retorno e consulta não executados nesta revisão |
+| Receita desta página | Plano de migração, implantação incremental e consulta autenticada separados; aplicação L300 preservada |
 
 Um **descritor** é um arquivo de dados preenchido na prática pelo operador com suas observações;
 não é um relatório já entregue nem um coletor. Os exemplos dos testes são dublês, não medições.
@@ -137,14 +137,18 @@ Primeiro confira o plano local:
 .\.venv\Scripts\python.exe scripts\operar_l400.py --etapa planejar --passo indice-candidato
 ```
 
-Na rodada histórica o gerenciador foi usado por uma sonda privada. A receita abaixo usa sua
-interface existente, mas não foi executada no Azure nesta revisão. Variáveis identificam o
-destino autorizado do aluno, não recursos do instrutor.
+Na rodada histórica o gerenciador foi usado por uma sonda privada. Na rodada de validação de
+11 de outubro de 2026, sua interface pública rodou **dentro do Job**, pelo caminho abaixo.
+Variáveis identificam o destino autorizado do aluno, não recursos do instrutor.
 Recupere na sessão privada os nomes de `$busca`, `$grupo`, `$conta` e `$modelos`,
 a assinatura em `$assinatura` e o identificador da identidade de manutenção em
 `$clientIdManutencao`. Eles vêm do inventário próprio da base L300; o
 [Desafio 03](03-operar-deployments.md#1-preparar-o-destino-e-a-sessão) define os demais destinos.
 Um terminal comum do VS Code não passa a estar na rede privada por receber essas variáveis.
+O terminal do operador só pode usar o caminho público dos dados **antes de esse acesso ser
+fechado**, com sua credencial Azure CLI e seus papéis de dados; não use identidade gerenciada
+num computador que não a possui. Depois do fechamento, é necessário um executor autorizado
+na rede. A receita exercitada usou o Job, mesmo com os serviços ainda públicos.
 Defina os destinos adicionais e arquivos novos de observação na pasta privada. Eles serão
 produzidos pelas leituras abaixo, não são artefatos do repositório:
 
@@ -158,6 +162,106 @@ foreach ($arquivo in @($referenciaAntes, $referenciaDepois, $candidatoDepois)) {
     if (Test-Path -LiteralPath $arquivo) { throw "Escolha nomes novos; preserve as observações anteriores." }
 }
 ```
+
+### Executar o gerenciador dentro do Job
+
+Reutilize o Job, as duas identidades, a imagem e `$variaveisBase` do
+[L300 D04](../L300/04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300).
+`scripts/gerenciar_ingestao_l300.py` está na imagem da sonda. O
+[mecanismo do L400 D06](06-testar-carga-interrupcao.md#4-executar-abaixo-do-limite-de-admissão)
+troca o comando somente na execução, sem alterar permanentemente o Job.
+Base64 é uma codificação de bytes como texto, **não criptografia**: os argumentos são
+privados e não devem conter segredo.
+
+**[altera o Azure]** ao iniciar cada execução do Job, mesmo para conferência ou plano.
+Criar objetos e executar a ingestão exigem autorizações adicionais e consomem embeddings.
+A função abaixo inicia uma execução e limita a espera a 900 segundos; terminar com
+`Succeeded` ainda exige ler o console antes de prosseguir:
+
+```powershell
+function Iniciar-IngestaoNoJob {
+    param([Parameter(Mandatory)][string[]]$Argumentos)
+    $script:ultimaExecucaoIngestao = $null
+    $lista = @("scripts/gerenciar_ingestao_l300.py") + $Argumentos
+    $json = ConvertTo-Json -InputObject $lista -Compress
+    $base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))
+    $entrada = "-cimport base64,json,runpy,sys; sys.path.insert(0,'scripts'); sys.argv=json.loads(base64.b64decode('$base64')); runpy.run_path(sys.argv[0],run_name='__main__')"
+    $inicioJson = az containerapp job start --subscription $assinatura --resource-group $grupo `
+        --name $job --container-name sonda --image $imagemSondaCompleta --cpu 0.25 --memory 0.5Gi `
+        --env-vars @variaveisBase --command python --args=$entrada --output json
+    if ($LASTEXITCODE -ne 0) { throw "Início não confirmado; confira as execuções antes de repetir." }
+    $execucao = $inicioJson | ConvertFrom-Json
+    $script:ultimaExecucaoIngestao = $execucao.name
+    if (-not $execucao.name) { throw "Nome da execução não recuperado." }
+    $limite = (Get-Date).AddSeconds(900)
+    do {
+        $estado = az containerapp job execution show --subscription $assinatura --resource-group $grupo `
+            --name $job --job-execution-name $execucao.name --query properties.status --output tsv
+        if ($LASTEXITCODE -ne 0) { throw "Estado não conferido; preserve a execução e leia os logs." }
+        if ($estado -in @("Succeeded", "Failed")) { break }
+        Start-Sleep -Seconds 5
+    } while ((Get-Date) -lt $limite)
+    if ($estado -ne "Succeeded") { throw "Execução falhou ou não terminou no prazo; confira o console privado." }
+    return $execucao
+}
+$destinosIngestao = @(
+    "--busca=$busca", "--assinatura=$assinatura", "--grupo=$grupo",
+    "--conta=$conta", "--modelos=$modelos", "--identidade-gerenciada",
+    "--client-id=$clientIdManutencao"
+)
+```
+
+Os argumentos com valor usam `--opcao=valor`; os sinalizadores booleanos, como `--executar`,
+não recebem valor. A lista inteira vira **um** argumento do Python. Confira imagem,
+comando, argumentos e identidade na execução efetiva, como no D06.
+Faça **uma linha por vez** da sequência exercitada; leia o console e autorize a próxima ação.
+Para cada linha, atribua o retorno a `$execucao`:
+
+| Ordem | Chamada com os destinos comuns | Observação da rodada |
+| --- | --- | --- |
+| 1. Referência antes | `$execucao = Iniciar-IngestaoNoJob -Argumentos ($destinosIngestao + @("--etapa=conferir", "--indice=$indiceReferencia", "--dimensoes=1536", "--privado"))` | Conferência aprovada, 24 trechos |
+| 2. Plano do candidato | `$execucao = Iniciar-IngestaoNoJob -Argumentos ($destinosIngestao + @("--etapa=criar", "--indice=$indiceCandidato", "--dimensoes=768"))` | Sem `--executar`: quatro objetos a criar; revisar antes de autorizar |
+| 3. Criar candidato | `$execucao = Iniciar-IngestaoNoJob -Argumentos ($destinosIngestao + @("--etapa=criar", "--indice=$indiceCandidato", "--dimensoes=768", "--executar"))` | Quatro objetos criados |
+| 4. Indexar candidato | `$execucao = Iniciar-IngestaoNoJob -Argumentos ($destinosIngestao + @("--etapa=executar", "--indice=$indiceCandidato", "--executar", "--aguardar"))` | Quatro processados, zero falhas; `--aguardar` sem número usa 300 segundos |
+| 5. Referência depois | `$execucao = Iniciar-IngestaoNoJob -Argumentos ($destinosIngestao + @("--etapa=conferir", "--indice=$indiceReferencia", "--dimensoes=1536", "--privado"))` | Conferência aprovada e referência preservada |
+| 6. Candidato depois | `$execucao = Iniciar-IngestaoNoJob -Argumentos ($destinosIngestao + @("--etapa=conferir", "--indice=$indiceCandidato", "--dimensoes=768", "--privado"))` | 24 trechos, com as mesmas contagens por documento |
+
+Não execute a tabela como um lote:
+a aprovação do plano e a leitura do console são decisões entre as chamadas.
+Prazo esgotado não cancela automaticamente o Job ou o indexador já iniciado; confira
+o estado antes de autorizar uma retomada.
+
+**Ler o console:** o gerenciador imprime texto, não uma linha `*_RESULTADO=`.
+Reutilize a [API de Log Analytics do L300 D04](../L300/04-dependencias-privadas.md#5-ler-conclusão-e-resultado-separadamente),
+mas filtre pelo grupo de contêineres dessa execução, não pelo prefixo da sonda.
+KQL, *Kusto Query Language*, é a linguagem da consulta. Com `$customerId` já conferido,
+escolha um arquivo novo na pasta privada:
+
+```powershell
+$nomeExecucao = $execucao.name
+if ($nomeExecucao -notmatch "^[a-zA-Z0-9-]+$") { throw "Nome da execução não conferido." }
+$arquivoKqlIngestao = Join-Path $pastaPrivada "$nomeExecucao-ingestao-kql.json"
+@{
+    query = "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(3h) | where ContainerGroupName_s startswith '$nomeExecucao' | project TimeGenerated, Log_s | order by TimeGenerated asc"
+} | ConvertTo-Json |
+    Out-File -LiteralPath $arquivoKqlIngestao -Encoding utf8 -NoClobber -ErrorAction Stop
+$consoleJson = az rest --method post `
+    --url "https://api.loganalytics.io/v1/workspaces/$customerId/query" `
+    --resource "https://api.loganalytics.io" --body "@$arquivoKqlIngestao" --output json
+if ($LASTEXITCODE -ne 0) { throw "Console não recuperado; conferência pendente." }
+$console = $consoleJson | ConvertFrom-Json
+```
+
+Cada linha de `tables[0].rows` traz horário e texto. Repita somente a leitura, com intervalo
+e prazo limitados, enquanto os logs chegam; não reinicie a ingestão para refazer a coleta.
+Confira o nome de execução e a completude do console. As contagens por documento do texto
+são as observações usadas no descritor; não as substitua por números históricos.
+Guarde console e associação somente em local privado. Se a função falhar, recupere o nome
+em `$ultimaExecucaoIngestao` e conserve a tentativa antes de decidir a retomada.
+
+Os comandos diretos nas subseções seguintes são a mesma interface para um executor que já
+tenha o caminho e a credencial apropriados. Na rodada de validação de 11 de outubro de 2026,
+essas etapas foram executadas pelo Job, não por um terminal comum fora da rede.
 
 ### Coletar a referência antes da reindexação
 
@@ -240,8 +344,7 @@ hashes e classes do manifesto. Referência antes/depois e candidato depois têm 
 
 ## Etapa 3: promover e retornar
 
-Esta é uma **receita revisada**, com comandos verificados por ajuda offline da Azure CLI 2.89.0
-e pelos testes locais das ferramentas existentes; **não executada nesta rodada de revisão**.
+Esta receita separa a conferência local das operações Azure e conserva autorização por ação.
 As execuções históricas no [registro L400](../../docs/validacao/l400-validacao.md) usaram helpers
 privados diferentes. A aplicação convencional L300 continua sempre na referência.
 
@@ -367,10 +470,15 @@ declarada, não somente duas variáveis.
 
 1. Escolha nome de implantação e arquivos novos em `$pastaPrivada`, seguindo o mesmo padrão do
    [Desafio 03](03-operar-deployments.md#2-simular-e-revisar-o-what-if). O relatório de what-if
-   não sobrescreve o de migração:
+   não sobrescreve o de migração. Use prefixo próprio, como
+   `vareleira-rag-l400-aplicacao-<sufixo-novo>`; o nome raiz não pode coincidir com módulos
+   aninhados `l400-aplicacao`, `l400-contingencia` ou `l400-guardas`:
 
 ```powershell
 $implantacao = Read-Host "Nome novo da implantação ARM para esta troca"
+if ($implantacao -in @("l400-aplicacao", "l400-contingencia", "l400-guardas")) {
+    throw "Nome raiz coincide com um módulo; escolha prefixo próprio e novo."
+}
 $arquivoWhatIf = Join-Path $pastaPrivada "$implantacao-whatif.json"
 $novoRelatorio = Join-Path $pastaPrivada "$implantacao-resumo.json"
 $erroWhatIf = Join-Path $pastaPrivada "$implantacao-whatif-erros.txt"
@@ -394,12 +502,107 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "What-if falhou; não aplique." }
     .\.venv\Scripts\python.exe scripts\operar_l400.py --etapa sanitizar-whatif `
         --arquivo $arquivoWhatIf --relatorio $novoRelatorio --rotulo $acaoMigracao
-    if ($LASTEXITCODE -ne 0) { throw "Sanitização bloqueou a troca." }
+    $codigoSanitizacao = $LASTEXITCODE
+    if ($codigoSanitizacao -notin @(0, 3)) { throw "Sanitização inválida; não aplique." }
+    if ($codigoSanitizacao -eq 3) { Write-Warning "Troca bloqueada; revise a causa antes de qualificar." }
 }
 finally {
     Remove-Item Env:\VARELEIRA_SEGREDO_LOGIN -ErrorAction SilentlyContinue
 }
 ```
+
+#### Se o sanitizador bloquear por propriedades removidas
+
+**O bloqueio é parte da conferência, não uma falha a esconder.** Na rodada de validação
+de 11 de outubro de 2026, o what-if de uma aplicação **existente** trouxe dois `Modify`:
+aplicativo L400 e `authConfigs`, sua configuração de autenticação. O sanitizador retornou
+código 3 até a revisão humana das propriedades removidas e a qualificação exata.
+Qualificar remoções de **propriedades** não permite `Delete` de recurso.
+
+| Troca | Aplicativo | Autenticação |
+| --- | --- | --- |
+| Promoção | Cinco padrões removidos: `ingress.exposedPort`, `ingress.traffic`, `maxInactiveRevisions`, `scale.cooldownPeriod` e `scale.pollingInterval` | Uma remoção: `isAutoProvisioned` |
+| Retorno | Quatro: os mesmos, exceto `maxInactiveRevisions`, que já não aparecia na leitura após promover | Uma remoção: `isAutoProvisioned` |
+
+Essas remoções foram classificadas como padrões do serviço **naquela revisão**. A quantidade
+mudou entre promoção e retorno; releia todos os deltas a cada simulação. Não qualifique por
+nome ou quantidade copiados deste exemplo para vencer um bloqueio.
+
+No terminal privado, o apoio abaixo achata `delta` e seus `children`, mostrando caminho,
+tipo e antes → depois. GUIDs, identificadores globalmente únicos, são mascarados;
+campos de segredo e textos não reconhecidos são ocultados. Objetos/listas também não
+são despejados no console. Valores omitidos exigem revisão do bruto na pasta privada,
+sem anexá-lo ao Copilot ou publicar seus conteúdos:
+
+```powershell
+$padraoGuid = "(?i)[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}"
+function Valor-DeltaVisivel {
+    param($Valor, [string]$Caminho)
+    if ($Caminho -match "(?i)secret|password|token|senha|credential|connectionstring") { return "<oculto>" }
+    if ($null -eq $Valor) { return "<ausente>" }
+    if ($Valor -is [bool] -or $Valor -is [int] -or $Valor -is [long] -or
+        $Valor -is [double] -or $Valor -is [decimal]) { return [string]$Valor }
+    if ($Valor -is [string]) {
+        $mascarado = [regex]::Replace($Valor, $padraoGuid, "<GUID>")
+        if ($mascarado -eq "<GUID>") { return $mascarado }
+        if ($Valor -in @("vareleira-lar-l300", "vareleira-lar-l300-l400-768", "1536", "768",
+            "VARELEIRA_INDICE", "VARELEIRA_DIMENSOES")) { return $Valor }
+        if ($Valor.StartsWith("[") -and $Valor.EndsWith("]")) { return "<expressão ARM>" }
+        return "<texto privado omitido>"
+    }
+    return "<objeto/lista: revisão privada>"
+}
+function Mostrar-Delta {
+    param($Deltas, [string]$Prefixo = "")
+    foreach ($no in @($Deltas)) {
+        if ($null -eq $no) { continue }
+        $caminho = if ($Prefixo) { "$Prefixo.$($no.path)" } else { [string]$no.path }
+        $visivel = [regex]::Replace($caminho, $padraoGuid, "<GUID>")
+        if ($visivel -match "://|/subscriptions/|/resourceGroups/") { $visivel = "<caminho privado>" }
+        $antes = Valor-DeltaVisivel -Valor $no.before -Caminho $caminho
+        $depois = Valor-DeltaVisivel -Valor $no.after -Caminho $caminho
+        "{0} | {1} | {2} -> {3}" -f $visivel, $no.propertyChangeType, $antes, $depois
+        Mostrar-Delta -Deltas $no.children -Prefixo $caminho
+    }
+}
+$planoArm = Get-Content -LiteralPath $arquivoWhatIf -Raw | ConvertFrom-Json
+foreach ($mudanca in $planoArm.changes) {
+    if ($mudanca.resourceId -match "/providers/Microsoft.App/containerApps/") {
+        Mostrar-Delta -Deltas $mudanca.delta
+    }
+}
+```
+
+O apoio **não aprova nem classifica automaticamente** a mudança. Registre a revisão humana:
+
+| Classe da revisão | O que foi encontrado e como conferir |
+| --- | --- |
+| ALVO | Troca conjunta de `VARELEIRA_INDICE` e `VARELEIRA_DIMENSOES` para o par conferido |
+| RUÍDO de expressão ARM não resolvida | Três expressões: servidor do registro, imagem e `clientId`; comparar os valores efetivos antes/depois, sem aceitar a expressão como prova de igualdade |
+| RUÍDO de ordem | 11 deltas de propriedades individuais das três sondas de saúde, trocadas de posição; comparar o **conjunto** completo, não apenas a posição das sondas |
+| PADRÃO removido | Cada propriedade da tabela de remoções, revisada no estado real e no bruto; remoção não explicada mantém o bloqueio |
+
+Depois de explicar cada delta e registrar a aprovação de **dois `Modify`**, informe as
+quantidades **lidas nessa revisão**. Na promoção foram cinco e um; no retorno, quatro e um.
+O sanitizador exige o tipo e a quantidade exata, e o relatório qualificado precisa ser novo:
+
+```powershell
+$n = [int](Read-Host "Remoções no aplicativo, contadas e aprovadas nesta simulação")
+$m = [int](Read-Host "Remoções na autenticação, contadas e aprovadas nesta simulação")
+$qualificacao = "Microsoft.App/containerApps=$n,Microsoft.App/containerApps/authConfigs=$m"
+$relatorioQualificado = Join-Path $pastaPrivada "$implantacao-resumo-qualificado.json"
+.\.venv\Scripts\python.exe scripts\operar_l400.py --etapa sanitizar-whatif `
+    --arquivo $arquivoWhatIf --relatorio $relatorioQualificado --rotulo $acaoMigracao `
+    --qualificar-propriedades-removidas $qualificacao
+if ($LASTEXITCODE -ne 0) { throw "Qualificação recusada; a troca permanece bloqueada." }
+$novoRelatorio = $relatorioQualificado
+```
+
+Essa chamada não altera Azure. Conserve o relatório bloqueado, a justificativa da revisão
+e o novo relatório; não edite o bruto. Código 0 significa que a qualificação declarada
+confere com as contagens, **não uma aprovação automática dos efeitos**. Para aplicar,
+continue as conferências de escopo e tipo abaixo e, depois, exija as provas positivas
+do passo 5. Uma simulação nova exige revisão nova, inclusive no retorno.
 
 3. Execute as conferências locais de escopo, ações e contagem de `Modify` do
    [Desafio 03](03-operar-deployments.md#2-simular-e-revisar-o-what-if), com as variáveis desta
@@ -446,6 +649,23 @@ segredo ecoado, mesmo com parâmetro seguro: mantenha-os privados e apague-os ap
 
 ### 5. Conferir a revisão e exigir a prova autenticada
 
+Conserve `$appAntes` e as observações L300 anteriores à aplicação. A revisão precisa
+demonstrar **positivamente** os itens abaixo; “não apareceu no resumo” não prova preservação:
+
+| Item | Comparação depois de aplicar |
+| --- | --- |
+| ALVO | Índice e dimensão iguais à configuração alvo do descritor |
+| Demais variáveis | Mesmos nomes e valores de todas as variáveis anteriores, exceto `VARELEIRA_INDICE` e `VARELEIRA_DIMENSOES` |
+| Imagem e registro | Mesma imagem e configuração efetiva do registro; expressões não resolvidas no what-if não dispensam a comparação |
+| Sondas | Mesmo conjunto das três definições, independentemente da ordem |
+| Escala, identidade e ingresso | Configurações efetivas anteriores preservadas; explicar separadamente os padrões removidos |
+| Revisão | Revisão atual pronta, não apenas pedido de implantação aceito |
+| Referência L300 | Aplicação, revisão e ingresso preservados, além da definição e contagens do índice |
+
+Na rodada de validação de 11 de outubro de 2026, essas comparações foram registradas nas duas
+direções, e a quantidade de `Modify` aprovada foi dois. Isso não dispensa revisão humana
+nem autoriza outro destino. Guarde diferenças e justificativas somente em local privado.
+
 As leituras abaixo não exibem segredos. O limite de dez minutos é uma janela operacional de
 conferência, não garantia de prontidão:
 
@@ -476,6 +696,14 @@ if ($variaveisApp["VARELEIRA_INDICE"] -ne $alvo.indice -or
     $variaveisApp["VARELEIRA_EXIGIR_COORDENACAO"] -ne "true") {
     throw "Configuração da aplicação não corresponde ao alvo conferido."
 }
+$outrasAntes = @($appAntes.properties.template.containers[0].env |
+    Where-Object { $_.name -notin @("VARELEIRA_INDICE", "VARELEIRA_DIMENSOES") } | Sort-Object name)
+$outrasDepois = @($p.template.containers[0].env |
+    Where-Object { $_.name -notin @("VARELEIRA_INDICE", "VARELEIRA_DIMENSOES") } | Sort-Object name)
+if ((ConvertTo-Json -InputObject $outrasAntes -Depth 10 -Compress) -ne
+    (ConvertTo-Json -InputObject $outrasDepois -Depth 10 -Compress)) {
+    throw "Outras variáveis mudaram; migração não aprovada."
+}
 az containerapp revision list --subscription $assinatura --resource-group $grupo `
     --name $aplicacaoL400 --all `
     --query "[].{revisao:name,ativa:properties.active,saude:properties.healthState,estado:properties.provisioningState}" `
@@ -497,12 +725,15 @@ conjuntos finais. Receba um token autorizado para o chat, com tenant e papel rec
 procedimento aprovado; não crie credencial ou amplie papéis para executar esta prova.
 **Token** é o comprovante digital de autenticação. Quando o ingresso é interno, execute a
 consulta de dentro do ambiente Container Apps autorizado; o terminal externo não ganha esse acesso.
+O host interno inclui `.internal.`; leia o FQDN (*Fully Qualified Domain Name*, nome completo
+de domínio) em `properties.configuration.ingress.fqdn`, sem montar `<app>.<domínio>`.
 O bloco requer PowerShell 7 nesse executor autorizado. Se ele só dispõe de outro cliente HTTP,
 use o cliente previamente aprovado e registre as mesmas provas; o guia não instala ferramentas
 nem cria um executor para alcançar o endereço interno.
 
 ```powershell
 $urlChat = "https://" + $appDepois.properties.configuration.ingress.fqdn
+if (-not $appDepois.properties.configuration.ingress.fqdn) { throw "FQDN real não conferido." }
 try {
     $env:VARELEIRA_L400_TOKEN_COORDENACAO = Read-Host "Token autorizado do chat L400" -MaskInput
     $perguntaDesenvolvimento = Read-Host "Pergunta de desenvolvimento sustentada pelas fontes sintéticas"
@@ -671,12 +902,39 @@ e borda preservada. O cliente L400 recebeu uma correção para enviar `dimension
 a primeira falha foi preservada no [registro](../../docs/validacao/l400-validacao.md).
 A aplicação convencional permaneceu na referência de 1.536; não foi testada no candidato.
 
-Em **11 de outubro de 2026**, a receita pública foi revisada por leitura dos artefatos e dos
+Na revisão local anterior à execução, a receita pública foi conferida por leitura dos artefatos e dos
 mecanismos históricos, ajuda offline da Azure CLI 2.89.0 e testes locais de operação,
 sanitização e repositório. Links e sintaxe PowerShell foram conferidos sem executar os blocos.
-**Nenhuma nova coleta Azure, reindexação, promoção, retorno, consulta HTTP ou remoção foi
-executada nesta revisão.** Validar esta sequência no destino do aluno é pendência do operador,
-com autorização e provas próprias; os resultados e falhas históricos permanecem inalterados.
+Essas verificações locais permanecem separadas dos resultados remotos.
+
+**Rodada de validação de 11 de outubro de 2026:**
+
+| Operação | Resultado observado |
+| --- | --- |
+| Caminho de manutenção | Gerenciador executado dentro do Job, com identidade de manutenção e argumento único Base64, sem depender de um terminal externo para alcançar o índice |
+| Referência antes | Conferência aprovada; 24 trechos: 11 das Condições Gerais, cinco das perguntas frequentes, cinco do Glossário e três do roteiro operacional |
+| Candidato de 768 dimensões | Plano com quatro objetos a criar; quatro objetos criados; quatro itens processados, zero falhas, cerca de dois segundos; conferência aprovada com 24 trechos e as mesmas contagens por documento |
+| Referência depois | Conferência aprovada e configuração preservada |
+| Descritor de migração | Somente observações reais; dez conferências atendidas, zero reprovadas, `origem_do_descritor=operador` e `evidencia_azure=false`, pois o conferidor é local |
+| Promoção | Dois `Modify`, aplicação e autenticação; sanitizador inicialmente bloqueou com código 3. Cinco propriedades removidas no aplicativo e uma na autenticação foram revisadas e qualificadas; três expressões ARM não resolvidas e 11 deltas de ordem das três sondas foram conferidos depois. Aplicação em 64 segundos, revisão pronta, índice/dimensão no alvo e demais variáveis idênticas |
+| Prova no candidato | Quatro pedidos, concorrência dois: quatro HTTP 200, zero divergentes; três `documentada` e um `sem_evidencia` |
+| Retorno | Nova revisão dos deltas: quatro propriedades removidas no aplicativo e uma na autenticação, pois `maxInactiveRevisions` já estava ausente. Aplicação em 64 segundos; referência com 1.536 dimensões restabelecida e candidato preservado |
+| Prova após retornar | Quatro HTTP 200: três `documentada` e um `sem_evidencia` |
+
+Imagem, registro, conjunto das sondas, escala, identidade e ingresso foram conferidos
+como inalterados nas trocas. A aplicação L300 permaneceu na referência.
+O bloqueio inicial e a qualificação diferente no retorno continuam parte da evidência;
+não reutilize uma contagem antiga de propriedades removidas.
+
+As provas medem operação e contrato HTTP, **não fidelidade semântica nem homologação**.
+Fase `isolar`, provas pós-isolamento, negativas externas, ingresso externo, login humano,
+implantação por GitHub Actions/OpenID Connect (OIDC, protocolo de identidade), federação e nova avaliação
+semântica não foram executados. O caminho privado foi observado com acesso público dos
+serviços ainda habilitado; isso não comprova operação isolada.
+Custo efetivo indisponível; a estimativa do coordenador é de poucos dólares, sem comprovar
+fatura ou o teto estimado de US$ 30 da rodada inteira.
+Os resultados e a limpeza aprovada estão no
+[registro da rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
 
 ## Glossário e referências
 
@@ -720,3 +978,5 @@ Revisão documental por gpt-6-astra (Astra), em 11 de outubro de 2026, sem nova 
 
 Receita de implantação e promoção: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026;
 comandos verificados por ajuda offline; sem nova execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: redigida por GPT-6.1 Sol com base nos fatos do coordenador; defeitos de código corrigidos com Sonnet 5.5; revisão do coordenador.

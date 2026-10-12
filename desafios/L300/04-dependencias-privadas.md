@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Topologia, DNS (sistema de nomes de domínio), ingestão e isolamento conferidos na rodada histórica; receita pública das sondas revisada localmente e por ajuda offline, sem nova execução Azure |
+| Situação | Histórico preservado; construção, rede, DNS (sistema de nomes de domínio), ingestão e sonda pública exercitados em 11 de outubro de 2026, com falhas e retomadas; fase isolar não executada nesta rodada |
 | Público | Operações, arquitetura e desenvolvimento, com apoio do administrador de rede e dos serviços |
 | Resultado | Definição de rede, resolução de nomes e conexões privadas para consulta e ingestão |
 | Custo | Endpoints, rede, serviços, construção e armazenamento de imagens, execuções do Job, logs e tokens têm cobranças próprias; confirme orçamento e duração |
@@ -68,9 +68,9 @@ As definições e a integração são conferidas localmente. Um plano Azure real
 destinos e permissões aprovados. A rodada autorizada conferiu planos e efeitos reais,
 separados das definições locais no [registro Azure](../../docs/validacao/l300-azure-validacao.md).
 As ferramentas públicas derivam dos helpers privados validados no Azure naquela rodada.
-As versões públicas foram conferidas por testes locais com dublês; os comandos desta receita
-foram verificados na ajuda offline da Azure CLI 2.89.0, interface de linha de comando do Azure,
-não executados no Azure nesta revisão.
+As versões públicas têm testes locais com dublês. Esta receita incorpora correções de construção,
+identidade, conexões e coleta observadas na rodada de validação de 11 de outubro de 2026, sem transformar uma prova parcial
+em validação de toda a sequência.
 
 ## Tecnologias e conceitos
 
@@ -99,6 +99,8 @@ servidor web [7]. **Identidade gerenciada atribuída ao usuário** é um recurso
 ser associado ao chat e ao Job; apagar o Job não apaga essa identidade [8].
 **RBAC**, controle de acesso baseado em papéis, concede operações em um escopo definido [9].
 Papéis de dados, de administração dos recursos e de uso do chat são autorizações distintas.
+**JSON** (*JavaScript Object Notation*) é o formato de dados estruturados usado nas linhas
+de resultado e nos arquivos privados desta receita.
 
 ## Pré-requisitos
 
@@ -221,10 +223,11 @@ Recupere os valores do inventário privado, sem colá-los no Copilot ou em arqui
 | Variáveis da sessão | O que devem identificar |
 | --- | --- |
 | `$assinatura`, `$grupo`, `$regiao`, `$conta`, `$busca`, `$modelos` | Destino aprovado e serviços reaproveitados |
-| `$registro`, `$servidorRegistro`, `$idRegistro`, `$idBusca`, `$idModelos` | ACR, seu servidor e IDs completos dos recursos, conferidos no inventário |
-| `$nomeIdentidade`, `$nomeManutencao`, `$nomeAmbiente`, `$job` | Identidade existente do chat, identidade temporária de manutenção, ambiente L300 e nome novo do Job |
+| `$registro`, `$servidorRegistro`, `$idRegistro`, `$idConta`, `$idBusca`, `$idModelos` | ACR, seu servidor e IDs completos dos recursos, conferidos no inventário |
+| `$nomeIdentidade`, `$nomeManutencao`, `$nomeAmbiente`, `$aplicacao`, `$job` | Identidade existente do chat, identidade temporária de manutenção, ambiente/aplicação L300 e nome novo do Job |
 | `$imagemChat`, `$imagemSonda`, `$contextoSonda` | Referência completa da imagem atual do chat; repositório e tag nova da sonda; pasta nova ou vazia escolhida para o contexto |
 | `$urlChat`, `$idLogin` | Endereço oficial HTTPS do chat e ID de aplicativo do seu registro de login, para `http-interno` |
+| `$nomeWorkspace`, `$pastaLogs` | Workspace do ambiente e pasta privada existente para a consulta e as evidências de logs |
 
 Uma **tag** identifica a versão da imagem. `$imagemChat` tem a forma
 `<registro>.azurecr.io/<repositorio-do-chat>:<tag-do-chat>`; `$imagemSonda`,
@@ -272,6 +275,12 @@ da criação. Confira os três identificadores; eles **não são intercambiávei
 $env:VARELEIRA_ID_OBJETO_CARGA = $manutencao.principalId
 ```
 
+**Atenção à sessão:** o L100 lê essa mesma variável para os papéis de carga do operador;
+a fase `rede` do L300 a lê para a identidade de manutenção. Redefina ou limpe
+`VARELEIRA_ID_OBJETO_CARGA` ao trocar de fase/nível e confira qual principal ela contém
+antes de **cada** `what-if`. Não reaplique o L100 com o principal de manutenção por herança
+da sessão; não imprima o valor em logs públicos.
+
 **Atenção:** `tipoPrincipalCarga` deve ser `ServicePrincipal` para essa identidade gerenciada.
 O Bicep principal assume `User` por padrão, e o arquivo de parâmetros versionado não expõe esse
 tipo por variável. O administrador precisa informar `ServicePrincipal` explicitamente nos parâmetros
@@ -281,6 +290,11 @@ Na cópia privada de parâmetros aprovada para essa implantação, a declaraçã
 ```bicep
 param tipoPrincipalCarga = 'ServicePrincipal'
 ```
+
+A diretiva `using` da cópia privada deve apontar para `infra\l300.bicep` por um caminho
+**relativo à localização dessa cópia**, não à pasta atual do terminal. Caminho absoluto
+nessa diretiva é recusado com `BCP189`. Revise o caminho antes do plano; não imprima
+parâmetros compilados quando a sessão contiver segredo.
 
 Não aplique o padrão `User` para a identidade de manutenção nem mude o principal de uma carga
 preexistente sem revisar seus consumidores.
@@ -332,12 +346,54 @@ modelos. Ela também será associada ao Job, para `negativas-mi` e `http-interno
 privilégios de manutenção.
 Para `http-interno` com perfil Atendimento, o administrador do tenant deve conferir também a
 atribuição do papel de **aplicação** correspondente à identidade usada no token do chat.
-Esse acesso exige autorização própria; associar a identidade ao Job não o concede.
+Siga a [receita de papéis do Desafio 03](03-filtrar-acesso.md#etapa-2-preparar-papéis-de-aplicação)
+antes de obter o primeiro token. Esse acesso exige autorização própria; associar a identidade
+ao Job não o concede.
 
-5. Aplique somente a fase `rede` autorizada, conservando a configuração pública atual. Confira
-   destino, sub-recurso e origem das conexões pendentes; o administrador aprova somente as próprias.
-   A aprovação do *shared private link*, conexão privada compartilhada, ocorre no recurso de destino [4].
-   Depois, leia as conexões administradas pela busca:
+5. Aplique somente a fase `rede` autorizada, em modo incremental e após novo `what-if`,
+   conservando a configuração pública atual. Para falha transitória do endpoint dos modelos,
+   veja o tratamento em [Solução de problemas](#solução-de-problemas), antes de reaplicar.
+   A aprovação do *shared private link*, conexão privada compartilhada, ocorre no recurso
+   de destino [4]. Leia as conexões do armazenamento e dos modelos, uma lista por destino:
+
+```powershell
+foreach ($idDestino in @($idConta, $idModelos)) {
+    az network private-endpoint-connection list --id $idDestino `
+        --query "[].{id:id,estado:properties.privateLinkServiceConnectionState.status,mensagem:properties.privateLinkServiceConnectionState.description}" `
+        --output table
+    if ($LASTEXITCODE -ne 0) { throw "Conexões do destino não conferidas." }
+}
+```
+
+Na rodada de validação de 11 de outubro de 2026, exatamente duas conexões ficaram `Pending`: uma em cada destino, com a
+mensagem `Vareleira L300: indexador privado da busca`. As conexões dos endpoints do chat
+não exigiram essa aprovação. Confira origem, destino e propriedade; não aprove outras
+conexões pendentes por conveniência.
+
+**[altera o Azure]**: quem tem papel de aprovação no recurso de destino e autorização
+para a conexão própria seleciona `<ID da conexão pendente>` na listagem. Antes de aprovar,
+confira novamente seu estado e sua mensagem:
+
+```powershell
+$idDestino = Read-Host "ID do recurso de destino conferido"
+if ($idDestino -notin @($idConta, $idModelos)) { throw "Destino fora dos dois recursos aprovados." }
+$idConexao = Read-Host "ID da conexão própria Pending"
+$conexoesJson = az network private-endpoint-connection list --id $idDestino `
+    --query "[].{id:id,estado:properties.privateLinkServiceConnectionState.status,mensagem:properties.privateLinkServiceConnectionState.description}" `
+    --output json
+if ($LASTEXITCODE -ne 0) { throw "Releitura das conexões falhou." }
+$conexao = @($conexoesJson | ConvertFrom-Json | Where-Object {
+    $_.id -eq $idConexao -and $_.estado -eq "Pending" -and
+    $_.mensagem -eq "Vareleira L300: indexador privado da busca"
+})
+if ($conexao.Count -ne 1) { throw "Conexão única, pendente e própria não conferida." }
+az network private-endpoint-connection approve --id $idConexao `
+    --description "Vareleira L300: indexador privado da busca" --output none
+if ($LASTEXITCODE -ne 0) { throw "Aprovação não concluída; confira o estado antes de repetir." }
+```
+
+Repita somente para a outra conexão própria que ainda esteja pendente. Uma conexão já
+aprovada deve ser conferida, não recriada. Depois, leia cada conexão administrada pela busca:
 
 ```powershell
 az search shared-private-link-resource list --subscription $assinatura --resource-group $grupo --service-name $busca --output json
@@ -385,13 +441,22 @@ de 256 bits, conferido contra a origem. Os módulos do chat vêm da imagem-base.
 3. Revise o comando impresso. **[altera o Azure]**, somente após autorizar envio, build e publicação:
 
 ```powershell
-az acr build --subscription $assinatura --registry $registro --image $imagemSonda --build-arg "IMAGEM_CHAT=$imagemChat" --file Dockerfile $contextoSonda
-if ($LASTEXITCODE -ne 0) { throw "Confira o estado remoto do build antes de autorizar uma repetição." }
+Push-Location
+try {
+    Set-Location -LiteralPath $contextoSonda
+    az acr build --subscription $assinatura --registry $registro --image $imagemSonda `
+        --build-arg "IMAGEM_CHAT=$imagemChat" --no-logs .
+    if ($LASTEXITCODE -ne 0) { throw "Confira o estado remoto do build antes de autorizar uma repetição." }
+}
+finally {
+    Pop-Location
+}
 ```
 
-É o comando de referência do montador, com assinatura explícita. O **último argumento é a pasta
-própria do contexto**; `--file Dockerfile` é relativo a ela. Na rodada histórica, um contexto errado
-selecionou o Dockerfile da raiz, pertencente ao chat; não repita o build sem conferir o run anterior.
+O `az` resolve `--file` a partir da **pasta atual**, não da pasta de contexto: entrar na pasta
+da sonda e usar `.` evita selecionar o Dockerfile do chat ou não encontrar Dockerfile.
+`--no-logs` evita a falha de Unicode da codificação `cp1252` do Windows ao transmitir o log;
+leia-o depois com UTF-8, codificação de texto Unicode, e conserve o retorno à pasta de trabalho.
 O valor de `--build-arg` é visível à equipe de suporte do ACR, conforme sua ajuda: use somente
 a referência da imagem, nunca segredo ou token.
 O Dockerfile deriva de `IMAGEM_CHAT`, sem valor padrão, conserva o usuário sem privilégios de
@@ -401,12 +466,17 @@ administrador (*root*) e executa `validar` durante a construção.
 
 ```powershell
 az acr task list-runs --subscription $assinatura --registry $registro --output json
+$runId = Read-Host "Run-id do JSON final do build da sonda"
+$env:PYTHONIOENCODING = "utf-8"
+az acr task logs --subscription $assinatura --registry $registro --run-id $runId
+if ($LASTEXITCODE -ne 0) { throw "Log do build não recuperado." }
 $digestSonda = az acr repository show --subscription $assinatura --name $registro --image $imagemSonda --query digest --output tsv
 if ($LASTEXITCODE -ne 0 -or -not $digestSonda) { throw "A imagem da sonda não foi conferida no registro." }
 ```
 
-Associe o run, execução do build, à tag e ao horário corretos; procure estado `Succeeded`, a etapa
-`validar` aprovada e o **digest**, resumo criptográfico da imagem publicada.
+Associe o run, execução do build, à tag e ao horário corretos; procure estado `Succeeded`,
+`ARG IMAGEM_CHAT`, a cópia `COPY scripts/sonda_l300.py`, a etapa `validar` aprovada e o
+**digest**, resumo criptográfico da imagem publicada.
 O encerramento do comando no computador não substitui essa leitura do resultado remoto.
 
 **Resultado esperado:** contexto com exatamente 14 arquivos e imagem nova, derivada da revisão
@@ -420,6 +490,22 @@ retire somente a imagem própria depois dos consumidores, conforme o Desafio 07.
 
 **Objetivo:** executar a sonda no caminho de rede dos dados, com duração e recursos delimitados.
 **[altera o Azure]** ao criar o Job e associar as duas identidades.
+
+**Atenção à CLI no Windows:** a instalação MSI, pacote do instalador Windows, de 32 bits
+falhou ao instalar a extensão `containerapp`, pois seu Python tentou compilar `cryptography`.
+Use a Azure CLI de **64 bits**. O caminho exercitado foi `pip install azure-cli` em um
+ambiente virtual próprio de Python de 64 bits, separado da `.venv` do laboratório.
+Selecione o `az` desse ambiente no PATH, lista de pastas de comandos, e confira `az --version`.
+Na mesma sessão, reserve uma pasta própria de extensões antes da instalação local:
+
+```powershell
+$env:AZURE_EXTENSION_DIR = "<pasta própria de extensões>"
+az extension add --name containerapp
+if ($LASTEXITCODE -ne 0) { throw "Extensão não instalada; confira a CLI e o Python de 64 bits." }
+```
+
+Instalar a extensão não implanta recursos Azure. Não compartilhe essa pasta com a instalação
+de 32 bits nem suponha que uma extensão instalada em outra sessão esteja disponível aqui.
 
 1. Confira que `$nomeAmbiente` é o ambiente L300 integrado à rede, não o ambiente anterior.
    “Dentro da rede” descreve o caminho dos dados; o Bicep mantém o ambiente com entrada externa
@@ -469,8 +555,11 @@ Conferir o papel antecipadamente não dispensa conferir os efeitos da criação.
 
 **Atenção aos três relógios:** espera do indexador, limite da sonda e limite da réplica.
 Esta receita escolhe **600 < 840 < 900 segundos**, deixando margem para a sonda emitir o resultado.
-São escolhas de configuração, não uma medição de desempenho. A espera padrão da ferramenta é
-900 segundos; usá-la com uma réplica também limitada a 900 pode interromper a sonda antes da linha.
+São escolhas de configuração, não uma medição de desempenho. `VARELEIRA_PROBE_ESPERA_SEGUNDOS`
+tem padrão de **900 segundos** e a sonda passa esse valor explicitamente ao gerenciador.
+Já `gerenciar_ingestao_l300.py --aguardar`, sem número, usa **300 segundos**; sem a opção,
+não espera. Não confunda os dois padrões. Usar espera de 900 com réplica limitada a 900 pode
+interromper a sonda antes da linha.
 Se precisar ampliar o prazo, revise custo e autorização; a sonda aceita espera de 10 a 1.500 segundos
 e limite próprio de 30 a 1.750. Não retire os limites nem habilite repetição automática.
 
@@ -520,6 +609,7 @@ Conserve os deployments, instâncias nomeadas dos modelos, e as 1.536 dimensões
 ```powershell
 $etapa = "dns"
 $variaveisEtapa = $variaveisBase + @("VARELEIRA_PROBE_ETAPA=$etapa")
+$inicioExecucaoUtc = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
 az containerapp job start --subscription $assinatura --resource-group $grupo --name $job `
     --container-name sonda --image $imagemSondaCompleta --cpu 0.25 --memory 0.5Gi `
     --env-vars @variaveisEtapa --output json
@@ -537,10 +627,17 @@ $variaveisEtapa = @($variaveisBase | Where-Object { $_ -notlike "VARELEIRA_PROBE
 ```
 
 Use essa lista no **mesmo comando de início**, uma vez, e confira seu resultado antes de outra etapa.
+Registre `$inicioExecucaoUtc` novamente imediatamente antes de cada início; UTC é o tempo
+universal coordenado e delimita a janela de leitura dos logs.
 Para `http-interno`, reconstrua-a a partir da base, com a identidade do chat, a etapa correspondente
-e estes três valores adicionais:
+e estes três valores adicionais. Leia primeiro o FQDN (*Fully Qualified Domain Name*, nome
+completo de domínio) da aplicação L300 pelo ARM; `$aplicacao` é seu nome inventariado:
 
 ```powershell
+$fqdnChat = az containerapp show --subscription $assinatura --resource-group $grupo `
+    --name $aplicacao --query properties.configuration.ingress.fqdn --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $fqdnChat) { throw "FQDN da aplicação não conferido." }
+$urlChat = "https://$fqdnChat"
 $etapa = "http-interno"
 $variaveisEtapa = @($variaveisBase | Where-Object { $_ -notlike "VARELEIRA_PROBE_CLIENT_ID=*" }) + @(
     "VARELEIRA_PROBE_CLIENT_ID=$($identidadeChat.clientId)"
@@ -551,11 +648,15 @@ $variaveisEtapa = @($variaveisBase | Where-Object { $_ -notlike "VARELEIRA_PROBE
 )
 ```
 
-**Limite da conferência da CLI:** a ajuda offline confirma `--env-vars`, `--args`, `--command`
-e `--image` no início. Ela não comprova como a CLI combina a lista de variáveis com a definição
-existente. A documentação avisa que substituir o template de execução pode substituir sua
-configuração inteira [7]. **Se `--env-vars` substitui ou combina a lista neste caminho da CLI
-não foi validado nesta rodada.** Por prudência, informe a lista completa em cada início,
+Com ingresso interno, o FQDN lido tem a forma `<app>.internal.<domínio>`. Use esse valor
+em `$urlChat`, não um endereço montado como `<app>.<domínio>`; esse outro host pode devolver
+404 na borda antes de alcançar o chat. Não remova `.internal.` para tentar alcançar a aplicação.
+
+**Limite da conferência da CLI:** na rodada de validação de 11 de outubro de 2026,
+`job start --env-vars` com a **lista completa** aplicou a etapa pedida; o caminho de
+`--command python --args` também foi exercitado. Isso não caracteriza o efeito de uma
+lista parcial nem de todas as versões da CLI. A documentação avisa que substituir o
+template de execução pode substituir sua configuração inteira [7]. Informe a lista completa em cada início,
 preserve imagem e recursos, e confira a definição da execução. Não use só a variável da etapa
 esperando herança implícita. O exemplo conserva o ponto de entrada da imagem, sem trocar
 `--command` ou `--args`. A rodada histórica iniciou as execuções por REST (*Representational State
@@ -579,24 +680,63 @@ Estas chamadas **só leem o Azure**:
 
 ```powershell
 az containerapp job execution list --subscription $assinatura --resource-group $grupo --name $job --output json
-az containerapp job execution show --subscription $assinatura --resource-group $grupo --name $job --job-execution-name $nomeExecucao --output json
+az containerapp job execution show --subscription $assinatura --resource-group $grupo --name $job `
+    --job-execution-name $nomeExecucao --query properties.status --output tsv
 ```
 
 1. Identifique `$nomeExecucao` na resposta do início ou na listagem, pelo nome e horário privados.
    Confira estado final, contêiner, imagem e variáveis efetivamente enviados; aceite apenas o
    resultado da execução correspondente. Iniciar com sucesso não é concluir com sucesso.
-2. No portal Azure, abra o workspace de logs do ambiente L300 em **Logs**, selecione uma janela
-   que cubra essa execução e procure a linha iniciada por `L300_SONDA_RESULTADO=` nos logs de
-   console. A documentação oficial confirma a tabela `ContainerAppConsoleLogs_CL` e as colunas
-   `TimeGenerated` e `Log_s` para esse destino de logs [10]. Confira os campos realmente presentes
-   para associar Job, execução e réplica; não suponha que um campo de revisão da aplicação
-   identifique uma execução do Job.
-3. Guarde os logs brutos e essa associação somente em local privado. A coleta correlacionada
-   precisa ser conferida no seu workspace. **A leitura de logs pela CLI ficou pendente:** as duas
-   superfícies de consulta tentadas não estavam disponíveis na instalação usada para a ajuda
-   offline. Este guia não publica comando de extensão ou consulta KQL (*Kusto Query Language*),
-   linguagem de consultas Kusto, não verificados. Sem recuperar a linha e associá-la à execução,
-   a prova permanece pendente.
+2. Leia o identificador `customerId` do workspace do ambiente. Prepare um arquivo JSON privado
+   com a consulta KQL (*Kusto Query Language*, linguagem de consultas Kusto) abaixo [10].
+   `$inicioExecucaoUtc` é o horário registrado **antes dessa execução**, não o horário da coleta:
+
+```powershell
+$customerId = az monitor log-analytics workspace show --subscription $assinatura `
+    --resource-group $grupo --workspace-name $nomeWorkspace --query customerId --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $customerId) { throw "Workspace não conferido." }
+if (-not $inicioExecucaoUtc) { throw "Recupere o início UTC dessa execução na evidência privada." }
+$inicioConsulta = [DateTimeOffset]::Parse($inicioExecucaoUtc).UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ")
+$arquivoKql = Join-Path $pastaLogs "$nomeExecucao-kql.json"
+@{
+    query = "ContainerAppConsoleLogs_CL | where TimeGenerated > datetime($inicioConsulta) | where Log_s startswith 'L300_SONDA_RESULTADO=' or Log_s startswith 'L400_CARGA_RESULTADO=' | project TimeGenerated, Log_s | order by TimeGenerated asc"
+} | ConvertTo-Json |
+    Out-File -LiteralPath $arquivoKql -Encoding utf8 -NoClobber -ErrorAction Stop
+```
+
+3. Consulte pela interface HTTP de Log Analytics. A ingestão dos logs leva de segundos a
+   poucos minutos; repita **somente a leitura**, por exemplo a cada 15 segundos até cinco
+   minutos, sem reiniciar o Job. Essa janela de espera não é garantia do serviço:
+
+```powershell
+$prefixoColeta = "L300_SONDA_RESULTADO="
+$limiteColeta = (Get-Date).AddMinutes(5)
+do {
+    $logsJson = az rest --method post `
+        --url "https://api.loganalytics.io/v1/workspaces/$customerId/query" `
+        --resource "https://api.loganalytics.io" --body "@$arquivoKql" --output json
+    if ($LASTEXITCODE -ne 0) { throw "Leitura de logs falhou; não há prova de ausência." }
+    $logs = $logsJson | ConvertFrom-Json
+    $linhasResultado = @(
+        foreach ($linhaLog in $logs.tables[0].rows) {
+            if (([string]$linhaLog[1]).StartsWith($prefixoColeta)) { ,$linhaLog }
+        }
+    )
+    if ($linhasResultado.Count -gt 0) { break }
+    Start-Sleep -Seconds 15
+} while ((Get-Date) -lt $limiteColeta)
+if ($linhasResultado.Count -ne 1) { throw "Linha ausente ou janela ambígua; mantenha a prova pendente." }
+$linha = [string]$linhasResultado[0][1]
+```
+
+Cada elemento de `tables[0].rows` contém `[TimeGenerated, Log_s]`. Guarde a resposta bruta
+e a associação a Job, execução e contêiner somente em local privado. A janela de tempo e o
+prefixo não identificam sozinhos uma execução: não rode sondas em paralelo nessa janela.
+Se houver outra execução, confira os campos de associação no portal/workspace e delimite
+a coleta, sem escolher a primeira linha por conveniência. No portal, a mesma tabela
+`ContainerAppConsoleLogs_CL` continua disponível. Sem linha associada à execução certa,
+a prova permanece pendente.
+
 4. Leia o JSON, formato JavaScript Object Notation de dados estruturados, depois do prefixo.
    A sonda emite uma única linha, sem outro texto em saída padrão ou de erro, com chaves ordenadas
    e caracteres ASCII, conjunto básico de caracteres. Confira `v`, `sonda`, `etapa`, `veredicto`,
@@ -626,6 +766,8 @@ if ($resultado.codigo -ne 0 -or $resultado.veredicto -ne "aprovado") {
 O estado **`Succeeded` do Job não prova aprovação**. O veredicto e o código devem ser lidos da
 linha efetivamente emitida. Exija conclusão compatível, linha válida da etapa certa,
 `veredicto=aprovado`, `codigo=0` e os fatos exigidos para cada campo do descritor.
+`Failed` indica saída diferente de zero neste roteiro; leia a linha e a causa, sem tratar
+o término como aprovação nem repetir a etapa para obter outro resultado.
 A serialização reduz valores fora do vocabulário a marcadores; a barreira final procura padrões
 de URL, identificador, token, IP, host e valores privados da configuração. Se detectar um deles,
 substitui a linha por `saida_bloqueada`, com código `4`; o processo também termina com código
@@ -728,11 +870,10 @@ com a linha de base preservada.
 antes de retirar o Job. As cobranças de imagem, logs, rede e serviços mantidos continuam.
 O Desafio 07 coordena esse encerramento; não exclua componentes do grupo gerenciado manualmente.
 
-**Limite de reprodução:** executor, imagem e ferramentas externas agora têm arquivos públicos e
-esta receita revisada. Isso não é uma nova validação Azure: as versões públicas, o build remoto,
-os inícios pela CLI, sua combinação de variáveis e a coleta correlacionada de logs precisam ser
-exercitados no destino autorizado. A receita foi conferida por leitura do código, testes locais
-com dublês, validação local e ajuda offline; os helpers privados sustentam somente a rodada histórica.
+**Limite de reprodução:** executor, imagem e ferramentas externas têm arquivos públicos.
+Construção e leitura de logs foram exercitadas na rodada de validação de 11 de outubro de 2026 com os ajustes desta receita;
+isso não comprova toda a sequência nem outro destino. Confira a definição efetiva de cada
+execução e a associação dos resultados; os helpers privados sustentam somente a rodada histórica.
 Sem identidade autorizada, papel de aplicação, conexões aprovadas ou linha de resultado associada
 à execução, mantenha a respectiva prova pendente, sem habilitar a guarda.
 
@@ -798,6 +939,9 @@ Uma simulação da negativa externa ou um descritor completo não mede uma recus
 | Pessoa lê dados fora da rede após isolamento | Confira configuração de acesso público e alvos reais |
 | L200 perde acesso depois de fechar dados | O isolamento também afeta clientes antigos; execute o plano de retorno autorizado |
 | Nome existente seria recriado ou reconfigurado | Interrompa; reveja alvo e configuração completa no inventário |
+| `OperationResultNotFound` ou `InvalidResponseFromPrivateLinkService` na fase `rede` | Falha transitória conhecida do endpoint privado dos modelos; confira conta saudável e endpoint próprio com falha, conforme o procedimento abaixo |
+| Build escolhe Dockerfile do chat ou não encontra `Dockerfile` | O `--file` é resolvido na pasta atual; entre na pasta do contexto da sonda, use `--no-logs .` e leia o log depois com UTF-8 |
+| Instalação de `containerapp` tenta compilar `cryptography` | Confira CLI/Python de 64 bits e pasta própria em `AZURE_EXTENSION_DIR`, pelo passo 3 |
 | Job não baixa a imagem | Confira tag/digest, identidade de registro e `AcrPull` no recurso exato; não habilite senha de administrador |
 | Job termina sem a linha da sonda | Confira timeout, contêiner e coleta de logs; mantenha a prova pendente e não inicie outra alteração |
 | `Succeeded` sem linha válida ou junto de `saida_bloqueada` | Não aprove; confira associação da execução e colisão de nome com vocabulário, preservando a barreira |
@@ -805,6 +949,42 @@ Uma simulação da negativa externa ou um descritor completo não mede uma recus
 | Identidade de manutenção chega à fase `rede` como `User` | Interrompa; revise `tipoPrincipalCarga=ServicePrincipal`, `principalId` e consumidores antes de implantar |
 | `http-interno` recebe 401 ou 403 inesperado | Confira alcance da URL, audiência do token, papel de aplicação e identidade selecionada; papel RBAC não concede perfil documental |
 | `negativas-mi` falha por rede ou token | Não registre como recusa de papel; restaure o caminho autorizado, sem conceder privilégios extras |
+
+**Falha transitória conhecida da fase `rede`:** foram observados `OperationResultNotFound` e,
+na tentativa seguinte, `InvalidResponseFromPrivateLinkService`, mesmo com a conta de modelos
+em `Succeeded`. Isso não promete que a causa ou a recuperação será a mesma em outro ambiente.
+Antes de qualquer remoção, só leia a conta e o endpoint exato registrado no inventário:
+
+```powershell
+$estadoModelos = az cognitiveservices account show --subscription $assinatura `
+    --resource-group $grupo --name $modelos --query properties.provisioningState --output tsv
+if ($LASTEXITCODE -ne 0 -or $estadoModelos -ne "Succeeded") { throw "Conta de modelos saudável não conferida." }
+$idEndpointModelos = Read-Host "ID do endpoint privado dos modelos próprio com falha"
+$endpointJson = az network private-endpoint show --ids $idEndpointModelos --output json
+if ($LASTEXITCODE -ne 0) { throw "Endpoint com falha não conferido." }
+$endpoint = $endpointJson | ConvertFrom-Json
+$prefixoEndpoints = "/subscriptions/$assinatura/resourceGroups/$grupo/providers/Microsoft.Network/privateEndpoints/"
+if (-not $idEndpointModelos.StartsWith($prefixoEndpoints, [StringComparison]::OrdinalIgnoreCase) -or
+    $endpoint.properties.provisioningState -ne "Failed") {
+    throw "Endpoint próprio no grupo exclusivo e com falha não confirmado."
+}
+```
+
+Confira também propriedade e consumidores no inventário; o prefixo não comprova propriedade.
+**[altera o Azure]**: somente depois de autorizar esse alvo, exclua **apenas o endpoint privado
+com falha**, não a conta, as conexões da busca ou outros endpoints:
+
+```powershell
+az network private-endpoint delete --ids $idEndpointModelos
+if ($LASTEXITCODE -ne 0) { throw "Exclusão do endpoint não concluída; confira seu estado." }
+az network private-endpoint list --subscription $assinatura --resource-group $grupo --output json
+if ($LASTEXITCODE -ne 0) { throw "Ausência do endpoint não conferida." }
+```
+
+Exija ausência na listagem. Gere e revise um **novo `what-if`** da mesma fase `rede` e,
+com autorização, reaplique-a em modo **incremental**, sem mudar os parâmetros revisados.
+Essa recuperação funcionou na rodada de validação de 11 de outubro de 2026; preserve as falhas anteriores e interrompa diante de
+outro bloqueio, sem ampliar permissões ou repetir exclusões já comprovadas.
 
 ## Custos, pausa e limpeza
 
@@ -823,7 +1003,7 @@ temporários, preservando o grupo gerenciado.
 ## Situação da validação
 
 O fechamento local registra compilação e testes de definição.
-No Azure foram conferidos três endpoints privados, cinco zonas DNS, duas conexões de saída
+Na rodada histórica L300 foram conferidos três endpoints privados, cinco zonas DNS, duas conexões de saída
 aprovadas, ingresso autenticado e ingestão privada. A guarda recusou isolar sem evidências;
 após as provas, os três serviços passaram a `publicNetworkAccess=Disabled`.
 Consultas e manutenção dentro da rede continuaram funcionando; três chamadas externas
@@ -832,15 +1012,40 @@ O [registro local L300](../../docs/validacao/l300-validacao-local.md) lista comp
 o [registro Azure](../../docs/validacao/l300-azure-validacao.md) discrimina mecanismos, resultados
 e limitações, incluindo o encerramento dos temporários.
 
-**Receita pública, 11 de outubro de 2026:** ferramentas derivadas dos helpers privados da rodada
-histórica, conferidas localmente com dublês; `sonda_l300.py --etapa validar` conferiu quatro fontes
-e módulos, com rede bloqueada. A ajuda offline da Azure CLI 2.89.0 confirmou os argumentos publicados
-de identidade, papéis, ACR, conexões, Job e suas execuções. As superfícies CLI de logs não estavam
-disponíveis; a documentação oficial confirma tabela e colunas, e a coleta pelo portal precisa ser
-associada à execução no destino autorizado. Não houve build remoto ou execução Azure das versões
-públicas nesta revisão. Permanecem por conferir a combinação de variáveis no início pela CLI,
-os efeitos reais desse caminho e a coleta correlacionada; o responsável pela nova execução
-deve autorizar destino, custo, identidades e limpeza antes de encerrá-los.
+**Revisão local anterior à execução:** as ferramentas públicas receberam testes com dublês;
+`sonda_l300.py --etapa validar` conferiu quatro fontes e módulos com rede bloqueada.
+A ajuda offline da Azure CLI 2.89.0 conferiu argumentos, não efeitos remotos.
+
+**Rodada de validação de 11 de outubro de 2026:** foi usada Azure CLI 2.89.0 de 64 bits,
+com extensão `containerapp` 1.3.0b5, e Job de consumo com 0,25 vCPU, 0,5 GiB,
+limite de réplica de 900 segundos e identidades de manutenção e do chat.
+
+| Operação | Resultado observado, incluindo falhas |
+| --- | --- |
+| Fase `rede` | What-if com 24 `Create`, oito `Ignore` e um `Unsupported` qualificado. Duas tentativas falharam no endpoint privado dos modelos: `OperationResultNotFound`, depois `InvalidResponseFromPrivateLinkService`, com a conta em `Succeeded`. Após excluir somente o endpoint próprio com falha e reaplicar a mesma fase incremental, a terceira tentativa concluiu em cerca de 440 segundos |
+| Conexões compartilhadas | Duas `Pending`, armazenamento e modelos, aprovadas no destino; conexões da busca em `Approved`/`Succeeded`. As conexões dos endpoints do chat não exigiram aprovação |
+| Construção da sonda | O comando antigo escolhia o Dockerfile a partir da pasta atual ou não o encontrava. Entrar no contexto e usar `--no-logs .` corrigiu o defeito; 14 passos em cerca de 66 segundos, com `ARG IMAGEM_CHAT`, cópia da sonda e `validar` aprovado no log |
+| `dns` | Código 0; um endereço de uso privado RFC 1918 para cada serviço: Blob, busca e modelos |
+| `conferir`/`resumo` iniciais | Código 3 e resposta 404 da busca, sem pipeline; a ausência foi preservada antes da criação |
+| `carregar` → `criar` → `executar` | Quatro documentos criados, quatro objetos de busca criados e quatro itens processados; 24 trechos, sendo 21 compartilhados e três de Atendimento |
+| Conferências depois da criação | `conferir` com nove verificações atendidas e `resumo` aprovado, código 0 |
+| `acesso` | Código 0; nove consultas à busca, cinco embeddings e uma geração; filtros por perfil e quatro recusas sem chamar o modelo |
+| Fase `aplicacao` e `http-interno` | Aplicação em 72 segundos, ingresso interno, uma réplica e EasyAuth `Return401`; saúde/prontidão e consulta autenticada deram 200, anônimo e principal forjado deram 401; resposta documentada com marcador operacional |
+| `negativas-mi` | Código 0; ARM, Blob e busca recusados com 403 para a identidade do chat |
+| Ciclo operacional | `excluir` retirou um blob; `executar` deixou 21 trechos e zero da fonte operacional; `conferir` com a ausência declarada teve dez verificações atendidas. `restaurar` repôs um blob; nova execução devolveu 24 trechos; conferência final teve nove verificações atendidas. Cada etapa levou aproximadamente um a 12 segundos dentro do Job |
+| Início e coleta | Lista completa em `job start --env-vars` aplicou a etapa pedida; o argumento único de Python também funcionou. Logs e resultados foram lidos pela API do Log Analytics em `ContainerAppConsoleLogs_CL`; ingestão de segundos a poucos minutos |
+
+**Não executado:** fase `isolar`, repetição de todas as provas depois de fechar o acesso
+público e negativas externas. Os serviços continuavam com acesso público habilitado:
+o caminho privado observado **não comprova funcionamento isolado**.
+Login humano, ingresso externo, implantação por GitHub Actions/OpenID Connect (OIDC, protocolo de identidade),
+federação, matriz Linux local e nova avaliação semântica também não foram executados.
+`tipoPrincipalCarga` não foi exposto por variável; foi usada a cópia privada de parâmetros.
+
+Custo efetivo **indisponível**. A estimativa do coordenador é de poucos dólares,
+não uma fatura nem comprovação do teto estimado de US$ 30 para a rodada inteira.
+Falhas, retomadas, resultados e limpeza aprovada estão no
+[registro da rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
 
 ## Glossário
 
@@ -865,6 +1070,7 @@ deve autorizar destino, custo, identidades e limpeza antes de encerrá-los.
 | IPv4 e RFC 1918 | Versão 4 do protocolo IP e especificação das faixas de endereços de uso privado |
 | JSON e ASCII | Formato de dados estruturados e conjunto básico de caracteres da linha de resultado |
 | REST e KQL | Estilo de interface web baseado em recursos e linguagem Kusto para consultar logs |
+| FQDN | Nome completo de domínio lido da configuração de ingresso; interno inclui `.internal.` |
 
 ## Referências
 
@@ -891,3 +1097,5 @@ conferência local dos artefatos; sem nova execução Azure.
 
 Receita das sondas: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026; ferramentas
 públicas por Claude Sonnet 5.5; comandos verificados por ajuda offline; sem execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: redigida por GPT-6.1 Sol com base nos fatos do coordenador; defeitos de código corrigidos com Sonnet 5.5; revisão do coordenador.

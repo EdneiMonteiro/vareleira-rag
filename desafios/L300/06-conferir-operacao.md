@@ -4,7 +4,7 @@
 
 | Item | Descrição |
 | --- | --- |
-| Situação | Perfis, rede, ingestão e logs conferidos na rodada histórica; receita pública das sondas revisada por testes locais e ajuda offline, sem nova execução Azure; login humano não executado |
+| Situação | Histórico preservado; logs do Job e consulta interna exercitados em 11 de outubro de 2026; sem nova medição do descritor L300 ou dos helpers externos; provas pós-isolamento não executadas |
 | Público | Atendimento, operações, arquitetura e desenvolvimento |
 | Resultado | Evidências separadas de aplicação, identidade, rede e ingestão, com falhas e pendências explícitas |
 | Custo | Dublês locais dispensam serviços. Consultas reais usam busca, embeddings e geração; logs têm armazenamento e retenção |
@@ -69,9 +69,8 @@ Rotas de saúde continuam com o contrato do L200 e não executam uma pergunta no
 O helper `conferir` lê um descritor preenchido pelo operador; ele avalia completude e coerência,
 sem obter as medições do Azure.
 As ferramentas públicas derivam dos helpers privados validados no Azure na rodada histórica.
-As versões públicas foram conferidas por testes locais com dublês; esta receita usa argumentos
-verificados na ajuda offline da Azure CLI 2.89.0, interface de linha de comando do Azure.
-Não foram executadas no Azure nesta revisão.
+As versões públicas têm testes locais com dublês. A receita de coleta do Desafio 04 incorpora
+achados da rodada de validação de 11 de outubro de 2026; continue separando uma observação real de uma declaração no descritor.
 
 ## Tecnologias e conceitos
 
@@ -119,6 +118,10 @@ dos administradores do tenant e da assinatura; este guia não cria esses objetos
 Abra os guias na prévia Markdown, mantenha destinos e exportações em local privado e confira
 `$LASTEXITCODE` logo após cada comando. Permissão de login, administração e acesso de dados
 são conferências distintas.
+
+Para os comandos `az containerapp`, use a CLI de 64 bits e a pasta própria de extensões,
+conforme a [nota de instalação do Desafio 04](04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300).
+Não confunda instalar a extensão localmente com autorizar uma operação na nuvem.
 
 ## Etapa 1: conferir o caminho local
 
@@ -261,6 +264,10 @@ papéis RBAC dos serviços.
 1. Confira que `$urlChat` é a URL HTTPS oficial e alcançável do computador que coordena.
    Com ingresso interno ou caminho fechado, o helper externo só funciona de uma origem que
    alcance essa URL. Não abra ingresso nem altere autenticação para contornar a falha.
+   Nesse caso, use o nome completo de domínio (FQDN, *Fully Qualified Domain Name*) lido do
+   ingresso no ARM, com `.internal.`, conforme o
+   [passo HTTP do Desafio 04](04-dependencias-privadas.md#4-iniciar-uma-etapa-por-execução).
+   Não reconstrua o host como `<app>.<domínio>`.
 2. Comece pelos testes locais com dublês. **Este helper não tem simulação nem opção `--executar`:**
    uma etapa configurada faz requisições. A simulação seguida de `--executar` pertence ao helper
    de negativas dos três serviços, no próximo passo.
@@ -284,7 +291,7 @@ reprova a etapa. “Sem credenciais” não significa consumo impossível diante
 4. Para `perfil`, o administrador fornece um cliente de aplicação de teste **já autorizado**,
    com credencial temporária e papel correspondente. Cliente de teste (`$idClienteTeste`) e
    registro de login do chat (`$idLogin`) são objetos distintos. Criar cliente, segredo ou
-   atribuição de papel **[altera o Azure]**, exige autorização do administrador do tenant e
+   atribuição de papel **[altera o Entra ID]**, exige autorização do administrador do tenant e
    não é executado por este guia. Reutilizar um objeto também exige aprovação de seu proprietário.
 5. Configure os valores privados e leia o segredo sem colocá-lo no histórico:
 
@@ -529,7 +536,7 @@ Os comandos abaixo só leem o arquivo privado indicado por `$descritor`:
 ```
 
 Execute o segundo após registrar também as negativas externas. A integração local exercitou
-esse caminho com descritores sintéticos. A rodada Azure posteriormente conferiu dois descritores
+esse caminho com descritores sintéticos. A rodada histórica L300 posteriormente conferiu dois descritores
 baseados em observações reais, com proveniência privada: antes e depois do isolamento.
 O [registro Azure](../../docs/validacao/l300-azure-validacao.md) discrimina as fontes e os limites.
 Um descritor completo significa que seus campos são completos e coerentes, **não que o helper
@@ -570,8 +577,10 @@ A rodada também resumiu um recorte real de logs do chat. Sondas de saúde foram
 das consultas; a amostra pequena não constitui teste de carga ou objetivo de nível de serviço.
 Esse resumidor reconhece **logs do chat**, não linhas `L300_SONDA_RESULTADO=`.
 Mantenha as sentinelas das sondas em sua proveniência separada; misturá-las ao arquivo do chat
-produz linha desconhecida e impede aprovação. A coleta correlacionada dos logs do Job segue o
-Desafio 04; as superfícies CLI de logs ficaram indisponíveis na ajuda offline desta revisão.
+produz linha desconhecida e impede aprovação. Para os logs do Job, use a
+[consulta de Log Analytics do Desafio 04](04-dependencias-privadas.md#5-ler-conclusão-e-resultado-separadamente),
+com a janela e a execução conferidas. A consulta usa a interface HTTP, não uma extensão
+de leitura de logs do Job, e deve ter intervalo e prazo limitados.
 
 ## Etapa 4: registrar a decisão de continuidade
 
@@ -661,7 +670,7 @@ são cobradas separadamente; conserve apenas os temporários necessários e siga
 ## Situação da validação
 
 A integração local registra decisões de acesso, descritores e sanitização com dublês.
-A rodada Azure conferiu papéis nos tokens de clientes temporários, borda EasyAuth, conexão
+A rodada histórica L300 conferiu papéis nos tokens de clientes temporários, borda EasyAuth, conexão
 privada, ingestão e recusas externas. Logs reais do chat foram resumidos sem linhas desconhecidas
 ou publicação de conteúdo e credenciais. Os resultados L200 ficam preservados, sem nova rodada
 para ajustar esta implementação. Login humano, Actions e teste de carga não foram executados.
@@ -669,16 +678,33 @@ O [registro local L300](../../docs/validacao/l300-validacao-local.md) e o
 [registro Azure](../../docs/validacao/l300-azure-validacao.md) distinguem formatos sintéticos,
 operações reais e limites da medição.
 
-**Receita pública, 11 de outubro de 2026:** sondas derivadas dos helpers privados da rodada histórica,
-com contratos e classificação conferidos localmente por dublês, sem reexecutar conjuntos finais.
-Argumentos Azure publicados foram conferidos na ajuda offline da CLI 2.89.0; nenhuma exportação,
-consulta externa, emissão de token, construção remota ou execução Azure pública foi feita nesta revisão.
-As leituras CLI de logs não estavam disponíveis; a documentação oficial confirma o destino
-Log Analytics e suas colunas, mas coleta e associação ao Job precisam ser conferidas no ambiente
-autorizado. A combinação de variáveis no início do Job pela CLI também continua não validada.
-Para concluir uma nova rodada, o responsável autoriza destino, identidades, clientes, custo e limpeza
-e conserva as provas reais vinculadas aos campos. Não atribua a essas versões públicas as
-21 execuções operacionais da rodada histórica.
+**Revisão local anterior:** contratos e classificação das ferramentas públicas foram
+conferidos com dublês e ajuda offline. As 21 execuções históricas continuam separadas.
+
+**Rodada de validação de 11 de outubro de 2026:** os resultados e o console do Job foram
+lidos pela API HTTP de Log Analytics. A tabela `ContainerAppConsoleLogs_CL` forneceu
+`TimeGenerated`, `Log_s`, `ContainerJobName_s` e `ContainerGroupName_s`;
+a ingestão levou de segundos a poucos minutos. Isso encerra a pendência do caminho de
+leitura usado nesta rodada, não a validação de qualquer extensão de logs.
+
+A etapa `http-interno` L300 observou 200 em saúde, prontidão e consulta autenticada,
+com resposta documentada e marcador operacional. Anônimo e principal forjado receberam 401.
+A sonda também executou o ciclo operacional: excluir um blob → reindexar para 21 trechos
+e ausência da fonte operacional → conferir dez verificações → restaurar um blob →
+reindexar para 24 trechos → conferir nove verificações. Esses resultados vieram do Job,
+não de um descritor preenchido pelo operador.
+
+**Sem nova medição documentada:** o conferidor do descritor L300 e o helper HTTP externo.
+As negativas externas e as provas pós-isolamento não foram executadas. A fase `isolar` não foi aplicada;
+os serviços de dados continuaram com acesso público habilitado. Portanto, a consulta
+privada observada não comprova operação com esse acesso fechado.
+Login humano, ingresso externo, implantação por GitHub Actions/OpenID Connect (OIDC, protocolo de identidade),
+federação, matriz Linux local e nova avaliação semântica continuam não executados.
+
+O custo efetivo segue indisponível; a estimativa do coordenador é de poucos dólares,
+sem comprovar a fatura ou o teto estimado de US$ 30 da rodada inteira.
+Os resultados e a limpeza aprovada estão no
+[registro da rodada de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md).
 
 ## Glossário
 
@@ -726,3 +752,5 @@ conferência local dos artefatos; sem nova execução Azure.
 
 Receita das sondas: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026; ferramentas
 públicas por Claude Sonnet 5.5; comandos verificados por ajuda offline; sem execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: redigida por GPT-6.1 Sol com base nos fatos do coordenador; defeitos de código corrigidos com Sonnet 5.5; revisão do coordenador.

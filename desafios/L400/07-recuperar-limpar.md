@@ -4,7 +4,7 @@
 
 | Campo | Definição |
 | --- | --- |
-| Situação | Encerramento Azure histórico; roteiro de IDs e sessão revisado por leitura; ferramenta testada localmente, sem nova execução Azure |
+| Situação | Histórico preservado; planejador público exercitado no grupo mínimo e no encerramento completo de 11 de outubro de 2026, com conferências aprovadas e espera assíncrona registrada |
 | Público | Operações, arquitetura e desenvolvimento, com responsáveis pelo acesso |
 | Resultado | IDs de objeto L400 conferidos antes das remoções, blocos revisados na mesma sessão e encerramento próprio sem alterar a base anterior |
 | Custo | Temporários continuam cobrando até o encerramento de seus serviços |
@@ -48,7 +48,7 @@ remoção, expurgo e preservação dos recursos anteriores.
 
 | Artefato | Uso |
 | --- | --- |
-| [Roteiro administrativo L300](../L300/07-recuperar-limpar.md#roteiro-administrativo-revisado-de-encerramento-completo) | Sequência comum da ferramenta pública; revisada por leitura, sem nova execução Azure |
+| [Roteiro administrativo L300](../L300/07-recuperar-limpar.md#roteiro-administrativo-revisado-de-encerramento-completo) | Sequência comum da ferramenta pública; exercitada no alcance registrado em 11 de outubro de 2026 |
 | [Registro Azure L300](../../docs/validacao/l300-azure-validacao.md) | Conflitos reais e retomadas preservadas |
 | [Gerenciador de ingestão](../../scripts/gerenciar_ingestao_l300.py) | Remoção dos quatro objetos com nomes reservados a um índice próprio |
 | [Roteiro L400](../../docs/roteiro-l400.md) | Referência e condições do novo experimento |
@@ -85,8 +85,9 @@ Azure Resource Manager (ARM), serviço de administração, não comprova por si 
 
 **Shared private links** são conexões privadas de saída da busca. Trate a exclusão como pendente
 até confirmar ausência na listagem do serviço, sem tratar aceitação como conclusão.
-O destino já ausente pode impedir a exclusão da busca [1]. A conclusão das operações impressas
-pelo planejador não foi qualificada em uma nova execução Azure.
+O destino já ausente pode impedir a exclusão da busca [1]. Na rodada de validação de
+11 de outubro de 2026, dois links próprios foram retirados e sua ausência conferida
+antes dos destinos; não foi provocada a falha histórica `LockedSPLResourceFound`.
 
 Um **deployment** é uma implantação nomeada de modelo na conta de modelos. A contingência L400
 é um deployment separado; o candidato de busca usa 768 dimensões e é distinto do índice de
@@ -131,6 +132,8 @@ explica a recusa, sem contorno por edição de arquivos ou recriação do grupo.
 
 O ambiente Container Apps pode ter um grupo gerenciado. Retire o ambiente pelo serviço,
 sem editar ou excluir componentes gerenciados manualmente [2].
+Para os comandos Container Apps do plano, confira a CLI de 64 bits e a pasta própria
+de extensões pela [nota do L300 D04](../L300/04-dependencias-privadas.md#3-criar-um-job-manual-no-ambiente-l300).
 
 ## Etapa 1: conferir a recuperação
 
@@ -289,6 +292,12 @@ precisam continuar presentes; atribuições anteriores, inclusive fora do grupo,
 ID, principal, definição e escopo. A conferência não compara todas as configurações do L300,
 não garante ausência de objetos não inventariados e não mede custo.
 
+Um ambiente Container Apps de consumo, mesmo vazio, **pode levar cerca de 30 minutos**
+em `ScheduledForDelete`, exclusão agendada, antes de desaparecer, como observado na rodada.
+Defina intervalo e prazo aprovados e confira ausência por `az containerapp env list`.
+Se o prazo terminar, registre a pendência e continue somente as leituras autorizadas;
+não repita a exclusão nem manipule o grupo gerenciado.
+
 Os comandos e verificações dos passos e a verificação do grupo gerenciado no fechamento só
 executam depois da Preparação na mesma sessão PowerShell 7. No Windows PowerShell 5.1 ou em
 outra janela sem Preparação, emitem aviso e não executam o corpo; a verificação recusada responde
@@ -321,8 +330,9 @@ explica como renovar presença ou capturar em outra pasta sem sobrescrever prova
 inventariados com IDs de objeto corretos, Preparação e blocos íntegros na mesma sessão sem troca
 de conta, referência anterior preservada no alcance conferido e custo disponível ou
 explicitamente indisponível. Sem base ou prova de presença, o encerramento não recebe aprovação
-completa quando essas provas são exigidas. Este roteiro foi revisado por leitura; sua execução
-Azure permanece não realizada.
+completa quando essas provas são exigidas. A execução observada está no
+[registro de 11 de outubro de 2026](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md);
+ela não substitui inventário ou autorização de outro destino.
 
 ## Como pedir uma mudança ao Copilot no VS Code
 
@@ -403,7 +413,7 @@ um novo orçamento, e uma resposta sem dados deve ficar registrada como indispon
 
 ## Situação da validação
 
-Promoção e retorno tiveram consultas autenticadas. A remoção granular retirou os quatro objetos
+Na rodada histórica L400, promoção e retorno tiveram consultas autenticadas. A remoção granular retirou os quatro objetos
 candidatos sem modificar a referência, com simulação e repetição idempotente.
 O encerramento retirou consumidores, links próprios antes dos destinos, credencial, 15 atribuições,
 cinco aplicativos e cinco principais de aplicação. Grupo exclusivo e gerenciado estão ausentes,
@@ -421,11 +431,38 @@ registros. A ferramenta pública tem testes locais com dublês, inclusive execu�
 e recusa no Windows PowerShell 5.1 com interface Azure CLI falsa [8]. As guardas de função dos GUIDs,
 identidade e sessão foram incorporadas por leitura e geração de planos e capturas sintéticos.
 Ela não foi usada no encerramento histórico, que empregou um script privado diferente.
-O roteiro novo não foi executado no Azure e os conjuntos finais não foram repetidos.
-Projeção `id:id` de `--query`, formatos reais das respostas, conclusão dos links e semântica da
-listagem de papéis por escopo permanecem pendentes de qualificação autorizada.
+Os conjuntos finais não foram repetidos.
 A remoção isolada da contingência em conta compartilhada e qualquer alvo fora do grupo exigem
 decisão e procedimento próprios do operador.
+
+**Rodada de validação de 11 de outubro de 2026:** o planejador público foi exercitado
+em grupo mínimo com 13 passos e no encerramento completo com 28. As duas conferências
+terminaram aprovadas: 12 atendidos, zero reprovados, zero pendentes e um não aplicável
+em cada uma. O programa não executou Azure; os comandos impressos foram executados
+pelo coordenador com autorização.
+
+| Alvos do encerramento completo | Prova observada |
+| --- | --- |
+| Dois aplicativos Container Apps e um Job | Ausência conferida, passos 1–3 |
+| Dois shared private links | Primeiro exercício real dessa fase do planejador; removidos e ausentes antes dos destinos |
+| Objetos Entra | Seis credenciais retiradas; principal de serviço e aplicativo removidos e expurgados |
+| Acessos próprios | Oito atribuições retiradas por ID exato, preservando as anteriores |
+| Logs e ambientes | Workspace retirado; dois ambientes ausentes após cerca de 23 minutos; grupo gerenciado desapareceu pelo serviço |
+| Grupo e modelos | Grupo exclusivo ausente e conta de modelos expurgada |
+| Conferência final | Captura nova com sete ausentes; oito grupos, 46 recursos e 20 atribuições na listagem direta, 17 comparadas e três herdadas ignoradas/contadas |
+
+A parada no passo 25 foi esperada: verificação `presente` durante a exclusão assíncrona.
+O passo 26 começou em paralelo; as leituras foram repetidas a cada aproximadamente
+90 segundos. Cada um dos 28 passos teve prova de ausência. Nenhuma exclusão falhou,
+nenhum bloqueio administrativo foi removido e nada foi recriado na limpeza.
+As herdadas não são comparadas: uma mudança nelas não seria detectada pelo critério.
+
+**Não validado nesta rodada:** encerramento depois da fase `isolar`, recuperação de
+`LockedSPLResourceFound` e cofre de chaves nesta segunda execução. O cofre foi exercitado
+no grupo mínimo. Custo efetivo indisponível não é zero; os cerca de duas horas e sete
+minutos de existência do laboratório não são uma medição de fatura.
+O [registro da rodada](../../docs/validacao/operacao-publica-azure-validacao-2026-10-11.md)
+preserva o alcance, as falhas anteriores e a limpeza aprovada.
 
 ## Glossário e referências
 
@@ -476,3 +513,5 @@ ferramenta pública por Claude Sonnet 5.5; revisado por leitura; sem execução 
 Sincronização final do roteiro: GPT-6.1 Sol, com Astra indisponível, em 11 de outubro de 2026;
 adequação às guardas de IDs e sessão da ferramenta de Claude Sonnet 5.5, por leitura e
 conferência local; sem execução Azure.
+
+Atualização pós-validação Azure de 11 de outubro de 2026: GPT-6.1 Sol com base nos fatos e revisão do coordenador; código e testes corrigidos com Claude Sonnet 5.5; autoria anterior preservada.
