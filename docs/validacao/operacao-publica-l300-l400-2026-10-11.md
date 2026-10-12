@@ -10,8 +10,12 @@ mesclados. O [PR #4](https://github.com/EdneiMonteiro/vareleira-rag/pull/4)
 também foi mesclado, por ordem expressa do mantenedor. Foi publicada a
 [pré-release `v0.4.1-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.1-l400),
 com tag anotada no commit de merge, contendo L100 a L400 com as correções.
-Uma rodada Azure foi autorizada e está pendente de execução.
-**Nenhuma ferramenta pública nova foi validada no Azure.**
+A [rodada Azure das ferramentas públicas](operacao-publica-azure-validacao-2026-10-11.md)
+foi executada e encerrada, com falhas e retomadas preservadas. O planejador teve conferências
+aprovadas no grupo mínimo e na limpeza completa; sonda, carga e migração tiveram provas
+operacionais parciais. **Isso não comprova isolamento nem homologação.**
+O PR #5 foi mesclado; os achados e o registro Azure foram mesclados pelo PR #6, por delegação,
+e publicados em `v0.4.2-l400`. `v0.4.1-l400` e as anteriores não contêm essa evidência.
 
 ## Escopo e autorização
 
@@ -46,20 +50,29 @@ encerramento → sonda L300 em rede privada → carga e receitas L400, com parad
 e limpeza ao primeiro bloqueio. O teto de US$ 30 é uma estimativa para a
 rodada inteira, não um custo efetivo medido.
 
-O destino é somente a assinatura de testes privada já confirmada e a região
-`brazilsouth`, em grupo exclusivo novo. A criação de identidades, credenciais
+O destino foi somente a assinatura de testes privada e a região já confirmadas,
+em grupo exclusivo novo. A criação de identidades, credenciais
 e papéis temporários foi autorizada, com remoção ao final. A linha de base
 deve ser capturada antes de criar o grupo; o planejador público orienta
 a limpeza final, sem executá-la. Escopo e principal devem ser conferidos
 contra o inventário antes de revogar, preservando todos os objetos anteriores.
 
-Essa autorização não inclui outros destinos, execuções além desta rodada,
-login humano do chat, implantação por GitHub Actions e OpenID Connect
-(OIDC, protocolo de identidade), confiança federada ou publicações além de
-`v0.4.1-l400`. A execução está pendente; resultados,
-falhas, retomadas e limpeza serão documentados em um registro próprio em
-`docs/validacao`, criado quando a rodada terminar. Custo indisponível não
-significa custo zero. Identificadores e evidências brutas permanecem privados.
+O mantenedor delegou o fechamento com “Proceda com o que for necessário para finalizar!”.
+O coordenador interpretou a delegação como autorização para mesclar os
+[PRs #5](https://github.com/EdneiMonteiro/vareleira-rag/pull/5) e
+[#6](https://github.com/EdneiMonteiro/vareleira-rag/pull/6) e publicar
+[`v0.4.2-l400`](https://github.com/EdneiMonteiro/vareleira-rag/releases/tag/v0.4.2-l400);
+os merges e a publicação foram concluídos por essa delegação.
+
+Isso não autoriza outros destinos, repetir a rodada, fase `isolar`, login humano,
+implantação por GitHub Actions/OpenID Connect (OIDC, protocolo de identidade) ou federação.
+O [registro Azure](operacao-publica-azure-validacao-2026-10-11.md) conserva a execução:
+13 passos no grupo mínimo e 28 no encerramento completo, ambos com conferência aprovada.
+Na limpeza completa, oito grupos, 46 recursos e 20 atribuições foram listados ao final;
+17 atribuições foram comparadas e três herdadas ignoradas e contadas.
+As provas privadas ocorreram com acesso público dos dados ainda habilitado.
+Custo efetivo indisponível não significa custo zero. Identificadores e evidências brutas
+permanecem privados.
 
 Os fatos de integração e CI abaixo foram conferidos pelo coordenador.
 Esta redação usou somente arquivos locais e esses fatos, sem consultas de rede
@@ -147,11 +160,14 @@ os relatórios, os denominadores, as duas divergências do L200 e os resultados
 
 ## Ferramentas e roteiros públicos
 
-As ferramentas novas foram testadas somente com dublês, substitutos controlados
-dos serviços. **Nenhuma foi validada no Azure.** Os auxiliares privados das
-rodadas históricas não são dependências do aluno nem provas destas versões.
+Na entrega do PR #4, as ferramentas novas tinham somente testes com dublês,
+substitutos controlados dos serviços. A
+[rodada Azure posterior](operacao-publica-azure-validacao-2026-10-11.md) exercitou o planejador,
+a sonda interna, a construção da imagem, a carga e as receitas L400 no alcance registrado.
+As ferramentas HTTP externas e o verificador L100 D07 corrigido não receberam uma nova
+validação Azure. Os auxiliares privados históricos não são dependências do aluno.
 
-| Ferramenta pública | Guias que a usam | Testes locais |
+| Ferramenta pública | Guias que a usam | Testes locais da entrega PR #4 |
 | --- | --- | --- |
 | [Planejador/verificador](../../scripts/planejar_encerramento.py) e [contrato de encerramento](../../scripts/lab_encerramento.py) | [L300 D07](../../desafios/L300/07-recuperar-limpar.md) e [L400 D07](../../desafios/L400/07-recuperar-limpar.md) | [100 testes](../../tests/test_encerramento.py), com 56 mutações injetadas, todas detectadas |
 | [Sonda interna L300](../../scripts/sonda_l300.py) | [L300 D04](../../desafios/L300/04-dependencias-privadas.md) e [D06](../../desafios/L300/06-conferir-operacao.md) | [18 testes](../../tests/test_sonda_l300.py) |
@@ -159,6 +175,9 @@ rodadas históricas não são dependências do aluno nem provas destas versões.
 | [Sonda de negativas externas](../../scripts/sonda_negativas_externas_l300.py) | L300 D04 e D06 | [32 testes](../../tests/test_sonda_negativas_externas_l300.py), um ignorado no Windows |
 | [Montador de contexto](../../scripts/montar_contexto_sonda_l300.py), [Dockerfile](../../infra/sonda-l300/Dockerfile) e [lista de arquivos permitidos](../../infra/sonda-l300/dockerignore) | L300 D04 e [L400 D06](../../desafios/L400/06-testar-carga-interrupcao.md) | [31 testes](../../tests/test_montar_contexto_sonda_l300.py) |
 | [Gerador de carga L400](../../scripts/gerar_carga_l400.py) | L400 D06 | [101 testes](../../tests/test_gerar_carga_l400.py), com 37 mutações injetadas, todas detectadas |
+
+Após a correção de herdadas, o módulo do planejador passou para 111 testes, com 48 mutações
+detectadas nessa conferência. Esses números não substituem nem são somados aos ensaios anteriores.
 
 O planejador de encerramento é **offline**: lê os arquivos locais e imprime
 comandos `az` para revisão. Não chama o Azure nem apaga nada. Usa inventário
@@ -186,8 +205,9 @@ Os guias [L400 D03](../../desafios/L400/03-operar-deployments.md) e
 [D04](../../desafios/L400/04-evoluir-indice.md) agora trazem receitas públicas
 de implantação por fases e de evolução, promoção e retorno do índice.
 Os roteiros L300 D07/L400 D07 usam o planejador público e conferências
-administrativas explícitas. Nenhuma dessas receitas foi executada ou
-validada no Azure nesta rodada.
+administrativas explícitas. Sua execução posterior está no
+[registro Azure](operacao-publica-azure-validacao-2026-10-11.md), sem reexecutar os conjuntos
+finais nem converter prova operacional em avaliação semântica.
 
 ## Revisões independentes e achados corrigidos
 
@@ -286,17 +306,15 @@ Não inclui uma execução de CI da principal no commit de merge do PR #4.
 
 ## O que não foi validado e limitações
 
-1. **Nenhuma ferramenta pública nova foi validada no Azure.** Dublês,
-   análise sintática e ajuda offline não comprovam identidade, conectividade,
-   carga, consumo, expurgo ou preservação reais dessas versões.
-2. O comportamento de `az containerapp job start` com `--env-vars`,
-   `--command` e `--args`, e de `az containerapp job execution`, não foi
-   validado no Azure nas versões atuais. A ajuda offline confirma somente
-   a interface de argumentos.
-3. A leitura dos logs do Job pela interface de linha de comando (CLI) continua
-   pendente. Os guias descrevem portal e Log Analytics, com a tabela
-   `ContainerAppConsoleLogs_CL`; a coleta e sua associação à execução
-   precisam ser conferidas no destino autorizado.
+1. **A prova Azure foi parcial.** Fase `isolar`, provas posteriores, negativas externas
+   e avaliação semântica nova não foram executadas. O caminho privado observado não
+   comprova funcionamento com acesso público dos dados fechado.
+2. `job start` foi exercitado com lista completa em `--env-vars` e Python com argumento
+   único Base64 em `--command`/`--args`; estado da execução também foi lido.
+   Isso não caracteriza listas parciais ou todas as versões da CLI.
+3. Logs e resultados foram lidos pela API do Log Analytics em
+   `ContainerAppConsoleLogs_CL`. A prova não valida qualquer extensão de logs nem outra
+   associação de execução. Os helpers externos continuam sem nova prova nesta rodada.
 4. A linha de base do encerramento precisa ser capturada **antes** de criar
    o grupo temporário. Um identificador globalmente único (GUID) errado,
    mas bem formado e distinto, não é detectável offline. Por isso o roteiro
@@ -312,7 +330,8 @@ Não inclui uma execução de CI da principal no commit de merge do PR #4.
 7. Login humano, implantação por Actions/OIDC e homologação continuam não
    executados. A CI na principal não testa esses caminhos. As pré-releases
    `v0.3.0-l300` e `v0.4.0-l400` não contêm as correções atuais;
-   `v0.4.1-l400` contém essas correções, ainda sem validação Azure.
+   `v0.4.1-l400` contém a entrega inicial das ferramentas, sem esta evidência Azure;
+   `v0.4.2-l400` acrescenta correções e o registro da prova parcial.
 8. Os textos finais são tratados como irrecuperáveis no alcance da busca;
    os resultados de contrato não demonstram fidelidade semântica.
 9. O cancelamento L400 continua com registro de execuções ativas em memória,
@@ -329,9 +348,10 @@ Não inclui uma execução de CI da principal no commit de merge do PR #4.
 | Decisão | Limite atual |
 | --- | --- |
 | Mesclar o PR #4 | Decidido e concluído em 11 de outubro de 2026, por ordem expressa; commit de merge, branch preservada |
-| Pré-releases corrigidas | Publicada somente `v0.4.1-l400`, com tag anotada no merge do PR #4. `v0.3.1-l300` e `v0.1.2-l100` não foram publicadas; separar a árvore corrigida exige reconstrução e novas verificações, pelas dependências L400 descritas abaixo |
-| Rodada Azure das ferramentas públicas | Autorizada, pendente de execução: uma única rodada completa em etapas, na assinatura de testes privada e em `brazilsouth`, com grupo exclusivo novo e teto estimado de US$ 30 para toda a rodada; identidades, credenciais e papéis temporários autorizados, com remoção ao final e parada e limpeza ao primeiro bloqueio; demais limites na seção de escopo |
-| Expor `tipoPrincipalCarga` por variável | Aguardando decisão, sem implementação. Define o tipo da identidade que recebe o papel de carga no Blob, o armazenamento de objetos: `User` para pessoa ou `ServicePrincipal` para identidade de aplicativo/gerenciada. A manutenção do L300 D04 exige `ServicePrincipal`; hoje o guia requer cópia privada de parâmetros |
+| PR #5 e PR #6 | Mesclados por delegação final; correção de herdadas no #5, achados e registro Azure no #6 |
+| Pré-releases corrigidas | `v0.4.2-l400` publicada após o merge do PR #6. `v0.4.1-l400` preservada; `v0.3.1-l300` e `v0.1.2-l100` continuam não publicadas. Separar a árvore exige reconstrução e novas verificações |
+| Rodada Azure das ferramentas públicas | Concluída e encerrada, com [registro próprio](operacao-publica-azure-validacao-2026-10-11.md). Conferências de limpeza aprovadas; custo efetivo indisponível. Não autoriza repetir, mudar destino ou executar `isolar` |
+| Expor `tipoPrincipalCarga` por variável | Não implementado: o coordenador adiou a mudança por delegação final (“Tome todas as decisões para finalizar”); só será reaberta por pedido do mantenedor. Define o tipo da identidade que recebe o papel de carga no Blob: `User` para pessoa ou `ServicePrincipal` para aplicativo/identidade gerenciada. Foi usada cópia privada de parâmetros |
 
 O [montador do contexto da sonda](../../scripts/montar_contexto_sonda_l300.py)
 inclui `scripts\gerar_carga_l400.py` na lista fechada de 12 arquivos.
@@ -349,6 +369,7 @@ exigiria reconstrução e novas verificações; o mantenedor pode pedi-la depois
 | Revisão independente de código | Agentes de revisão de código, um por componente; achados e correções informados pelo coordenador |
 | Coordenação e revisão dos diffs de documentação | Claude Sonnet 5.5; fechamento da revisão a cargo do coordenador |
 | Atualização de estado, publicação e autorização Azure | Redigida por GPT-6.1 Sol e revisada pelo coordenador Claude Sonnet 5.5; autoria anterior preservada |
+| Fechamento da validação Azure e publicação `v0.4.2-l400` | GPT-6.1 Sol com Astra indisponível, fatos e revisão do coordenador; código e testes por Claude Sonnet 5.5 |
 
 As autorias e revisões anteriores permanecem nos guias e nos registros
 históricos. Modelos de autoria e revisão não configuram o modelo do aluno

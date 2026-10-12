@@ -100,8 +100,19 @@ ou executar o workflow de implantação.
 Cobrança ainda indisponível não é custo zero.
 
 As [ferramentas públicas desta rodada](docs/validacao/operacao-publica-l300-l400-2026-10-11.md)
-acrescentam planejamento de encerramento, sondas e carga finita. Os testes usam apenas dublês;
-**nenhuma ferramenta pública nova foi validada no Azure**. Para consultar ajuda e conferir
+acrescentam planejamento de encerramento, sondas e carga finita. Os testes automáticos usam
+dublês; a [rodada Azure posterior](docs/validacao/operacao-publica-azure-validacao-2026-10-11.md)
+exercitou planejador, sonda interna, carga e migração, com falhas e retomadas preservadas
+e limpeza aprovada. O PR #5 foi mesclado com a correção de herdadas; o PR #6 foi mesclado
+por delegação, e a pré-release `v0.4.2-l400` foi publicada com os achados e o registro.
+`v0.4.1-l400` e anteriores não contêm essa evidência Azure.
+
+**A prova é parcial e não homologa produção:** os serviços de dados ainda tinham acesso
+público habilitado. Fase `isolar`, repetição posterior, negativas externas, ingresso externo,
+login humano, implantação Actions/OIDC e avaliação semântica nova não foram executados.
+Os helpers externos e o verificador L100 D07 corrigido não receberam nova prova Azure.
+Custo efetivo indisponível não é zero; publicação não autoriza repetir ou mudar destino.
+Para consultar ajuda e conferir
 a preparação local sem rede, com o ambiente Python preparado, use:
 
 ```powershell

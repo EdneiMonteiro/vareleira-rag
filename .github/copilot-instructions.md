@@ -185,8 +185,8 @@
   `docs/validacao/publicacao-l300-l400.md`.
 - Em 11 de outubro de 2026, o mantenedor autorizou corrigir o D07, completar as ferramentas e
   receitas públicas L300/L400, encerrar a lacuna semântica e mesclar os PRs #1 → #2 → #3.
-  O D07 usa alvo aleatório diferente do índice informado; essa correção, encerramento, sondas
-  e carga só foram testados localmente, nada validado no Azure.
+  O D07 usa alvo aleatório diferente do índice informado; na entrega inicial do PR #4,
+  essa correção, encerramento, sondas e carga tinham apenas testes locais.
   Os textos finais são tratados como irrecuperáveis,
   sem reexecução. Código/testes e coordenação: Claude Sonnet 5.5; documentação: GPT-6.1 Sol,
   com Astra indisponível. O PR #4, aberto a partir da branch `fix/operacao-publica-l300-l400`,
@@ -195,20 +195,21 @@
   As tags `v0.3.0-l300` e `v0.4.0-l400` permanecem intactas, sem essas correções.
   O escopo inicial não incluía execução Azure ou novas pré-releases; a autorização posterior
   está delimitada abaixo. Registro: `docs/validacao/operacao-publica-l300-l400-2026-10-11.md`.
-- Em 11 de outubro de 2026, o mantenedor autorizou uma única rodada Azure das ferramentas
-  públicas, completa em etapas: encerramento → sonda L300 em rede privada → carga e receitas
-  L400 D03/D04. Use somente a assinatura de testes privada já confirmada e `brazilsouth`,
-  em grupo exclusivo novo, com teto estimado de US$ 30 para toda a rodada.
-  Colete a linha de base ANTES de criar o grupo. Identidades, credenciais e papéis temporários
-  foram autorizados, com remoção ao final; ao primeiro bloqueio, pare e limpe os próprios.
-  Use o planejador público `scripts\planejar_encerramento.py` para orientar a limpeza final;
-  ele não executa a exclusão. Confira escopo e principal contra o inventário antes de revogar.
-  Preserve grupos, recursos, identidades e papéis preexistentes; não imprima nem registre IDs
-  em arquivos públicos ou logs. Isso não autoriza outros destinos, novas execuções,
-  login humano, implantação Actions/OIDC/federação ou publicação além de `v0.4.1-l400`.
-  Custo efetivo indisponível não é custo zero. A execução está pendente; registre cada resultado
-  real, falha, retomada e limpeza em um registro próprio em `docs/validacao`,
-  criado quando a rodada terminar.
+- A rodada Azure das ferramentas públicas de 11 de outubro de 2026 foi executada e encerrada
+  no destino privado autorizado, com teto estimado de US$ 30 e linha de base anterior ao grupo.
+  Planejador: 13 e 28 passos, conferências aprovadas; no fechamento completo, oito grupos,
+  46 recursos e 20 atribuições listados, 17 comparadas e três herdadas ignoradas/contadas.
+  Sonda, carga e migração tiveram prova parcial, com falhas e retomadas preservadas;
+  dados ainda públicos, sem `isolar` ou provas posteriores. Custo efetivo indisponível não é zero.
+  O mantenedor delegou “Proceda com o que for necessário para finalizar!”; o coordenador
+  interpretou como autorização para mesclar PR #5 e PR #6 e publicar `v0.4.2-l400`, concluídos.
+  Isso não autoriza repetir, outros destinos, `isolar`, login humano, ingresso externo,
+  implantação Actions/OIDC/federação ou avaliação semântica nova. O mantenedor reforçou
+  “Tome todas as decisões para finalizar”: o coordenador não abriu nova rodada Azure e não
+  implementou `tipoPrincipalCarga` por variável (o guia usa cópia privada de parâmetros);
+  reabra esses itens só por pedido do mantenedor. Preserve a captura antes do grupo,
+  escopo/principal conferidos contra inventário, execução manual do plano e IDs privados.
+  Registro: `docs/validacao/operacao-publica-azure-validacao-2026-10-11.md`.
 
 - `infra/` (Bicep e parâmetros por nível), `scripts/` (Python), `dados/` (documentos
   sintéticos e inventário), `desafios/` (guias), `requirements/`, `tests/` e `docs/`.
@@ -227,5 +228,5 @@
 - Ferramentas públicas, sem rede: `python scripts\planejar_encerramento.py --etapa modelo`,
   `python scripts\sonda_l300.py --etapa validar`, `python scripts\montar_contexto_sonda_l300.py --help`
   e `python scripts\gerar_carga_l400.py --help`. Planejar não executa; linha de base antes do grupo.
-  Testes só com dublês; nenhuma dessas ferramentas foi validada no Azure.
+  Esses comandos são locais; a execução Azure posterior foi parcial e está no registro da rodada.
 - Instruções por tipo de arquivo ficam em `.github/instructions/`.
